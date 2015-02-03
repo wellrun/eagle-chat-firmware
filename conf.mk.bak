@@ -1,0 +1,9 @@
+#
+# Developer settings. Modify at your will.
+# These parameters will vary from developer to developer, so you must copy this file to a new file called
+# 'conf.mk', fill in your local settings, and you're done. Git should ignore your local copy, but make sure
+# it doesn't get in there accidentally.
+#
+
+# location of ASF directory. Alter to suit your environment.
+ASF_PATH = /Users/kevinward/avr/asf-3.21.0

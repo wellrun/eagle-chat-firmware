@@ -1,8 +1,13 @@
 # Object files
 *.o
+*.d
 *.ko
 *.obj
 *.elf
+*.sym
+*.map
+*.lss
+*.bin
 
 # Precompiled Headers
 *.gch
@@ -27,3 +32,6 @@
 *.i*86
 *.x86_64
 *.hex
+
+# Ignore user's conf.mk
+conf.mk
