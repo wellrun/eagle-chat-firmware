@@ -54,9 +54,9 @@ CSRCS = \
 
 # Assembler source files located from the top-level source directory
 ASSRCS = \
-#       xmega/applications/xmega_a3bu_xplained_demo/qtouch/qt_asm_xmega.s \
        xmega/drivers/cpu/ccp.s                            \
        xmega/drivers/nvm/nvm_asm.s
+#       xmega/applications/xmega_a3bu_xplained_demo/qtouch/qt_asm_xmega.s \
 
 # Include path located from the top-level source directory
 INC_PATH = \
