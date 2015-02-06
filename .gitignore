@@ -33,5 +33,10 @@
 *.x86_64
 *.hex
 
+# Atmel
+*.cproj
+*.atsln
+*.atsuo
+
 # Ignore user's conf.mk
 conf.mk
