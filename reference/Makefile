@@ -1,8 +1,6 @@
 
 include ../project.mk
 
-$(warning $(ASF_PATH))
-
-MAKEFILE_PATH = $(ASF_PATH)/$(ASF_MAKEFILE)
+MAKEFILE_PATH = ../Makefile.avr.in
 
 include $(MAKEFILE_PATH)

@@ -5,10 +5,13 @@
 include ../conf.mk
 
 # Location of ASF makefile. You should not need to change this.
-ASF_MAKEFILE = common/utils/make/Makefile.avr.in
+#ASF_MAKEFILE = common/utils/make/Makefile.avr.in
 
 # Microcontroller: atxmega128a1, atmega128, attiny261, etc.
 MCU = atxmega192a3u
+
+BUILD_DIR = build
+
 
 # Application target name. Given with suffix .a for library and .elf for a
 # standalone application.
@@ -17,6 +20,8 @@ MCU = atxmega192a3u
 # C source files located from the top-level source directory
 CSRCS = \
        common/services/clock/xmega/sysclk.c               \
+       xmega/drivers/nvm/nvm.c                            \
+
  #      common/components/display/st7565r/st7565r.c        \
  #      common/services/calendar/calendar.c                \
  #      common/services/gfx_mono/gfx_mono_c12832_a1z.c     \
@@ -46,7 +51,6 @@ CSRCS = \
  #      xmega/boards/xmega_a3bu_xplained/init.c            \
  #      xmega/drivers/adc/adc.c                            \
  #      xmega/drivers/adc/xmega_aau/adc_aau.c              \
- #      xmega/drivers/nvm/nvm.c                            \
  #      xmega/drivers/rtc32/rtc32.c                        \
  #      xmega/drivers/tc/tc.c                              \
  #      xmega/drivers/usart/usart.c                        \
@@ -66,31 +70,32 @@ INC_PATH = \
        common/services/clock                              \
        xmega/drivers/cpu                                  \
        xmega/utils                                        \
-       xmega/utils/preprocessor 						  \
+       xmega/utils/preprocessor 				  \
        xmega/drivers/nvm                                  \
+       xmega/drivers/usb                                  \
+       common/services/usb                                \
+       common/services/gpio                               \
+       common/services/ioport                             \
+       xmega/drivers/pmic                                 \
+       xmega/drivers/tc                                   \
+       common/services/sleepmgr                           \
+       xmega/drivers/sleep                                \
+       xmega/drivers/usart                                \
+       common/services/usb/class/cdc                      \
+       common/services/usb/class/cdc/device               \
+       common/services/usb/udc                            \
+       common/services/spi                                \
+       xmega/drivers/spi                                  \
+
 #       common/components/display/st7565r                  \
 #       common/services/calendar                           \
 #       common/services/delay                              \
 #       common/services/gfx_mono                           \
-#       common/services/gpio                               \
-#       common/services/ioport                             \
-#       common/services/sleepmgr                           \
-#       common/services/spi                                \
-#       common/services/usb                                \
-#       common/services/usb/class/cdc                      \
-#       common/services/usb/class/cdc/device               \
-#       common/services/usb/udc                            \
 #       xmega/applications/xmega_a3bu_xplained_demo        \
 #       xmega/applications/xmega_a3bu_xplained_demo/atxmega256a3bu_xmega_a3bu_xplained \
 #       xmega/applications/xmega_a3bu_xplained_demo/qtouch \
 #       xmega/boards/xmega_a3bu_xplained                   \
 #       xmega/drivers/adc                                  \
-#       xmega/drivers/pmic                                 \
-#       xmega/drivers/rtc32                                \
-#       xmega/drivers/sleep                                \
-#       xmega/drivers/tc                                   \
-#       xmega/drivers/usart                                \
-#       xmega/drivers/usb                                  \
 #       xmega/applications/xmega_a3bu_xplained_demo/atxmega256a3bu_xmega_a3bu_xplained/gcc
 
 # Library paths from the top-level source directory
@@ -126,7 +131,7 @@ ARFLAGS =
 ASFLAGS = 
 
 # Extra flags to use when compiling.
-CFLAGS = -v -I../config/
+CFLAGS = -I../config/
 
 # Extra flags to use when preprocessing.
 #
@@ -138,10 +143,11 @@ CFLAGS = -v -I../config/
 #   BOARD      Target board in use, see boards/board.h for a list.
 #   EXT_BOARD  Optional extension board in use, see boards/board.h for a list.
 CPPFLAGS = \
-       -D BOARD=USER_BOARD			                       \
+       -D BOARD=USER_BOARD			                \
+       -D IOPORT_XMEGA_COMPAT                             \
+
 #       -D CONFIG_NVM_IGNORE_XMEGA_A3_D3_REVB_ERRATA       \
 #       -D GFX_MONO_C12832_A1Z=1                           \
-#       -D IOPORT_XMEGA_COMPAT                             \
 #       -D NUMBER_OF_PORTS=1                               \
 #       -D QTOUCH_STUDIO_MASKS=1                           \
 #       -D QT_DELAY_CYCLES=1                               \
@@ -153,7 +159,7 @@ CPPFLAGS = \
 
 # Extra flags to use when linking
 LDFLAGS =  \
-       -Wl,--section-start=.BOOT=0x40000                 
+       -Wl,--section-start=.BOOT=0x30000                 
 
 # Pre- and post-build commands
 PREBUILD_CMD = 
