@@ -100,6 +100,6 @@
  * file to avoid compile error.
  */
 #include "udi_cdc_conf.h"
-//#include "cdc.h"
+#include "cdc.h"
 
 #endif // _CONF_USB_H_

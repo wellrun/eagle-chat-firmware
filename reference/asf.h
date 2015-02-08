@@ -3,7 +3,6 @@
 #include <ccp.h>
 #include <xmega_reset_cause.h>
 
-
 // From module: GPIO - General purpose Input/Output
 #include <gpio.h>
 
@@ -29,8 +28,8 @@
 #include <sleep.h>
 
 // From module: Sleep manager - XMEGA A/AU/B/D implementation
-//#include <sleepmgr.h>
-//#include <xmega/sleepmgr.h>
+#include <sleepmgr.h>
+#include <xmega/sleepmgr.h>
 
 // From module: System Clock Control - XMEGA A1U/A3U/A3BU/A4U/B/C implementation
 #include <sysclk.h>

@@ -100,9 +100,13 @@ else
 ifeq ($(os_type),)
 os              := Windows
 else
+ifeq ($(os_type),Darwin)
+os 				:= Darwin
+else
 # Default to Linux style operating system. Both Cygwin and mingw are fully
 # compatible (for this Makefile) with Linux.
 os              := Linux
+endif
 endif
 endif
 endif
@@ -125,12 +129,15 @@ OBJDUMP         := $(CROSS)objdump
 SIZE            := $(CROSS)size
 
 RM              := rm
+
 ifeq ($(os),Windows)
 	RMDIR           := rmdir /S /Q
-else ($(os),Darwin)
-	RMDIR           := grmdir -p --ignore-fail-on-non-empty
+else 
+ifeq ($(os),Darwin)
+	RMDIR           := grmdir "--ignore-fail-on-non-empty" -p
 else
-	RMDIR 			:= rmdir -p --ignore-fail-on-non-empty
+	RMDIR		:= rmdir --ignore-fail-on-non-empty -p 
+endif
 endif
 
 # On Windows, we need to override the shell to force the use of cmd.exe
@@ -321,6 +328,9 @@ clean-files             += $(wildcard $(obj-y))
 clean-files             += $(dep-files)
 
 clean-dirs              += $(call reverse,$(sort $(wildcard $(dir $(obj-y)))))
+clean-dirs				:= $(filter-out ./,$(clean-dirs))
+clean-dirs				:= $(filter-out .,$(clean-dirs))
+
 
 # Default target.
 .PHONY: all
