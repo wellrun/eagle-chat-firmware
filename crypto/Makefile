@@ -1,10 +1,6 @@
 
-# Path to top level ASF directory relative to this project directory.
-PRJ_PATH = # set to asf toplevel path
+include ../project.mk
 
-# Microcontroller: atxmega128a1, atmega128, attiny261, etc.
-MCU = atxmega192a3u
+MAKEFILE_PATH = ../Makefile.avr.in
 
-# Application target name. Given with suffix .a for library and .elf for a
-# standalone application.
-TARGET = crypto.elf
+include $(MAKEFILE_PATH)

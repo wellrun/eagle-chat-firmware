@@ -22,11 +22,6 @@ CSRCS = \
 	common/services/clock/xmega/sysclk.c \
 	xmega/drivers/nvm/nvm.c \
 	common/services/sleepmgr/xmega/sleepmgr.c \
-       xmega/drivers/usb/usb_device.c \
-	common/services/usb/udc/udc.c \
-	common/services/usb/class/cdc/device/udi_cdc.c \
- 	common/services/usb/class/cdc/device/udi_cdc_desc.c \
-       cdc.c \
 
  # common/components/display/st7565r/st7565r.c \
  # common/services/calendar/calendar.c \
@@ -103,6 +98,7 @@ INC_PATH = \
 
 # Library paths from the top-level source directory
 LIB_PATH = \
+	
 # xmega/applications/xmega_a3bu_xplained_demo/qtouch
 
 # Libraries to link with the project
@@ -160,9 +156,15 @@ CPPFLAGS = \
 # -D _QTOUCH_ \
 # -D _SNS1_SNSK1_SAME_PORT_
 
+# Use this to add library search paths relative to the current working directory
+USER_LIB_PATH = \
+	../libs
+
 # Extra flags to use when linking
 LDFLAGS = \
 	-Wl,--section-start=.BOOT=0x30000 
+
+LDFLAGS += $(foreach user_lib_path,$(USER_LIB_PATH),-L$(user_lib_path))
 
 # Pre- and post-build commands
 PREBUILD_CMD = 
