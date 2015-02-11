@@ -131,6 +131,7 @@ ASFLAGS =
 
 # Extra flags to use when compiling.
 CFLAGS = -I../config/ -I.
+CFLAGS += $(foreach user_inc_path,$(USER_INC_PATH),-L$(user_inc_PATH))
 
 # Extra flags to use when preprocessing.
 #
