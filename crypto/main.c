@@ -38,12 +38,11 @@ int main (void)
 
 	sysclk_init();
 
-	unsigned char buf1[crypto_secretbox_KEYBYTES];
-	unsigned char buf2[crypto_secretbox_KEYBYTES];
-	unsigned char buf3[crypto_secretbox_KEYBYTES];
-	unsigned char buf4[crypto_secretbox_KEYBYTES];
+	unsigned char k[crypto_box_BEFORENMBYTES]; // Buffer to hold the shared secret
+	unsigned char public_key[crypto_box_PUBLICKEYBYTES]; // Public key of the other guy
+	unsigned char secret_key[crypto_box_SECRETKEYBYTES]; // My private or secret key
 
-	crypto_secretbox(buf1, buf2, crypto_secretbox_KEYBYTES, buf3, buf4);
+	crypto_box_beforenm(k, public_key, secret_key); // Stores shared secret in k
 
 	// Insert application code here, after the board has been initialized.
 }
