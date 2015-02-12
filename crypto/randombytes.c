@@ -10,6 +10,10 @@
  * by D. J. Bernstein
  */
 
+ /**
+  * Sample implementation from AVRNacl library.
+  */
+
  #include "randombytes.h"
 
 typedef unsigned long uint32;
