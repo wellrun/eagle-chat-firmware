@@ -71,18 +71,20 @@ void cdc_set_dtr(bool enable);
  *
  * \retval true if cdc startup is successfully done
  */
-static inline bool cdc_enable(void)
-{
-	return true;
-}
+bool cdc_enable(void);
 
 /**
  * \brief Called by CDC interface
  *
  * Callback running when USB Host disable cdc interface
  */
-static inline void cdc_disable(void)
-{
-}
+void cdc_disable(void);
+
+/**
+ * \brief Called by CDC interface
+ *
+ * Callback when data has been received
+ */
+void cdc_rx_notify(uint8_t);
 
 #endif /* CDC_H_INCLUDED */

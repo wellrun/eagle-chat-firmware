@@ -51,33 +51,51 @@
 //! USBID size in user signature row
 #define USER_SIGNATURE_USBID_SIZE 12
 
-uint8_t cdc_serial_number[USB_DEVICE_GET_SERIAL_NAME_LENGTH + 1];
+uint8_t cdc_serial_number[USB_DEVICE_GET_SERIAL_NAME_LENGTH + 1] = "N4MgCeYtn7Bx"; // Just a random string for now
 
-bool cdc_opened = false;
+static bool cdc_opened = false;
+static bool cdc_enabled = false;
 
 void cdc_start(void)
 {
-	uint8_t i;
-	uint8_t temp;
-	uint8_t nibble_to_ascii[16] = "0123456789ABCDEF";
-
-	/* Copy serial number from user signature row and convert to ASCII
-	 * The 6 byte id results in a 12 byte string (1 character per nibble)
-	 */
-	for (i = 0; i < USER_SIGNATURE_USBID_SIZE / 2; i++) {
-		temp = nvm_read_user_signature_row(
-				i + USER_SIGNATURE_USBID_POS);
-		// Upper nibble
-		cdc_serial_number[i * 2] = nibble_to_ascii[(temp & 0xF0) >> 4];
-		// Lower nibble
-		cdc_serial_number[(i * 2) + 1] = nibble_to_ascii[temp & 0x0F];
-	}
-
 	udc_start();
 }
 
 void cdc_set_dtr(bool enable)
 {
 	cdc_opened = enable;
+}
+
+bool cdc_enable(void)
+{
+	cdc_enabled = true;
+	return true;
+}
+
+void cdc_disable(void)
+{
+	cdc_enabled = false;
+}
+
+static void say_hello(void) {
+	uint8_t msg[] = "Hello.\n";
+
+	while (!udi_cdc_is_tx_ready());
+
+	uint8_t * c = msg;
+
+	while (*c != 0) {
+		udi_cdc_putc(*c);
+		++c;
+	}
+}
+
+static void echo(void) {
+	uint8_t read = udi_cdc_getc();
+	udi_cdc_putc(read+1);
+}
+
+
+void cdc_rx_notify(uint8_t port) {
 }
 

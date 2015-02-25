@@ -35,7 +35,20 @@ int main (void)
 {
 	// Insert system clock initialization code here (sysclk_init()).
 
+	cpu_irq_enable();
+
+	irq_initialize_vectors();
+
 	sysclk_init();
+
+	cdc_start();
+
+	while (1) {
+		uint8_t read = udi_cdc_getc();
+		if (read != 0)
+			udi_cdc_putc(read);
+	}
+
 
 	// Insert application code here, after the board has been initialized.
 }
