@@ -25,7 +25,7 @@
 #define  USB_DEVICE_PRODUCT_NAME            "EagleChat (keepin' it secret)"
 #define  USB_DEVICE_SERIAL_NAME
 #define  USB_DEVICE_GET_SERIAL_NAME_POINTER cdc_serial_number
-#define  USB_DEVICE_GET_SERIAL_NAME_LENGTH  12
+//#define  USB_DEVICE_GET_SERIAL_NAME_LENGTH  12
 
 
 /**

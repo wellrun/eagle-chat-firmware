@@ -51,7 +51,7 @@
 //! USBID size in user signature row
 #define USER_SIGNATURE_USBID_SIZE 12
 
-uint8_t cdc_serial_number[USB_DEVICE_GET_SERIAL_NAME_LENGTH + 1] = "N4MgCeYtn7Bx"; // Just a random string for now
+uint8_t cdc_serial_number[USB_DEVICE_GET_SERIAL_NAME_LENGTH + 1] = USB_SERIAL_NUMBER; // Just a random string for now
 
 static bool cdc_opened = false;
 static bool cdc_enabled = false;
