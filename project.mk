@@ -4,24 +4,79 @@
 
 include ../conf.mk
 
-# Location of ASF makefile. You should not need to change this.
-#ASF_MAKEFILE = common/utils/make/Makefile.avr.in
+# Path to top level ASF directory relative to this project directory.
+PRJ_PATH = $(ASF_PATH)
+
+os_type         ?= $(strip $(shell uname))
+
+ifeq ($(os_type),windows32)
+os              := Windows
+else
+ifeq ($(os_type),windows64)
+os              := Windows
+else
+ifeq ($(os_type),windows32_64)
+os              ?= Windows
+else
+ifeq ($(os_type),)
+os              := Windows
+else
+ifeq ($(os_type),Darwin)
+os 				:= Darwin
+else
+# Default to Linux style operating system. Both Cygwin and mingw are fully
+# compatible (for this Makefile) with Linux.
+os              := Linux
+endif
+endif
+endif
+endif
+endif
+
+
+#ifeq ($(os),Windows)
+#	READLINK           := readlink
+#else 
+ifeq ($(os),Darwin)
+	READLINK    := greadlink
+else
+	READLINK	:= readlink
+endif
 
 # Microcontroller: atxmega128a1, atmega128, attiny261, etc.
 MCU = atxmega192a3u
 
 BUILD_DIR = build
 
+CWD = $(shell $(READLINK) -f ..)
 
-# Application target name. Given with suffix .a for library and .elf for a
-# standalone application.
-#TARGET = xmega_a3bu_xplained_demo.elf
+# define this variable here to keep from getting out of sync
+SERIAL_NUMBER_LENGTH = 12
+
+SERIAL_NUMBER = \
+    $(shell head -c 500 /dev/urandom | base64 | tr -dc 'a-f0-9' | head -c $(SERIAL_NUMBER_LENGTH))
+
+CPPFLAGS = \
+    -D USB_SERIAL_NUMBER=\"$(SERIAL_NUMBER)\" \
+    -D USB_DEVICE_GET_SERIAL_NAME_LENGTH=$(SERIAL_NUMBER_LENGTH)
+
+USER_INC_PATH = \
+    config \
+    cdc \
+
+CPPFLAGS += $(foreach INC,$(addprefix $(CWD)/,$(USER_INC_PATH)),-I$(INC))
 
 # C source files located from the top-level source directory
 CSRCS = \
 	common/services/clock/xmega/sysclk.c \
 	xmega/drivers/nvm/nvm.c \
 	common/services/sleepmgr/xmega/sleepmgr.c \
+    cdc/cdc.c \
+    xmega/drivers/usb/usb_device.c \
+    common/services/usb/udc/udc.c \
+    common/services/usb/class/cdc/device/udi_cdc.c \
+    common/services/usb/class/cdc/device/udi_cdc_desc.c \
+
 
  # common/components/display/st7565r/st7565r.c \
  # common/services/calendar/calendar.c \
@@ -61,7 +116,6 @@ ASSRCS = \
 
 # Include path located from the top-level source directory
 INC_PATH = \
-	. \
 	common/boards \
 	common/utils \
 	xmega/boards \
@@ -83,7 +137,7 @@ INC_PATH = \
 	common/services/usb/class/cdc/device \
 	common/services/usb/udc \
 	common/services/spi \
-	xmega/drivers/spi \
+	xmega/drivers/spi 
 
 # common/components/display/st7565r \
 # common/services/calendar \
@@ -130,8 +184,10 @@ ARFLAGS =
 ASFLAGS = 
 
 # Extra flags to use when compiling.
-CFLAGS = -I../config/ -I.
-CFLAGS += $(foreach user_inc_path,$(USER_INC_PATH),-L$(user_inc_PATH))
+#CFLAGS = -I../config/ -I.
+#CFLAGS += $(foreach user_inc_path,$(USER_INC_PATH),-I$(user_inc_path))
+
+#$(warning CFLAGS=$(CFLAGS))
 
 # Extra flags to use when preprocessing.
 #
@@ -142,7 +198,7 @@ CFLAGS += $(foreach user_inc_path,$(USER_INC_PATH),-L$(user_inc_PATH))
 # The most relevant symbols to define for the preprocessor are:
 # BOARD Target board in use, see boards/board.h for a list.
 # EXT_BOARD Optional extension board in use, see boards/board.h for a list.
-CPPFLAGS = \
+CPPFLAGS += \
 	-D BOARD=USER_BOARD	 \
 	-D IOPORT_XMEGA_COMPAT \
 
@@ -157,15 +213,16 @@ CPPFLAGS = \
 # -D _QTOUCH_ \
 # -D _SNS1_SNSK1_SAME_PORT_
 
+
 # Use this to add library search paths relative to the current working directory
 USER_LIB_PATH = \
-	../libs
+    libs
+
+LDFLAGS += $(foreach INC,$(addprefix $(CWD)/,$(USER_LIB_PATH)),-L$(INC)) 
 
 # Extra flags to use when linking
 LDFLAGS = \
 	-Wl,--section-start=.BOOT=0x30000 
-
-LDFLAGS += $(foreach user_lib_path,$(USER_LIB_PATH),-L$(user_lib_path))
 
 # Pre- and post-build commands
 PREBUILD_CMD = 

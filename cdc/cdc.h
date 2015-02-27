@@ -1,9 +1,9 @@
 /**
  * \file
  *
- * \brief Application CDC Implementation
+ * \brief Application CDC Definitions
  *
- * Copyright (c) 2011 - 2014 Atmel Corporation. All rights reserved.
+ * Copyright (c) 2014 Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -43,59 +43,58 @@
  /**
  * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
  */
-#include "nvm.h"
-#include "cdc.h"
-
-//! USBID position in user signature row
-#define USER_SIGNATURE_USBID_POS   8
-//! USBID size in user signature row
-#define USER_SIGNATURE_USBID_SIZE 12
-
-uint8_t cdc_serial_number[USB_DEVICE_GET_SERIAL_NAME_LENGTH + 1] = USB_SERIAL_NUMBER; // Just a random string for now
-
-static bool cdc_opened = false;
-static bool cdc_enabled = false;
-
-void cdc_start(void)
-{
-	udc_start();
-}
-
-void cdc_set_dtr(bool enable)
-{
-	cdc_opened = enable;
-}
-
-bool cdc_enable(void)
-{
-	cdc_enabled = true;
-	return true;
-}
-
-void cdc_disable(void)
-{
-	cdc_enabled = false;
-}
-
-static void say_hello(void) {
-	uint8_t msg[] = "Hello.\n";
-
-	while (!udi_cdc_is_tx_ready());
-
-	uint8_t * c = msg;
-
-	while (*c != 0) {
-		udi_cdc_putc(*c);
-		++c;
-	}
-}
-
-static void echo(void) {
-	uint8_t read = udi_cdc_getc();
-	udi_cdc_putc(read+1);
-}
 
 
-void cdc_rx_notify(uint8_t port) {
-}
+#ifndef CDC_H_INCLUDED
+#define CDC_H_INCLUDED
 
+#include "udc.h"
+#include "udi_cdc.h"
+
+//! \brief Serial number to be passed to USB stack
+extern uint8_t cdc_serial_number[];
+
+//! \brief Start up the needed parts for USB CDC
+void cdc_start(void);
+
+/**
+ * \brief Called by CDC interface to open/close port communication
+ *
+ * \param enable Open if true, and close if false
+ */
+void cdc_set_dtr(bool enable);
+
+/**
+ * \brief Called by CDC interface
+ *
+ * Callback running when USB Host enable CDC interface
+ *
+ * \retval true if cdc startup is successfully done
+ */
+bool cdc_enable(void);
+
+/**
+ * \brief Called by CDC interface
+ *
+ * Callback running when USB Host disable cdc interface
+ */
+void cdc_disable(void);
+
+/**
+ * \brief Called by CDC interface
+ *
+ * Callback when data has been received
+ */
+void cdc_rx_notify(uint8_t);
+
+/**
+ * Prints a null terminated string over USB
+ */
+void cdc_write_string(const uint8_t* buf);
+
+/**
+ * Prints a byte as its human-readable HEX form over USB
+ */
+void cdc_write_hex(const uint8_t c);
+
+#endif /* CDC_H_INCLUDED */
