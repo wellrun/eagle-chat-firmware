@@ -54,7 +54,7 @@ include config.mk
 DOCGEN          ?= doxygen
 
 # Look for source files relative to the top-level source directory
-VPATH           := $(PRJ_PATH)
+VPATH           := $(PRJ_PATH) $(CWD)
 
 # Output target file
 target          := $(TARGET)
@@ -84,32 +84,6 @@ ifdef OS
   ifeq ($(strip $(OS)), Windows)
     os_type     := windows32_64
   endif
-endif
-
-os_type         ?= $(strip $(shell uname))
-
-ifeq ($(os_type),windows32)
-os              := Windows
-else
-ifeq ($(os_type),windows64)
-os              := Windows
-else
-ifeq ($(os_type),windows32_64)
-os              ?= Windows
-else
-ifeq ($(os_type),)
-os              := Windows
-else
-ifeq ($(os_type),Darwin)
-os 				:= Darwin
-else
-# Default to Linux style operating system. Both Cygwin and mingw are fully
-# compatible (for this Makefile) with Linux.
-os              := Linux
-endif
-endif
-endif
-endif
 endif
 
 # Output documentation directory and configuration file.
