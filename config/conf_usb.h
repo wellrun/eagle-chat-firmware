@@ -12,19 +12,20 @@
 #define  USB_DEVICE_PRODUCT_ID              USB_PID_ATMEL_XPLAINED
 #define  USB_DEVICE_MAJOR_VERSION           1
 #define  USB_DEVICE_MINOR_VERSION           0
-#define  USB_DEVICE_POWER                   100 // Consumption on Vbus (mA)
+#define  USB_DEVICE_POWER                   200 // Consumption on Vbus (mA)
 #define  USB_DEVICE_ATTR                    \
-	(USB_CONFIG_ATTR_SELF_POWERED)
+   (USB_CONFIG_ATTR_BUS_POWERED)
+// (USB_CONFIG_ATTR_SELF_POWERED)
 // (USB_CONFIG_ATTR_BUS_POWERED)
 // (USB_CONFIG_ATTR_REMOTE_WAKEUP|USB_CONFIG_ATTR_SELF_POWERED)
 // (USB_CONFIG_ATTR_REMOTE_WAKEUP|USB_CONFIG_ATTR_BUS_POWERED)
 
 //! USB Device string definitions (Optional)
 #define  USB_DEVICE_MANUFACTURE_NAME        "ATMEL ASF"
-#define  USB_DEVICE_PRODUCT_NAME            "CDC Virtual Com"
+#define  USB_DEVICE_PRODUCT_NAME            "EagleChat (keepin' it secret)"
 #define  USB_DEVICE_SERIAL_NAME
 #define  USB_DEVICE_GET_SERIAL_NAME_POINTER cdc_serial_number
-#define  USB_DEVICE_GET_SERIAL_NAME_LENGTH  12
+//#define  USB_DEVICE_GET_SERIAL_NAME_LENGTH  12
 
 
 /**
@@ -67,18 +68,18 @@
  */
 //@{
 //! Interface callback definition
-#define  UDI_CDC_ENABLE_EXT(port)             true
+#define  UDI_CDC_ENABLE_EXT(port)				cdc_enable()
 #define  UDI_CDC_DISABLE_EXT(port)
-#define  UDI_CDC_RX_NOTIFY(port)
+#define  UDI_CDC_RX_NOTIFY(port)				cdc_rx_notify(port)
 #define  UDI_CDC_SET_CODING_EXT(port,cfg)
-#define  UDI_CDC_SET_DTR_EXT(port,set)         cdc_set_dtr(set)
+#define  UDI_CDC_SET_DTR_EXT(port,set)			cdc_set_dtr(set)
 #define  UDI_CDC_SET_RTS_EXT(port,set)
 
 /**
  * Define it when the transfer CDC Device to Host is a low rate (<512000 bauds)
  * to reduce CDC buffers size.
  */
-//#define  UDI_CDC_LOW_RATE
+#define  UDI_CDC_LOW_RATE
 
 //! Default configuration of communication port
 #define  UDI_CDC_DEFAULT_RATE             115200
