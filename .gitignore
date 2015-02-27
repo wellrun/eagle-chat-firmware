@@ -40,3 +40,6 @@
 
 # Ignore user's conf.mk
 conf.mk
+
+# Block Sam's weird backup files
+**/*~
