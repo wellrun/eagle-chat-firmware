@@ -48,6 +48,7 @@
 
 # Include the config.mk file from the current working path, e.g., where the
 # user called make.
+include ../project.mk
 include config.mk
 
 # Tool to use to generate documentation from the source code

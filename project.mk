@@ -4,6 +4,9 @@
 
 include ../conf.mk
 
+# Path to top level ASF directory relative to this project directory.
+PRJ_PATH = $(ASF_PATH)
+
 os_type         ?= $(strip $(shell uname))
 
 ifeq ($(os_type),windows32)
