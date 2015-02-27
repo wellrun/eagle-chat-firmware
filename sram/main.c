@@ -53,8 +53,8 @@ int main (void)
 		uint8_t read = udi_cdc_getc();
 		//if (read != 0)
 			//cdc_write_string("Hello. This is quite a long string.\n");
-			cdc_write_hex(read);
-			cdc_write_string(" ");
+		cdc_write_hex(read);
+		cdc_write_string(" ");
 	}
 
 
