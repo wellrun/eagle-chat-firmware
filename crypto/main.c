@@ -18,34 +18,34 @@ int main (void)
 	unsigned char public_key[crypto_box_PUBLICKEYBYTES]; // Public key of the other guy
 	unsigned char secret_key[crypto_box_SECRETKEYBYTES]; // My private or secret key
 
-	while(udi_cdc_getc() != 'a');
-	cdc_write_string("Secret key:\n");
+	while (1) {
+		while(udi_cdc_getc() != 'a');
+		cdc_write_string("Secret key:\n");
 
-	randombytes(secret_key, crypto_box_BEFORENMBYTES);
+		randombytes(secret_key, crypto_box_BEFORENMBYTES);
 
-	for (uint8_t i = 0; i < crypto_box_BEFORENMBYTES; ++i) {
-		cdc_write_hex(secret_key[i]);
+		for (uint8_t i = 0; i < crypto_box_BEFORENMBYTES; ++i) {
+			cdc_write_hex(secret_key[i]);
+		}
+		cdc_write_string("\n");
+
+		crypto_box_keypair(public_key, secret_key);
+
+		cdc_write_string("Public key:\n");
+
+		for (uint8_t i = 0; i < crypto_box_PUBLICKEYBYTES; ++i) {
+			cdc_write_hex(public_key[i]);
+		}
+		cdc_write_string("\n");
+
+		crypto_box_beforenm(k, public_key, secret_key); // Stores shared secret in k
+
+		cdc_write_string("Shared secret:\n");
+
+		for (uint8_t i = 0; i < crypto_box_BEFORENMBYTES; ++i) {
+			cdc_write_hex(k[i]);
+		}
+		cdc_write_string("\n");
 	}
-	cdc_write_string("\n");
 
-	crypto_box_keypair(public_key, secret_key);
-
-	cdc_write_string("Public key:\n");
-
-	for (uint8_t i = 0; i < crypto_box_PUBLICKEYBYTES; ++i) {
-		cdc_write_hex(public_key[i]);
-	}
-	cdc_write_string("\n");
-
-	crypto_box_beforenm(k, public_key, secret_key); // Stores shared secret in k
-
-	cdc_write_string("Shared secret:\n");
-
-	for (uint8_t i = 0; i < crypto_box_BEFORENMBYTES; ++i) {
-		cdc_write_hex(k[i]);
-	}
-	cdc_write_string("\n");
-
-	while(1);
-	
 }
