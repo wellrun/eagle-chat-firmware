@@ -1,5 +1,3 @@
-# Path to top level ASF directory relative to this project directory.
-PRJ_PATH = $(ASF_PATH)
 
 TARGET = main.elf
 
@@ -13,4 +11,6 @@ LIBS += \
 
 # Extra header paths to include, relative to this directory
 USER_INC_PATH += \
-	. \
+
+USER_LIB_PATH += \
+	# add extra static libraries here

@@ -215,13 +215,14 @@ CPPFLAGS += \
 
 
 # Use this to add library search paths relative to the current working directory
-USER_LIB_PATH = \
+USER_LIB_PATH := \
     libs
 
-LDFLAGS += $(foreach INC,$(addprefix $(CWD)/,$(USER_LIB_PATH)),-L$(INC)) 
+LDFLAGS += \
+	$(foreach INC,$(addprefix $(CWD)/,$(USER_LIB_PATH)),-L$(INC)) 
 
 # Extra flags to use when linking
-LDFLAGS = \
+LDFLAGS += \
 	-Wl,--section-start=.BOOT=0x30000 
 
 # Pre- and post-build commands
