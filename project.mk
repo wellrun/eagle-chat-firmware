@@ -77,8 +77,8 @@ CSRCS = \
     common/services/usb/class/cdc/device/udi_cdc.c \
     common/services/usb/class/cdc/device/udi_cdc_desc.c \
     common/services/spi/xmega_spi/spi_master.c \
-common/services/ioport/xmega/ioport_compat.c\
-xmega/drivers/spi/spi.c
+	common/services/ioport/xmega/ioport_compat.c\
+	xmega/drivers/spi/spi.c
 
 
  # common/components/display/st7565r/st7565r.c \
