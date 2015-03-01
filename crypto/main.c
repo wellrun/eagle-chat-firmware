@@ -55,35 +55,33 @@ int main (void)
 		cr_generate_keypair(bPublic, bPrivate, randomSeed);
 
 		cdc_write_string("A private: ");
-		cdc_write_hex_string(aPrivate, crypto_box_SECRETKEYBYTES);
+		cdc_write_hex_string(aPrivate, crypto_box_SECRETKEYBYTES); cdc_newline();
 		cdc_write_string("A public : ");
-		cdc_write_hex_string(aPublic, crypto_box_PUBLICKEYBYTES);
+		cdc_write_hex_string(aPublic, crypto_box_PUBLICKEYBYTES); cdc_newline();
 		cdc_write_string("B private: ");
-		cdc_write_hex_string(bPrivate, crypto_box_SECRETKEYBYTES);
+		cdc_write_hex_string(bPrivate, crypto_box_SECRETKEYBYTES); cdc_newline();
 		cdc_write_string("B public : ");
-		cdc_write_hex_string(bPublic, crypto_box_PUBLICKEYBYTES);
+		cdc_write_hex_string(bPublic, crypto_box_PUBLICKEYBYTES); cdc_newline();
 		cdc_write_string("\n");
 
 
 		randombytes(nonce, crypto_box_NONCEBYTES);
 
 		cdc_write_string("Message: ");
-		cdc_write_string(testMessage);
-		cdc_write_string("\nNonce  : ");
-		cdc_write_hex_string(nonce, crypto_box_NONCEBYTES);
-		cdc_write_string("\n");
+		cdc_write_string(testMessage); cdc_newline();
+		cdc_write_string("Nonce  : ");
+		cdc_write_hex_string(nonce, crypto_box_NONCEBYTES); cdc_newline();
 
 		cr_encrypt(encrypted, testMessage, mlen, aPrivate, bPublic, nonce);
 
 		cdc_write_string("Encrypted: ");
-		cdc_write_hex_string(encrypted, encryptedLength);
+		cdc_write_hex_string(encrypted, encryptedLength); cdc_newline();
 
 		int s = cr_decrypt(decrypted, encrypted, encryptedLength, aPublic, bPrivate, nonce);
 
-		cdc_write_string("Decrypt returned ");
-		cdc_write_hex(s);
-		cdc_write_string("\nDecrypted: ");
-		cdc_write_string(decrypted);
+		cdc_log_int("Decrypt returned: ", s);
+		cdc_write_string("Decrypted: ");
+		cdc_write_string(decrypted); cdc_newline();
 
 
 	}
