@@ -1,8 +1,17 @@
 #include "asf.h"
-#include "avrnacl.h"
 #include "cdc.h"
-#include "randombytes.h"
 #include <avr/io.h>
+
+#include "randombytes.h"
+#include "avrnacl.h"
+#include "crypto.h"
+
+void cdc_write_hex_string(char *string, uint16_t length) {
+	for (uint8_t i = 0; i < length; ++i) {
+		cdc_write_hex(string[i]);
+	}
+	cdc_write_string("\n");
+}
 
 int main (void)
 {
@@ -14,38 +23,69 @@ int main (void)
 
 	cdc_start();
 
-	unsigned char k[crypto_box_BEFORENMBYTES]; // Buffer to hold the shared secret
-	unsigned char public_key[crypto_box_PUBLICKEYBYTES]; // Public key of the other guy
-	unsigned char secret_key[crypto_box_SECRETKEYBYTES]; // My private or secret key
+	uint8_t randomSeed[crypto_box_SECRETKEYBYTES];
+
+	uint8_t aPublic[crypto_box_PUBLICKEYBYTES];
+	uint8_t aPrivate[crypto_box_SECRETKEYBYTES];
+
+	uint8_t bPublic[crypto_box_PUBLICKEYBYTES];
+	uint8_t bPrivate[crypto_box_SECRETKEYBYTES];
+
+	uint8_t *testMessage = "test";
+	uint32_t mlen = 4;
+
+	uint32_t encryptedLength = ENCRYPTED_LENGTH(mlen);
+	uint32_t decryptedLength = DECRYPTED_LENGTH(encryptedLength);
+
+	uint8_t nonce[crypto_box_NONCEBYTES];
+
+	uint8_t encrypted[encryptedLength];
+	uint8_t decrypted[decryptedLength];
 
 	while (1) {
-		while(udi_cdc_getc() != 'a');
-		cdc_write_string("Secret key:\n");
+		
+		cdc_write_string("Press a to run: \n");
+		while (udi_cdc_getc() != 'a');
 
-		randombytes(secret_key, crypto_box_BEFORENMBYTES);
+		cdc_write_string("First, generate a public and private key for us\n");
 
-		for (uint8_t i = 0; i < crypto_box_BEFORENMBYTES; ++i) {
-			cdc_write_hex(secret_key[i]);
-		}
+		randombytes(randomSeed, crypto_box_SECRETKEYBYTES);
+		cr_generate_keypair(aPublic, aPrivate, randomSeed);
+		randombytes(randomSeed, crypto_box_SECRETKEYBYTES);
+		cr_generate_keypair(bPublic, bPrivate, randomSeed);
+
+		cdc_write_string("A private: ");
+		cdc_write_hex_string(aPrivate, crypto_box_SECRETKEYBYTES);
+		cdc_write_string("A public : ");
+		cdc_write_hex_string(aPublic, crypto_box_PUBLICKEYBYTES);
+		cdc_write_string("B private: ");
+		cdc_write_hex_string(bPrivate, crypto_box_SECRETKEYBYTES);
+		cdc_write_string("B public : ");
+		cdc_write_hex_string(bPublic, crypto_box_PUBLICKEYBYTES);
 		cdc_write_string("\n");
 
-		crypto_box_keypair(public_key, secret_key);
 
-		cdc_write_string("Public key:\n");
+		randombytes(nonce, crypto_box_NONCEBYTES);
 
-		for (uint8_t i = 0; i < crypto_box_PUBLICKEYBYTES; ++i) {
-			cdc_write_hex(public_key[i]);
-		}
+		cdc_write_string("Message: ");
+		cdc_write_string(testMessage);
+		cdc_write_string("\nNonce  : ");
+		cdc_write_hex_string(nonce, crypto_box_NONCEBYTES);
 		cdc_write_string("\n");
 
-		crypto_box_beforenm(k, public_key, secret_key); // Stores shared secret in k
+		cr_encrypt(encrypted, testMessage, mlen, aPrivate, bPublic, nonce);
 
-		cdc_write_string("Shared secret:\n");
+		cdc_write_string("Encrypted: ");
+		cdc_write_hex_string(encrypted, encryptedLength);
 
-		for (uint8_t i = 0; i < crypto_box_BEFORENMBYTES; ++i) {
-			cdc_write_hex(k[i]);
-		}
-		cdc_write_string("\n");
+		int s = cr_decrypt(decrypted, encrypted, encryptedLength, aPublic, bPrivate, nonce);
+
+		cdc_write_string("Decrypt returned ");
+		cdc_write_hex(s);
+		cdc_write_string("\nDecrypted: ");
+		cdc_write_string(decrypted);
+
+
 	}
 
 }
