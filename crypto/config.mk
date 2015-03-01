@@ -4,6 +4,7 @@ TARGET = main.elf
 CSRCS += \
     main.c \
     randombytes.c \
+	crypto.c \
 
 # Libraries to link with the project
 LIBS += \
