@@ -93,6 +93,30 @@ void cdc_write_hex(const uint8_t c) {
 	udi_cdc_putc(table[c & 0x0F]);
 }
 
+void cdc_newline() {
+	udi_cdc_putc('\n');
+}
+
+void cdc_log_int(uint8_t *message, uint32_t value) {
+	cdc_write_string(message);
+	uint8_t v[33];
+	itoa(value, v, 10);
+	cdc_write_string(v);
+	cdc_newline();
+}
+
+void cdc_read_string(uint8_t *buffer, uint32_t maxlen) {
+	int i = 0;
+    while (i < maxlen) {
+        buffer[i] = udi_cdc_getc();
+        if ((buffer[i] == '\n') || (buffer[i] == '\r')) {
+            buffer[i] = 0;
+            return;
+        }
+        i ++;
+    }
+}
+
 /*
 static void say_hello(void) {
 	uint8_t msg[] = "Hello.\n";

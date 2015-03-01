@@ -97,4 +97,22 @@ void cdc_write_string(const uint8_t* buf);
  */
 void cdc_write_hex(const uint8_t c);
 
+/**
+ * Prints a newline character
+ */
+void cdc_newline();
+
+/**
+ * Prints a message followed by a string representation of 'value',
+ * and finishes with a newline.
+ * E.g. cdc_log_int("The value is: ", 5);
+ */
+void cdc_log_int(uint8_t *message, uint32_t value);
+
+/**
+ * Reads USB input into 'buffer' until a newline character
+ * is encountered or 'maxlen' is reached
+ */
+void cdc_read_string(uint8_t *buffer, uint32_t maxlen);
+
 #endif /* CDC_H_INCLUDED */
