@@ -7,48 +7,12 @@ include ../conf.mk
 # Path to top level ASF directory relative to this project directory.
 PRJ_PATH = $(ASF_PATH)
 
-os_type         ?= $(strip $(shell uname))
-
-ifeq ($(os_type),windows32)
-os              := Windows
-else
-ifeq ($(os_type),windows64)
-os              := Windows
-else
-ifeq ($(os_type),windows32_64)
-os              ?= Windows
-else
-ifeq ($(os_type),)
-os              := Windows
-else
-ifeq ($(os_type),Darwin)
-os 				:= Darwin
-else
-# Default to Linux style operating system. Both Cygwin and mingw are fully
-# compatible (for this Makefile) with Linux.
-os              := Linux
-endif
-endif
-endif
-endif
-endif
-
-
-#ifeq ($(os),Windows)
-#	READLINK           := readlink
-#else 
-ifeq ($(os),Darwin)
-	READLINK    := greadlink
-else
-	READLINK	:= readlink
-endif
-
 # Microcontroller: atxmega128a1, atmega128, attiny261, etc.
 MCU = atxmega192a3u
 
 BUILD_DIR = build
 
-CWD = $(shell $(READLINK) -f ..)
+CWD = $(abspath ..)
 
 # define this variable here to keep from getting out of sync
 SERIAL_NUMBER_LENGTH = 12
