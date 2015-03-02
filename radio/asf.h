@@ -37,6 +37,9 @@
 // From module: TC - Timer Counter
 #include <tc.h>
 
+// From module: RTC - Real Time Counter
+#include <rtc.h>
+
 // From module: USART - Universal Synchronous/Asynchronous Receiver/Transmitter
 #include <usart.h>
 

@@ -42,7 +42,8 @@ CSRCS = \
     common/services/usb/class/cdc/device/udi_cdc_desc.c \
     common/services/spi/xmega_spi/spi_master.c \
 	common/services/ioport/xmega/ioport_compat.c\
-	xmega/drivers/spi/spi.c
+	xmega/drivers/spi/spi.c\
+	xmega/drivers/rtc/rtc.c
 
 
  # common/components/display/st7565r/st7565r.c \
@@ -105,7 +106,9 @@ INC_PATH = \
 	common/services/usb/class/cdc/device \
 	common/services/usb/udc \
 	common/services/spi \
-	xmega/drivers/spi 
+	xmega/drivers/spi \
+	xmega/drivers/rtc \
+	xmega/drivers/rtc/module_config
 
 # common/components/display/st7565r \
 # common/services/calendar \

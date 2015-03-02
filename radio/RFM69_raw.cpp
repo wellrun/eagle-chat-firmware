@@ -38,7 +38,7 @@ void SPIBegin() {
 	// ioport_set_pin_level(_slaveSelectPin, HIGH);
 	// ioport_set_pin_mode(_slaveSelectPin, IOPORT_DIR_OUTPUT);
 
-	ioport_set_pin_dir(RF_SCK_pin, IOPORT_DIR_OUTPUT);
+    ioport_set_pin_dir(RF_SCK_pin, IOPORT_DIR_OUTPUT);
     ioport_set_pin_dir(RF_SS_pin, IOPORT_DIR_OUTPUT);
     ioport_set_pin_dir(RF_MOSI_pin, IOPORT_DIR_OUTPUT);
     ioport_set_pin_dir(RF_MISO_pin, IOPORT_DIR_INPUT);
@@ -76,8 +76,8 @@ int readInterruptPin() {
 }
 
 int millis() {
-	static int i = 0;
-	return i++;
+	static int i = rtc_get_time();
+	return i;
 }
 
 volatile uint8_t RFM69::DATA[RF69_MAX_DATA_LEN];
