@@ -104,7 +104,7 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
   setHighPower(_isRFM69HW); // called regardless if it's a RFM69W or RFM69HW
   setMode(RF69_MODE_STANDBY);
   while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // wait for ModeReady
-  attachInterrupt(_interruptNum, RFM69::isr0, RISING);
+  //attachInterrupt(_interruptNum, RFM69::isr0, RISING);
 
   selfPointer = this;
   _address = nodeID;

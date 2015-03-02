@@ -28,31 +28,38 @@
  /**
  * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
  */
-#include "asf.h"
-#include <avr/io.h>
 
-void spi_init_pins(void);
-void spi_init_pins(void)
-{
-    ioport_configure_port_pin(&PORTE, PIN4_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT); 	//Set the pin used for slave select as output high
-											//Pin is set, though not needed to change
-																						
-    ioport_configure_port_pin(&PORTE, PIN1_bm, IOPORT_PULL_UP | IOPORT_DIR_INPUT);	//Enable pull-up on own chip select (SS):
-    ioport_configure_port_pin(&PORTE, PIN5_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);	//Set MOSI as output high
-    ioport_configure_port_pin(&PORTE, PIN6_bm, IOPORT_DIR_INPUT);						//Set MISO as input
-    ioport_configure_port_pin(&PORTE, PIN7_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);	//Set SCL as output high
+extern "C" {
+	#include "asf.h"
+	#include <avr/io.h>
+	#include "cdc.h"
 }
 
-void spi_init_module(void);
-void spi_init_module(void)
-{
-   struct spi_device spi_device_conf = {
-       .id = IOPORT_CREATE_PIN(PORTE, 4)
-   };
-   spi_master_init(&SPIE);
-   spi_master_setup_device(&SPIE, &spi_device_conf, SPI_MODE_0, 1000000, 0);
-   spi_enable(&SPID);
-}
+#include "RFM69.h"
+
+// void spi_init_pins(void);
+// void spi_init_pins(void)
+// {
+//     ioport_configure_port_pin(&PORTE, PIN4_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT); 	//Set the pin used for slave select as output high
+// 	//Pin is set, though not needed to change
+//     ioport_configure_port_pin(&PORTE, PIN1_bm, IOPORT_PULL_UP | IOPORT_DIR_INPUT);	//Enable pull-up on own chip select (SS):
+//     ioport_configure_port_pin(&PORTE, PIN5_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);	//Set MOSI as output high
+//     ioport_configure_port_pin(&PORTE, PIN6_bm, IOPORT_DIR_INPUT);						//Set MISO as input
+//     ioport_configure_port_pin(&PORTE, PIN7_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);	//Set SCL as output high
+// }
+
+// void spi_init_module(void);
+// void spi_init_module(void)
+// {
+//    struct spi_device spi_device_conf = {
+//        .id = IOPORT_CREATE_PIN(PORTE, 4)
+//    };
+//    spi_master_init(&SPIE);
+//    spi_master_setup_device(&SPIE, &spi_device_conf, SPI_MODE_0, 1000000, 0);
+//    spi_enable(&SPID);
+// }
+
+RFM69 module;
 
 int main (void)
 {
@@ -66,22 +73,23 @@ int main (void)
 
 	cdc_start();
 
-	spi_init_module();
-	spi_init_pins();
+	// spi_init_module();
+	// spi_init_pins();
 
-	uint8_t data_buffer[1] = {0xAA};
+	// uint8_t data_buffer[1] = {0xAA};
 
-	struct spi_device spi_device_conf = {
-		.id = IOPORT_CREATE_PIN(PORTE, 4)
-	};
+	// struct spi_device spi_device_conf = {
+	// 	.id = IOPORT_CREATE_PIN(PORTE, 4)
+	// };
 
-	spi_select_device(&SPIE, &spi_device_conf);
+	// spi_select_device(&SPIE, &spi_device_conf);
 
-	spi_write_packet(&SPIE, data_buffer, 1);
-	spi_read_packet(&SPIE, data_buffer, 1);
+	// spi_write_packet(&SPIE, data_buffer, 1);
+	// spi_read_packet(&SPIE, data_buffer, 1);
 
-	spi_deselect_device(&SPIE, &spi_device_conf);
+	// spi_deselect_device(&SPIE, &spi_device_conf);
+
+	module = RFM69();
 
 
-	// Insert application code here, after the board has been initialized.
 }
