@@ -37,9 +37,6 @@ extern "C" {
 
 #include "RFM69.h"
 
-#define CONFIG_RTC_PRESCALER RTC_PRESCALER_DIV1024_gc
-#define CONFIG_RTC_SOURCE SYSCLK_RTCSRC_ULP
-
 RFM69 module;
 
 int main (void)

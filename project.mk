@@ -107,8 +107,7 @@ INC_PATH = \
 	common/services/usb/udc \
 	common/services/spi \
 	xmega/drivers/spi \
-	xmega/drivers/rtc \
-	xmega/drivers/rtc/module_config
+	xmega/drivers/rtc
 
 # common/components/display/st7565r \
 # common/services/calendar \
