@@ -28,9 +28,9 @@
 // Please maintain this license information along with authorship
 // and copyright notices in any redistribution of this code
 // **********************************************************************************
-#include <RFM69.h>
-#include <RFM69registers.h>
-#include <SPI.h>
+#include "RFM69.h"
+#include "RFM69registers.h"
+//#include <SPI.h>
 
 volatile uint8_t RFM69::DATA[RF69_MAX_DATA_LEN];
 volatile uint8_t RFM69::_mode;        // current transceiver state
@@ -87,9 +87,9 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
     {255, 0}
   };
 
-  digitalWrite(_slaveSelectPin, HIGH);
-  pinMode(_slaveSelectPin, OUTPUT);
-  SPI.begin();
+  ioport_set_pin_level(_slaveSelectPin, HIGH);
+  ioport_set_pin_mode(_slaveSelectPin, IOPORT_DIR_OUTPUT);
+  //SPI.begin();
 
   do writeReg(REG_SYNCVALUE1, 0xAA); while (readReg(REG_SYNCVALUE1) != 0xAA);
   do writeReg(REG_SYNCVALUE1, 0x55); while (readReg(REG_SYNCVALUE1) != 0x55);

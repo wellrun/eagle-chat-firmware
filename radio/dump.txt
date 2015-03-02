@@ -1,0 +1,116 @@
+CXX     build/RFM69.o
+RFM69.cpp: In member function 'bool RFM69::initialize(uint8_t, uint8_t, uint8_t)':
+RFM69.cpp:107:47: error: 'RISING' was not declared in this scope
+   attachInterrupt(_interruptNum, RFM69::isr0, RISING);
+                                               ^
+RFM69.cpp:107:53: error: 'attachInterrupt' was not declared in this scope
+   attachInterrupt(_interruptNum, RFM69::isr0, RISING);
+                                                     ^
+RFM69.cpp: In member function 'void RFM69::send(uint8_t, const void*, uint8_t, bool)':
+RFM69.cpp:207:25: error: 'millis' was not declared in this scope
+   uint32_t now = millis();
+                         ^
+RFM69.cpp: In member function 'bool RFM69::sendWithRetry(uint8_t, const void*, uint8_t, uint8_t, uint8_t)':
+RFM69.cpp:223:23: error: 'millis' was not declared in this scope
+     sentTime = millis();
+                       ^
+RFM69.cpp: In member function 'void RFM69::sendACK(const void*, uint8_t)':
+RFM69.cpp:254:25: error: 'millis' was not declared in this scope
+   uint32_t now = millis();
+                         ^
+RFM69.cpp: In member function 'void RFM69::sendFrame(uint8_t, const void*, uint8_t, bool, bool)':
+RFM69.cpp:276:3: error: 'SPI' was not declared in this scope
+   SPI.transfer(REG_FIFO | 0x80);
+   ^
+RFM69.cpp:288:29: error: 'millis' was not declared in this scope
+   uint32_t txStart = millis();
+                             ^
+RFM69.cpp:289:35: error: 'digitalRead' was not declared in this scope
+   while (digitalRead(_interruptPin) == 0 && millis() - txStart < RF69_TX_LIMIT_MS); // wait for DIO0 to turn HIGH signalling transmission finish
+                                   ^
+RFM69.cpp: In member function 'virtual void RFM69::interruptHandler()':
+RFM69.cpp:302:5: error: 'SPI' was not declared in this scope
+     SPI.transfer(REG_FIFO & 0x7F);
+     ^
+RFM69.cpp: In member function 'bool RFM69::receiveDone()':
+RFM69.cpp:354:16: error: 'noInterrupts' was not declared in this scope
+   noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
+                ^
+RFM69.cpp:362:16: error: 'interrupts' was not declared in this scope
+     interrupts(); // explicitly re-enable interrupts
+                ^
+RFM69.cpp: In member function 'void RFM69::encrypt(const char*)':
+RFM69.cpp:378:5: error: 'SPI' was not declared in this scope
+     SPI.transfer(REG_AESKEY1 | 0x80);
+     ^
+RFM69.cpp: In member function 'uint8_t RFM69::readReg(uint8_t)':
+RFM69.cpp:402:3: error: 'SPI' was not declared in this scope
+   SPI.transfer(addr & 0x7F);
+   ^
+RFM69.cpp: In member function 'void RFM69::writeReg(uint8_t, uint8_t)':
+RFM69.cpp:411:3: error: 'SPI' was not declared in this scope
+   SPI.transfer(addr | 0x80);
+   ^
+RFM69.cpp: In member function 'void RFM69::select()':
+RFM69.cpp:418:16: error: 'noInterrupts' was not declared in this scope
+   noInterrupts();
+                ^
+RFM69.cpp:420:11: error: 'SPCR' was not declared in this scope
+   _SPCR = SPCR;
+           ^
+RFM69.cpp:421:11: error: 'SPSR' was not declared in this scope
+   _SPSR = SPSR;
+           ^
+RFM69.cpp:423:3: error: 'SPI' was not declared in this scope
+   SPI.setDataMode(SPI_MODE0);
+   ^
+RFM69.cpp:423:19: error: 'SPI_MODE0' was not declared in this scope
+   SPI.setDataMode(SPI_MODE0);
+                   ^
+RFM69.cpp:424:19: error: 'MSBFIRST' was not declared in this scope
+   SPI.setBitOrder(MSBFIRST);
+                   ^
+RFM69.cpp:425:23: error: 'SPI_CLOCK_DIV4' was not declared in this scope
+   SPI.setClockDivider(SPI_CLOCK_DIV4); // decided to slow down from DIV2 after SPI stalling in some instances, especially visible on mega1284p when RFM69 and FLASH chip both present
+                       ^
+RFM69.cpp:426:36: error: 'digitalWrite' was not declared in this scope
+   digitalWrite(_slaveSelectPin, LOW);
+                                    ^
+RFM69.cpp: In member function 'void RFM69::unselect()':
+RFM69.cpp:431:37: error: 'digitalWrite' was not declared in this scope
+   digitalWrite(_slaveSelectPin, HIGH);
+                                     ^
+RFM69.cpp:433:3: error: 'SPCR' was not declared in this scope
+   SPCR = _SPCR;
+   ^
+RFM69.cpp:434:3: error: 'SPSR' was not declared in this scope
+   SPSR = _SPSR;
+   ^
+RFM69.cpp:435:14: error: 'interrupts' was not declared in this scope
+   interrupts();
+              ^
+RFM69.cpp: In member function 'void RFM69::setCS(uint8_t)':
+RFM69.cpp:461:37: error: 'digitalWrite' was not declared in this scope
+   digitalWrite(_slaveSelectPin, HIGH);
+                                     ^
+RFM69.cpp:462:28: error: 'OUTPUT' was not declared in this scope
+   pinMode(_slaveSelectPin, OUTPUT);
+                            ^
+RFM69.cpp:462:34: error: 'pinMode' was not declared in this scope
+   pinMode(_slaveSelectPin, OUTPUT);
+                                  ^
+RFM69.cpp: In member function 'void RFM69::readAllRegs()':
+RFM69.cpp:473:5: error: 'SPI' was not declared in this scope
+     SPI.transfer(regAddr & 0x7F); // send address + r/w bit
+     ^
+RFM69.cpp:477:5: error: 'Serial' was not declared in this scope
+     Serial.print(regAddr, HEX);
+     ^
+RFM69.cpp:477:27: error: 'HEX' was not declared in this scope
+     Serial.print(regAddr, HEX);
+                           ^
+RFM69.cpp:481:27: error: 'BIN' was not declared in this scope
+     Serial.println(regVal,BIN);
+                           ^
+../Makefile.avr.in:376: recipe for target 'build/RFM69.o' failed
+make: *** [build/RFM69.o] Error 1

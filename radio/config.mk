@@ -2,6 +2,7 @@
 TARGET = main.elf
 
 CSRCS += \
-    main.c \
+    main.cpp \
+    RFM69.cpp \
 
 USER_INC_PATH += \
