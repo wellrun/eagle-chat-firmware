@@ -99,22 +99,23 @@ void cdc_newline() {
 
 void cdc_log_int(uint8_t *message, uint32_t value) {
 	cdc_write_string(message);
-	uint8_t v[33];
+	uint8_t v[11];
 	itoa(value, v, 10);
 	cdc_write_string(v);
 	cdc_newline();
 }
 
-void cdc_read_string(uint8_t *buffer, uint32_t maxlen) {
-	int i = 0;
+uint32_t cdc_read_string(uint8_t *buffer, uint32_t maxlen) {
+	uint32_t i = 0;
     while (i < maxlen) {
         buffer[i] = udi_cdc_getc();
         if ((buffer[i] == '\n') || (buffer[i] == '\r')) {
             buffer[i] = 0;
-            return;
+            return i;
         }
-        i ++;
+        i++;
     }
+    return maxlen;
 }
 
 /*

@@ -113,6 +113,6 @@ void cdc_log_int(uint8_t *message, uint32_t value);
  * Reads USB input into 'buffer' until a newline character
  * is encountered or 'maxlen' is reached
  */
-void cdc_read_string(uint8_t *buffer, uint32_t maxlen);
+uint32_t cdc_read_string(uint8_t *buffer, uint32_t maxlen);
 
 #endif /* CDC_H_INCLUDED */

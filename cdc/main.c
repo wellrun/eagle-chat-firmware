@@ -16,10 +16,11 @@ int main (void)
 	while (1) {
 
 		cdc_write_string("Enter message: ");
-		cdc_read_string(buf, 50);
+		uint32_t len = cdc_read_string(buf, 50);
 		cdc_write_string("Message was: ");
 		cdc_write_string(buf);
 		cdc_newline();
+		cdc_log_int("Bytes received: ", len);
 		cdc_log_int("Max length of buffer is: ", 50);
 
 	}

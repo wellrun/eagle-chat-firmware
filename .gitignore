@@ -43,3 +43,7 @@ conf.mk
 
 # Block Sam's weird backup files
 **/*~
+
+samsfiles.txt
+**/samsfiles.txt
+
