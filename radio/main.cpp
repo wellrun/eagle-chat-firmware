@@ -53,10 +53,13 @@ int main (void)
 
 	cdc_start();
 
-	module = RFM69();
+	//module = RFM69();
 
     while (1) {
-			udi_cdc_putc(rtc_get_time());
+    	while (udi_cdc_getc() != 'a');
+    	cdc_write_string((uint8_t *)"Logging time: \n");
+		cdc_log_int((uint8_t *)"rtc_get_time(): ", rtc_get_counter());
+		cdc_write_string((uint8_t *)"Logged time. \n");
 	}
 
 }
