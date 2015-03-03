@@ -57,9 +57,9 @@ int main (void)
 
     while (1) {
     	while (udi_cdc_getc() != 'a');
-    	cdc_write_string((uint8_t *)"Logging time: \n");
-		cdc_log_int((uint8_t *)"rtc_get_time(): ", rtc_get_counter());
-		cdc_write_string((uint8_t *)"Logged time. \n");
+    	cdc_write_string("Logging time: \n");
+		cdc_log_int("rtc_get_time(): ", rtc_get_time());
+		cdc_write_string("Logged time. \n");
 	}
 
 }
