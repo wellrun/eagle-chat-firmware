@@ -97,6 +97,14 @@ void cdc_write_string(const char *buf);
  */
 void cdc_write_hex(const uint8_t c);
 
+void cdc_write_hex_string(char *string, uint32_t length);
+
+void cdc_log_int(const char *message, uint32_t value);
+void cdc_log_string(const char *message, const char *value);
+void cdc_log_hex(const char *message, uint8_t value);
+void cdc_log_hex_string(const char *message, uint8_t *value, uint32_t len);
+
+
 /**
  * Prints a newline character
  */

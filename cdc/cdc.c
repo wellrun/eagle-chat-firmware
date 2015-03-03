@@ -93,6 +93,12 @@ void cdc_write_hex(const uint8_t c) {
 	udi_cdc_putc(table[c & 0x0F]);
 }
 
+void cdc_write_hex_string(char *string, uint32_t length) {
+	for (uint8_t i = 0; i < length; ++i) {
+		cdc_write_hex(string[i]);
+	}
+}
+
 void cdc_newline() {
 	udi_cdc_putc('\n');
 }
@@ -102,6 +108,24 @@ void cdc_log_int(const char *message, uint32_t value) {
 	uint8_t v[12];
 	itoa(value, v, 10);
 	cdc_write_string(v);
+	cdc_newline();
+}
+
+void cdc_log_string(const char *message, const char *value) {
+	cdc_write_string((uint8_t *)message);
+	cdc_write_string((uint8_t *)value);
+	cdc_newline();
+}
+
+void cdc_log_hex(const char *message, uint8_t value) {
+	cdc_write_string((uint8_t *)message);
+	cdc_write_hex(value);
+	cdc_newline();
+}
+
+void cdc_log_hex_string(const char *message, uint8_t *value, uint32_t len) {
+	cdc_write_string(message);
+	cdc_write_hex_string(value, len);
 	cdc_newline();
 }
 
