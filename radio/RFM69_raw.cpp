@@ -48,6 +48,9 @@ void SPIBegin() {
     ioport_set_pin_high(RF_SS_pin);
 
     struct spi_device spi_conf = {0};
+	SPI_t *spi = 0;
+	spi = &SPIE;
+	spi_master_init(&RF_SPI);
     spi_master_setup_device(&RF_SPI, &spi_conf, SPI_MODE_0, 50000, 0);
     spi_enable(&RF_SPI);
 }
@@ -136,8 +139,18 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 
 	SPIBegin();
 
-	do writeReg(REG_SYNCVALUE1, 0xAA); while (readReg(REG_SYNCVALUE1) != 0xAA);
-	do writeReg(REG_SYNCVALUE1, 0x55); while (readReg(REG_SYNCVALUE1) != 0x55);
+	cdc_write_line("SPI started");
+	uint8_t reg_ret = 0;
+	writeReg(REG_SYNCVALUE1, 0xAA);
+	while (reg_ret != 0xAA) {
+		reg_ret = readReg(REG_SYNCVALUE1);
+	}
+	writeReg(REG_SYNCVALUE1, 0x55); 
+	while (reg_ret != 0x55) {
+		reg_ret = readReg(REG_SYNCVALUE1);
+	}
+
+	cdc_write_line("Wrote some registers");
 
 	for (uint8_t i = 0; CONFIG[i][0] != 255; i++)
 		writeReg(CONFIG[i][0], CONFIG[i][1]);
@@ -524,6 +537,9 @@ void RFM69::readAllRegs()
 		// Serial.print(regVal,HEX);
 		// Serial.print(" - ");
 		// Serial.println(regVal,BIN);
+
+		cdc_log_hex("Address: ", regAddr);
+		cdc_log_hex("Value  : ", regVal);
 	}
 	unselect();
 }
