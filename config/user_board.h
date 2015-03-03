@@ -16,7 +16,7 @@
 
 // CS = PC4
 // SCK = PC7
-// MOSI = PC5
+// MOSI = PC5 
 // MISO = PC6
 // HOLD = PD0
 
@@ -44,7 +44,7 @@
 // RST = PF7
 
 #define RF_SPI 		SPIE
-#define RF_SS_pin	IOPORT_CREATE_PIN(PORTE, 4)
+#define RF_SS_pin	IOPORT_CREATE_PIN(PORTE, 4) //Unmodified board's correct SS output pin
 #define RF_SCK_pin	IOPORT_CREATE_PIN(PORTE, 7)
 #define RF_MOSI_pin	IOPORT_CREATE_PIN(PORTE, 5)
 #define RF_MISO_pin	IOPORT_CREATE_PIN(PORTE, 6)
@@ -53,8 +53,8 @@
 #define RF_DIO2_pin	IOPORT_CREATE_PIN(PORTF, 2)
 #define RF_DIO3_pin	IOPORT_CREATE_PIN(PORTF, 3)
 #define RF_DIO4_pin	IOPORT_CREATE_PIN(PORTF, 4)
-#define RF_DIO5_pin	IOPORT_CREATE_PIN(PORTF, 5)
-#define RF_RST_pin	IOPORT_CREATE_PIN(PORTF, 7)
+#define RF_DIO5_pin	IOPORT_CREATE_PIN(PORTF, 5) //ALSO D-!!!!
+#define RF_RST_pin	IOPORT_CREATE_PIN(PORTF, 7) //ALSO D+!!!!
 
 
 /**
