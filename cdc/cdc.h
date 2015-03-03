@@ -90,7 +90,7 @@ void cdc_rx_notify(uint8_t);
 /**
  * Prints a null terminated string over USB
  */
-void cdc_write_string(const uint8_t* buf);
+void cdc_write_string(const char *buf);
 
 /**
  * Prints a byte as its human-readable HEX form over USB
@@ -107,7 +107,7 @@ void cdc_newline();
  * and finishes with a newline.
  * E.g. cdc_log_int("The value is: ", 5);
  */
-void cdc_log_int(uint8_t *message, uint32_t value);
+void cdc_log_int(const char *message, uint32_t value);
 
 /**
  * Reads USB input into 'buffer' until a newline character

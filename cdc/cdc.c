@@ -77,7 +77,7 @@ void cdc_disable(void)
 	cdc_enabled = false;
 }
 
-void cdc_write_string(const uint8_t* buf) {
+void cdc_write_string(const char *buf) {
 	iram_size_t size = 0;
 	uint8_t* temp = buf;
 	while (*temp != 0) {
@@ -97,9 +97,9 @@ void cdc_newline() {
 	udi_cdc_putc('\n');
 }
 
-void cdc_log_int(uint8_t *message, uint32_t value) {
-	cdc_write_string(message);
-	uint8_t v[11];
+void cdc_log_int(const char *message, uint32_t value) {
+	cdc_write_string((uint8_t *)message);
+	uint8_t v[12];
 	itoa(value, v, 10);
 	cdc_write_string(v);
 	cdc_newline();
