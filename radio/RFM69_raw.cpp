@@ -75,9 +75,8 @@ int readInterruptPin() {
 	return 0;
 }
 
-int millis() {
-	static int i = rtc_get_time();
-	return i;
+uint32_t millis() {
+	return rtc_get_time();
 }
 
 volatile uint8_t RFM69::DATA[RF69_MAX_DATA_LEN];
