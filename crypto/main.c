@@ -6,13 +6,6 @@
 #include "avrnacl.h"
 #include "crypto.h"
 
-void cdc_write_hex_string(char *string, uint16_t length) {
-	for (uint8_t i = 0; i < length; ++i) {
-		cdc_write_hex(string[i]);
-	}
-	cdc_write_string("\n");
-}
-
 int main (void)
 {
 	cpu_irq_enable();
