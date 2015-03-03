@@ -33,6 +33,9 @@
 
 #include "user_board.h"
 
+    struct spi_device spi_device_conf = {
+        .id = IOPORT_CREATE_PIN(PORTE, 2)
+    };
 
 void SPIBegin() {
 	// ioport_set_pin_level(_slaveSelectPin, HIGH);
@@ -49,17 +52,15 @@ void SPIBegin() {
     ioport_set_pin_high(RF_MOSI_pin);
     ioport_set_pin_high(RF_SS_pin);*/
 
-    ioport_configure_port_pin(&RF_SPI, PIN4_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // Module CS, even though it is chip's SS, output
+    ioport_configure_port_pin(&RF_SPI, PIN2_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // Module CS, even though it is chip's SS, output
                                                                                         // pin mode disables it from being used.
                                                                                         // Unmodifid board's correct pin setting
-    //ioport_configure_port_pin(&RF_SPI, PIN2_bm, IOPORT_PULL_UP | IOPORT_DIR_INPUT);     // Own CS
+    ioport_configure_port_pin(&RF_SPI, PIN4_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);     // Own CS
     ioport_configure_port_pin(&RF_SPI, PIN5_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // MOSI
     ioport_configure_port_pin(&RF_SPI, PIN6_bm, IOPORT_DIR_INPUT);                      // MISO
     ioport_configure_port_pin(&RF_SPI, PIN7_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // SCL
 
-    struct spi_device spi_device_conf = {
-        .id = IOPORT_CREATE_PIN(PORTE, 2)
-    };
+
     spi_master_init(&RF_SPI);
     spi_master_setup_device(&RF_SPI, &spi_device_conf, SPI_MODE_0, 115200, 0);
     spi_enable(&RF_SPI);
@@ -76,13 +77,14 @@ uint8_t SPITransfer(const uint8_t val) {
 	}
 }
 
+/*
 void slaveSelectHigh() {
 	ioport_set_pin_high(RF_SS_pin);
 }
 
 void slaveSelectLow() {
 	ioport_set_pin_low(RF_SS_pin);
-}
+}*/
 
 int readInterruptPin() {
 	return 0;
@@ -153,7 +155,7 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	do {
         writeReg(REG_SYNCVALUE1, 0xAA);
         if(ljcount<5){
-            cdc_log_hex("Wrote REG_SYNCVALUE = 0xAA : ", readReg(REG_SYNCVALUE1));
+            cdc_log_hex("Wrote REG_SYNCVALUE = 0xAA : Read 0x", readReg(REG_SYNCVALUE1));
             ++ljcount;
         }
     } while (readReg(REG_SYNCVALUE1) != 0xAA);
@@ -489,12 +491,18 @@ void RFM69::select() {
 	// SPI.setDataMode(SPI_MODE0);
 	// SPI.setBitOrder(MSBFIRST);
 	// SPI.setClockDivider(SPI_CLOCK_DIV4); // decided to slow down from DIV2 after SPI stalling in some instances, especially visible on mega1284p when RFM69 and FLASH chip both present
-	slaveSelectLow();
+	
+    //slaveSelectLow();
+
+    spi_select_device(&RF_SPI, &spi_device_conf);
 }
 
 // UNselect the transceiver chip
 void RFM69::unselect() {
-	slaveSelectHigh();
+	//slaveSelectHigh();
+
+    spi_deselect_device(&RF_SPI, &spi_device_conf);
+
 	// restore SPI settings to what they were before talking to RFM69
 	// SPCR = _SPCR;
 	// SPSR = _SPSR;

@@ -2,7 +2,10 @@
 TARGET = main.elf
 
 CSRCS += \
-    main.cpp \
-    RFM69_raw.cpp \
+    main_bak.cpp \
+    RFM69_raw_bak.cpp \
 
-USER_INC_PATH += \
+INC_PATH += \
+    common/services/ioport/xmega \
+
+USER_INC_PTH += \

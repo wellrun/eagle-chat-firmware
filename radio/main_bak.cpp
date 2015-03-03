@@ -55,8 +55,8 @@ char sendSize=0;
 bool requestACK = false;
 RFM69 radio;
 
-void setup(void)
-{
+int main (void)
+{   	
     cpu_irq_enable();
 
 	irq_initialize_vectors();
@@ -67,18 +67,13 @@ void setup(void)
 
 	cdc_start();
 
-	while (udi_cdc_getc() != '2'){
+    while (udi_cdc_getc() != '2'){
     cdc_log_int("About to instantiate module ", rtc_get_time());}
     radio = RFM69();
 	while (udi_cdc_getc() != '3'){
     cdc_log_int("About to intialize module ", rtc_get_time());}
     radio.initialize(FREQUENCY,NODEID,NETWORKID);
 
-}
-
-int main (void)
-{   	
-    setup();
 /*    PORTE.DIRSET = 0b11100100 ; // Set pin 7,6,5,2 to be output.
       
     while(1){ // loop forever

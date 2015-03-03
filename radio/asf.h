@@ -11,6 +11,7 @@
 
 // From module: IOPORT - General purpose I/O service
 #include <ioport.h>
+#include <ioport_compat.h>
 
 // From module: Interrupt management - XMEGA implementation
 #include <interrupt.h>
