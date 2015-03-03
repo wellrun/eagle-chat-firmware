@@ -1,6 +1,25 @@
 #include "asf.h"
 #include "cdc.h"
 
+#define BUF_SIZE (1 << 6)
+
+uint8_t buf[BUF_SIZE];
+bool msg_recvd = false;
+uint8_t ctr = 0;
+
+void rx_callback(void) {
+	uint8_t c = udi_cdc_getc();
+	if (ctr < BUF_SIZE) {
+		if (c == '\r' || c == '\n' ) {
+			buf[ctr] = '\0';
+			msg_recvd = true;
+		} else {
+			buf[ctr] = c;
+			++ctr;
+		}
+	}
+}
+
 int main (void)
 {
 	cpu_irq_enable();
@@ -11,8 +30,10 @@ int main (void)
 
 	cdc_start();
 
-	uint8_t buf[50];
-	while(udi_cdc_getc() == 0);
+	//while(udi_cdc_getc() == 0);
+
+	cdc_set_rx_callback(&rx_callback);
+
 	while (1) {
 		/*
 		cdc_write_string("Enter message: ");
@@ -25,11 +46,11 @@ int main (void)
 		*/
 		//cdc_write_hex(0xAA);
 
-		cdc_read_string(buf, 50);
+		//cdc_read_string(buf, 50);
 
-		delay_s(5);
+		//delay_s(5);
 
-		cdc_write_string(buf);
+		//cdc_write_string(buf);
 
 		//while (1) {
 		//	udi_cdc_getc();

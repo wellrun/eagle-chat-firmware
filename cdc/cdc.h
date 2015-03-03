@@ -128,4 +128,6 @@ void cdc_log_int(const char *message, uint32_t value);
  */
 uint32_t cdc_read_string(uint8_t *buffer, uint32_t maxlen);
 
+void cdc_set_rx_callback(void (*rx_callback)(void));
+
 #endif /* CDC_H_INCLUDED */

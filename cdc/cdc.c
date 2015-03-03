@@ -56,6 +56,8 @@ uint8_t cdc_serial_number[USB_DEVICE_GET_SERIAL_NAME_LENGTH + 1] = USB_SERIAL_NU
 static bool cdc_opened = false;
 static bool cdc_enabled = false;
 
+static void (*rx_callback)(void);
+
 void cdc_start(void)
 {
 	udc_start();
@@ -147,28 +149,13 @@ uint32_t cdc_read_string(uint8_t *buffer, uint32_t maxlen) {
     return maxlen;
 }
 
-/*
-static void say_hello(void) {
-	uint8_t msg[] = "Hello.\n";
-
-	while (!udi_cdc_is_tx_ready());
-
-	uint8_t * c = msg;
-
-	while (*c != 0) {
-		udi_cdc_putc(*c);
-		++c;
-	}
+void cdc_set_rx_callback(void (*rx_callbackPtr)(void)) {
+	rx_callback = rx_callbackPtr;
 }
-*/
-
-/*
-static void echo(void) {
-	uint8_t read = udi_cdc_getc();
-	udi_cdc_putc(read+1);
-}
-*/
 
 void cdc_rx_notify(uint8_t port) {
+	if (rx_callback != NULL) {
+		(*rx_callback)();
+	}
 }
 
