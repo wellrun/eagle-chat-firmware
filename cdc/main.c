@@ -12,9 +12,8 @@ int main (void)
 	cdc_start();
 
 	uint8_t buf[50];
-
+	while(udi_cdc_getc() == 0);
 	while (1) {
-
 		cdc_write_string("Enter message: ");
 		uint32_t len = cdc_read_string(buf, 50);
 		cdc_write_string("Message was: ");
