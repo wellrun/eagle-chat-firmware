@@ -87,6 +87,11 @@ void cdc_write_string(const char *buf) {
 	udi_cdc_write_buf((void *) buf, size);
 }
 
+void cdc_write_line(const char *message) {
+	cdc_write_string(message);
+	cdc_newline();
+}
+
 void cdc_write_hex(const uint8_t c) {
 	const uint8_t table[] = "0123456789ABCDEF";
 	udi_cdc_putc(table[(c>>4) & 0x0F]);

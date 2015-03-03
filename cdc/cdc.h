@@ -93,6 +93,11 @@ void cdc_rx_notify(uint8_t);
 void cdc_write_string(const char *buf);
 
 /**
+ * cdc_write_string followed by a newline
+ */
+void cdc_write_line(const char *message);
+
+/**
  * Prints a byte as its human-readable HEX form over USB
  */
 void cdc_write_hex(const uint8_t c);
