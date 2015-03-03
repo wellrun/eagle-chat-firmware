@@ -137,8 +137,12 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 
 	SPIBegin();
 
+	cdc_write_line("SPI started");
+
 	do writeReg(REG_SYNCVALUE1, 0xAA); while (readReg(REG_SYNCVALUE1) != 0xAA);
 	do writeReg(REG_SYNCVALUE1, 0x55); while (readReg(REG_SYNCVALUE1) != 0x55);
+
+	cdc_write_line("Wrote some registers");
 
 	for (uint8_t i = 0; CONFIG[i][0] != 255; i++)
 		writeReg(CONFIG[i][0], CONFIG[i][1]);
@@ -525,6 +529,9 @@ void RFM69::readAllRegs()
 		// Serial.print(regVal,HEX);
 		// Serial.print(" - ");
 		// Serial.println(regVal,BIN);
+
+		cdc_log_hex("Address: ", regAddr);
+		cdc_log_hex("Value  : ", regVal);
 	}
 	unselect();
 }

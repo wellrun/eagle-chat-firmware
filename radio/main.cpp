@@ -53,13 +53,14 @@ int main (void)
 
 	cdc_start();
 
-	//module = RFM69();
+	while (udi_cdc_getc() != 'a');
+	cdc_write_string("About to instantiate module");
 
-    while (1) {
-    	while (udi_cdc_getc() != 'a');
-    	cdc_write_string("Logging time: \n");
-		cdc_log_int("rtc_get_time(): ", rtc_get_time());
-		cdc_write_string("Logged time. \n");
-	}
+	module = RFM69();
+	int s = module.initialize(0x00, 0x00, 0x00);
+
+	cdc_log_int("Initialized: ", s);
+
+	module.readAllRegs();
 
 }
