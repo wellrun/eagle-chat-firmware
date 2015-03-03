@@ -82,6 +82,19 @@ uint32_t millis() {
 	return rtc_get_time();
 }
 
+/* Resets the radio */
+void resetRadio() {
+	ioport_set_pin_low(RF_RST_pin);
+	ioport_set_pin_mode(RF_RST_pin, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_high(RF_RST_pin);
+	uint32_t time = millis();
+	while( (millis() - time) < 2);
+	ioport_set_pin_low(RF_RST_pin);
+	time = millis();
+	while ((millis() - time) < 12);
+	ioport_set_pin_low(RF_RST_pin);
+}
+
 volatile uint8_t RFM69::DATA[RF69_MAX_DATA_LEN];
 volatile uint8_t RFM69::_mode;        // current transceiver state
 volatile uint8_t RFM69::DATALEN;
@@ -138,6 +151,8 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	};
 
 	SPIBegin();
+
+	resetRadio();
 
 	cdc_write_line("SPI started");
 	uint8_t reg_ret = 0;
