@@ -38,23 +38,6 @@ struct spi_device spi_device_conf = {
 };
 
 void SPIBegin() {
-	// ioport_set_pin_level(_slaveSelectPin, HIGH);
-	// ioport_set_pin_mode(_slaveSelectPin, IOPORT_DIR_OUTPUT);
-
-    /*ioport_set_pin_dir(RF_SCK_pin, IOPORT_DIR_OUTPUT);
-    ioport_set_pin_dir(RF_SS_pin, IOPORT_DIR_OUTPUT);
-    ioport_set_pin_dir(RF_MOSI_pin, IOPORT_DIR_OUTPUT);
-    ioport_set_pin_dir(RF_MISO_pin, IOPORT_DIR_INPUT);
-    ioport_set_pin_dir(RF_RST_pin, IOPORT_DIR_OUTPUT);
-    
-    ioport_set_pin_low(RF_SCK_pin);
-    ioport_set_pin_high(RF_SCK_pin);
-    ioport_set_pin_high(RF_MOSI_pin);
-    ioport_set_pin_high(RF_SS_pin);*/
-
-    //ioport_configure_port_pin(&PORTE, PIN2_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // Module CS, even though it is chip's SS, output
-                                                                                      // pin mode disables it from being used.
-                                                                                      // Unmodifid board's correct pin setting: 4
     ioport_configure_port_pin(&PORTE, PIN4_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // Own CS being used as Module CS
     ioport_configure_port_pin(&PORTE, PIN5_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // MOSI
     ioport_configure_port_pin(&PORTE, PIN6_bm, IOPORT_DIR_INPUT);                      // MISO
@@ -62,7 +45,7 @@ void SPIBegin() {
 
 
     spi_master_init(&SPIE);
-    spi_master_setup_device(&SPIE, &spi_device_conf, SPI_MODE_0, 115200, 0);
+    spi_master_setup_device(&SPIE, &spi_device_conf, SPI_MODE_0, 4500000, 0);
     spi_enable(&SPIE);
 }
 
@@ -76,15 +59,6 @@ uint8_t SPITransfer(const uint8_t val) {
 		return 0;
 	}
 }
-
-/*
-void slaveSelectHigh() {
-	ioport_set_pin_high(RF_SS_pin);
-}
-
-void slaveSelectLow() {
-	ioport_set_pin_low(RF_SS_pin);
-}*/
 
 int readInterruptPin() {
 	return 0;
@@ -152,29 +126,31 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	SPIBegin();
     int ljcount = 0;
     cdc_log_int("Initized SPI, attempting to write/read some registers ", rtc_get_time());
-	do {
-        writeReg(REG_SYNCVALUE1, 0xAA);
-        if(ljcount<5){
-            cdc_log_hex("Wrote REG_SYNCVALUE = 0xAA : Read 0x", readReg(REG_SYNCVALUE1));
-            ++ljcount;
-        }
-    } while (readReg(REG_SYNCVALUE1) != 0xAA);
-    cdc_log_int("Successfully wrote and read once ", rtc_get_time());
-	do writeReg(REG_SYNCVALUE1, 0x55); while (readReg(REG_SYNCVALUE1) != 0x55);
-    cdc_log_int("Successfully wrote and read twice ", rtc_get_time());
+	do {writeReg(REG_SYNCVALUE1, 0xAA); ++ljcount;} while (readReg(REG_SYNCVALUE1) != 0xAA);
+    cdc_log_int("Successfully wrote and read SYNC 0xAA, number of attempts: ", ljcount);
+    ljcount=0;
+	do {writeReg(REG_SYNCVALUE1, 0x55); ++ljcount;} while (readReg(REG_SYNCVALUE1) != 0x55);
+    cdc_log_int("Successfully wrote and read SYNC 0X55, number of attempts: ", ljcount);
+    ljcount=0;
 	for (uint8_t i = 0; CONFIG[i][0] != 255; i++)
 		writeReg(CONFIG[i][0], CONFIG[i][1]);
     cdc_log_int("Successfully wrote configs ", rtc_get_time());
 	// Encryption is persistent between resets and can trip you up during debugging.
 	// Disable it during initialization so we always start from a known state.
 	encrypt(0);
-    cdc_log_int("Successfully wrote encrypt status ", rtc_get_time());
+    cdc_log_int("Successfully set encrypt mode ", rtc_get_time());
 	setHighPower(_isRFM69HW); // called regardless if it's a RFM69W or RFM69HW
     cdc_log_int("Successfully set high power mode ", rtc_get_time());
 	setMode(RF69_MODE_STANDBY);
-    cdc_log_int("Init successfully set standby, waiting for ModeReady ", rtc_get_time());
-	while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // wait for ModeReady
-    cdc_log_int("Apparenly ModeReady, RF Initialization done ", rtc_get_time());
+    cdc_log_int("Mode set function has been called, waiting for ModeReady ", rtc_get_time());
+    while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00){  // wait for ModeReady
+        ++ljcount;        
+        if(ljcount>1000){
+            cdc_log_int("Timing out for ModeReady ", rtc_get_time());
+            break;
+        }
+    }
+    cdc_log_int("ModeReady or timed out ", rtc_get_time());
 	//attachInterrupt(_interruptNum, RFM69::isr0, RISING);
 
 	selfPointer = this;
@@ -225,7 +201,7 @@ void RFM69::setMode(uint8_t newMode)
 		case RF69_MODE_STANDBY:
             cdc_log_int("About to set to standby mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY);
-            cdc_log_int("Set to standby mode ", rtc_get_time());
+            cdc_log_int("Set to standby mode ", newMode);
 			break;
 		case RF69_MODE_SLEEP:
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP);
