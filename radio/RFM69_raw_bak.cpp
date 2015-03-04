@@ -33,9 +33,9 @@
 
 #include "user_board.h"
 
-    struct spi_device spi_device_conf = {
-        .id = IOPORT_CREATE_PIN(PORTE, 2)
-    };
+struct spi_device spi_device_conf = {
+    .id = IOPORT_CREATE_PIN(PORTE, 4)
+};
 
 void SPIBegin() {
 	// ioport_set_pin_level(_slaveSelectPin, HIGH);
@@ -52,27 +52,27 @@ void SPIBegin() {
     ioport_set_pin_high(RF_MOSI_pin);
     ioport_set_pin_high(RF_SS_pin);*/
 
-    ioport_configure_port_pin(&RF_SPI, PIN2_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // Module CS, even though it is chip's SS, output
-                                                                                        // pin mode disables it from being used.
-                                                                                        // Unmodifid board's correct pin setting
-    ioport_configure_port_pin(&RF_SPI, PIN4_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);     // Own CS
-    ioport_configure_port_pin(&RF_SPI, PIN5_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // MOSI
-    ioport_configure_port_pin(&RF_SPI, PIN6_bm, IOPORT_DIR_INPUT);                      // MISO
-    ioport_configure_port_pin(&RF_SPI, PIN7_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // SCL
+    //ioport_configure_port_pin(&PORTE, PIN2_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // Module CS, even though it is chip's SS, output
+                                                                                      // pin mode disables it from being used.
+                                                                                      // Unmodifid board's correct pin setting: 4
+    ioport_configure_port_pin(&PORTE, PIN4_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // Own CS being used as Module CS
+    ioport_configure_port_pin(&PORTE, PIN5_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // MOSI
+    ioport_configure_port_pin(&PORTE, PIN6_bm, IOPORT_DIR_INPUT);                      // MISO
+    ioport_configure_port_pin(&PORTE, PIN7_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // SCL
 
 
-    spi_master_init(&RF_SPI);
-    spi_master_setup_device(&RF_SPI, &spi_device_conf, SPI_MODE_0, 115200, 0);
-    spi_enable(&RF_SPI);
+    spi_master_init(&SPIE);
+    spi_master_setup_device(&SPIE, &spi_device_conf, SPI_MODE_0, 115200, 0);
+    spi_enable(&SPIE);
 }
 
 uint8_t SPITransfer(const uint8_t val) {
 	uint8_t ret;
 	if (val == 0) {
-		spi_read_single(&RF_SPI, &ret);
+		spi_read_single(&SPIE, &ret);
 		return ret;
 	} else {
-		spi_write_single(&RF_SPI, val);
+		spi_write_single(&SPIE, val);
 		return 0;
 	}
 }
@@ -164,14 +164,17 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
     cdc_log_int("Successfully wrote and read twice ", rtc_get_time());
 	for (uint8_t i = 0; CONFIG[i][0] != 255; i++)
 		writeReg(CONFIG[i][0], CONFIG[i][1]);
-
+    cdc_log_int("Successfully wrote configs ", rtc_get_time());
 	// Encryption is persistent between resets and can trip you up during debugging.
 	// Disable it during initialization so we always start from a known state.
 	encrypt(0);
-
+    cdc_log_int("Successfully wrote encrypt status ", rtc_get_time());
 	setHighPower(_isRFM69HW); // called regardless if it's a RFM69W or RFM69HW
+    cdc_log_int("Successfully set high power mode ", rtc_get_time());
 	setMode(RF69_MODE_STANDBY);
+    cdc_log_int("Init successfully set standby, waiting for ModeReady ", rtc_get_time());
 	while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // wait for ModeReady
+    cdc_log_int("Apparenly ModeReady, RF Initialization done ", rtc_get_time());
 	//attachInterrupt(_interruptNum, RFM69::isr0, RISING);
 
 	selfPointer = this;
@@ -206,7 +209,7 @@ void RFM69::setMode(uint8_t newMode)
 {
 	if (newMode == _mode)
 		return;
-
+    cdc_log_int("About to set a mode ", rtc_get_time());
 	switch (newMode) {
 		case RF69_MODE_TX:
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER);
@@ -220,7 +223,9 @@ void RFM69::setMode(uint8_t newMode)
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER);
 			break;
 		case RF69_MODE_STANDBY:
+            cdc_log_int("About to set to standby mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY);
+            cdc_log_int("Set to standby mode ", rtc_get_time());
 			break;
 		case RF69_MODE_SLEEP:
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP);
@@ -494,14 +499,14 @@ void RFM69::select() {
 	
     //slaveSelectLow();
 
-    spi_select_device(&RF_SPI, &spi_device_conf);
+    spi_select_device(&SPIE, &spi_device_conf);
 }
 
 // UNselect the transceiver chip
 void RFM69::unselect() {
 	//slaveSelectHigh();
 
-    spi_deselect_device(&RF_SPI, &spi_device_conf);
+    spi_deselect_device(&SPIE, &spi_device_conf);
 
 	// restore SPI settings to what they were before talking to RFM69
 	// SPCR = _SPCR;

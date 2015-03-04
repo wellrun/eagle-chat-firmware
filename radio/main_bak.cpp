@@ -63,6 +63,8 @@ int main (void)
 
 	sysclk_init();
 
+    ioport_init();
+
 	rtc_init();
 
 	cdc_start();
