@@ -35,6 +35,7 @@ int main (void)
 	cdc_set_rx_callback(&rx_callback);
 
 	while (1) {
+		
 		/*
 		cdc_write_string("Enter message: ");
 		uint32_t len = cdc_read_string(buf, 50);
