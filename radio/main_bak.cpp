@@ -50,6 +50,7 @@ extern "C" {
 #define ACK_TIME      30 // max # of ms to wait for an ack
 
 #define UDI_CDC_DEFAULT_RATE             9600 
+#define F_CPU                           32000000UL
 
 int TRANSMITPERIOD = 150; //transmit a packet to gateway so often (in ms)
 char payload[] = "123 ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -71,7 +72,7 @@ int main (void)
 	rtc_init();
 
 	cdc_start();
-
+    _delay_ms(10);
     while (udi_cdc_getc() != '2'){
     cdc_log_int("About to instantiate module ", rtc_get_time());}
     radio = RFM69();
@@ -79,16 +80,16 @@ int main (void)
     cdc_log_int("About to intialize module ", rtc_get_time());}
     radio.initialize(FREQUENCY,NODEID,NETWORKID);
 	cdc_log_int("Initialized: ", rtc_get_time());
-    radio.setHighPower();
-
+    //radio.setHighPower();
+/*
     if(radio.sendWithRetry(TOID, payload, 30, requestACK)){
         cdc_log_int("Holyshit I think I sent something ", rtc_get_time());
     } else {
         cdc_log_int("I didn't send anything because something borked ", rtc_get_time());
     }
-        
+*/      
+
+	radio.readAllRegs();
 
     while(1);
-
-	//radio.readAllRegs();
 }

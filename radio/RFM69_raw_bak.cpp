@@ -32,6 +32,8 @@
 #include "RFM69registers.h"
 
 #include "user_board.h"
+#include <util/delay.h>
+#define F_CPU                           32000000UL
 
 struct spi_device spi_device_conf = {
     .id = IOPORT_CREATE_PIN(PORTE, 4)
@@ -50,14 +52,19 @@ void SPIBegin() {
 }
 
 uint8_t SPITransfer(const uint8_t val) {
-	uint8_t ret;
-	if (val == 0) {
-		spi_read_single(&SPIE, &ret);
-		return ret;
-	} else {
-		spi_write_single(&SPIE, val);
-		return 0;
-	}
+    uint8_t ret;
+    if (val == 0) {
+        spi_write_single(&SPIE,0); //Dummy write
+        while (!spi_is_rx_full(&SPIE)) {
+        }        
+        spi_read_single(&SPIE, &ret);
+        return ret;
+    } else {
+        spi_write_single(&SPIE, val);        
+        while (!spi_is_rx_full(&SPIE)) {
+        }
+        return 0;
+    }
 }
 
 int readInterruptPin() {
@@ -124,13 +131,18 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	};
     cdc_log_int("About to initialize SPI ", rtc_get_time());
 	SPIBegin();
-    int ljcount = 0;
+    uint32_t ljcount = 0;
+    uint8_t ljreg = 0;
     cdc_log_int("Initized SPI, attempting to write/read some registers ", rtc_get_time());
-	do {writeReg(REG_SYNCVALUE1, 0xAA); ++ljcount;} while (readReg(REG_SYNCVALUE1) != 0xAA);
-    cdc_log_int("Successfully wrote and read SYNC 0xAA, number of attempts: ", ljcount);
+	do {writeReg(REG_SYNCVALUE1, 0xAA); ++ljcount; ljreg=readReg(REG_SYNCVALUE1);} while (ljreg != 0xAA);
+    ljreg=0;
+    ljreg=readReg(REG_SYNCVALUE1);
+    cdc_log_int("Successfully wrote and read SYNCVALUE1 0xAA, number of attempts: ", ljcount);
     ljcount=0;
-	do {writeReg(REG_SYNCVALUE1, 0x55); ++ljcount;} while (readReg(REG_SYNCVALUE1) != 0x55);
-    cdc_log_int("Successfully wrote and read SYNC 0X55, number of attempts: ", ljcount);
+	do {writeReg(REG_SYNCVALUE1, 0x55); ++ljcount; ljreg=readReg(REG_SYNCVALUE1);} while (ljreg != 0x55);
+    ljreg=0;
+    ljreg=readReg(REG_SYNCVALUE1);
+    cdc_log_int("Successfully wrote and read SYNCVALUE1 0X55, number of attempts: ", ljcount);
     ljcount=0;
 	for (uint8_t i = 0; CONFIG[i][0] != 255; i++)
 		writeReg(CONFIG[i][0], CONFIG[i][1]);
@@ -143,21 +155,23 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
     cdc_log_int("Successfully set high power mode ", rtc_get_time());
 	setMode(RF69_MODE_STANDBY);
     cdc_log_int("Mode set function has been called, waiting for ModeReady ", rtc_get_time());
-    while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00){  // wait for ModeReady
+    while ((ljreg & RF_IRQFLAGS1_MODEREADY) == 0x00){  // wait for ModeReady
+        ljreg = readReg(REG_IRQFLAGS1);
         ++ljcount;        
-        if(ljcount>1000){
-            cdc_log_int("Timing out for ModeReady ", rtc_get_time());
+        if(ljcount>10){
+            cdc_log_hex("Timing out for ModeReady, read ", ljreg);
             break;
         }
     }
-    cdc_log_int("ModeReady or timed out ", rtc_get_time());
+    cdc_log_int("ModeReady if no timeout message ", rtc_get_time());
 	//attachInterrupt(_interruptNum, RFM69::isr0, RISING);
 
 	selfPointer = this;
 	_address = nodeID;
 	return true;
 }
-
+#define SPIDELAY 0
+#define NUMSPIRETRY 10000
 // return the frequency (in Hz)
 uint32_t RFM69::getFrequency()
 {
@@ -188,23 +202,31 @@ void RFM69::setMode(uint8_t newMode)
     cdc_log_int("About to set a mode ", rtc_get_time());
 	switch (newMode) {
 		case RF69_MODE_TX:
+            cdc_log_int("Setting to TX mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER);
 			if (_isRFM69HW) setHighPowerRegs(true);
+            cdc_log_int("Set to TX mode ", newMode);
 			break;
 		case RF69_MODE_RX:
+            cdc_log_int("Setting to RX mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER);
 			if (_isRFM69HW) setHighPowerRegs(false);
+            cdc_log_int("Set to RX mode ", newMode);
 			break;
 		case RF69_MODE_SYNTH:
+            cdc_log_int("Setting to Synth mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER);
+            cdc_log_int("Set to Synth mode ", newMode);
 			break;
 		case RF69_MODE_STANDBY:
-            cdc_log_int("About to set to standby mode ", rtc_get_time());
+            cdc_log_int("Setting to standby mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY);
             cdc_log_int("Set to standby mode ", newMode);
 			break;
 		case RF69_MODE_SLEEP:
+            cdc_log_int("Setting to sleep mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP);
+            cdc_log_int("Set to sleep mode ", newMode);
 			break;
 		default:
 			return;
@@ -447,15 +469,17 @@ int16_t RFM69::readRSSI(bool forceTrigger) {
 
 uint8_t RFM69::readReg(uint8_t addr)
 {
-	select();
-	SPITransfer(addr & 0x7F);
-	uint8_t regval = SPITransfer(0);
-	unselect();
+    //_delay_ms(SPIDELAY);
+    select();
+    SPITransfer(addr & 0x7F);
+    uint8_t regval = SPITransfer(0);
+    unselect();
 	return regval;
 }
 
 void RFM69::writeReg(uint8_t addr, uint8_t value)
 {
+    //_delay_ms(SPIDELAY);
 	select();
 	SPITransfer(addr | 0x80);
 	SPITransfer(value);
@@ -524,18 +548,11 @@ void RFM69::readAllRegs()
 
 	for (uint8_t regAddr = 1; regAddr <= 0x4F; regAddr++)
 	{
-		select();
-		SPITransfer(regAddr & 0x7F); // send address + r/w bit
-		regVal = SPITransfer(0);
-		unselect();
-
-		// Serial.print(regAddr, HEX);
-		// Serial.print(" - ");
-		// Serial.print(regVal,HEX);
-		// Serial.print(" - ");
-		// Serial.println(regVal,BIN);
+		regVal = readReg(regAddr);
+		cdc_write_string("Address: 0x");
+        cdc_write_hex(regAddr);
+        cdc_log_hex(" : Value 0x", regVal);
 	}
-	unselect();
 }
 
 uint8_t RFM69::readTemperature(uint8_t calFactor) // returns centigrade
