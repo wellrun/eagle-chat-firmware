@@ -2,8 +2,8 @@
 TARGET = main.elf
 
 CSRCS += \
-    main_bak.cpp \
-    RFM69_raw_bak.cpp \
+    main.cpp \
+    RFM69.cpp \
 
 INC_PATH += \
     common/services/ioport/xmega \
