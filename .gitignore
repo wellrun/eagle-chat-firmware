@@ -48,6 +48,6 @@ conf.mk
 **/.txt
 
 # Sublime text
-.sublime-project
-.sublime-workspace
+*.sublime-project
+*.sublime-workspace
 
