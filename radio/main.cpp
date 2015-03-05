@@ -38,10 +38,10 @@ extern "C" {
 #include "RFM69.h"
 
 
-#define NODEID        101    //unique for each node on same network
+#define NODEID        1    //unique for each node on same network
 #define NETWORKID     100  //the same on all nodes that talk to each other
 #define GATEWAYID     1
-#define TOID          102
+#define TOID          1
 //Match frequency to the hardware version of the radio on your Moteino (uncomment one):
 //#define FREQUENCY   RF69_433MHZ
 #define FREQUENCY   RF69_868MHZ
@@ -80,14 +80,14 @@ int main (void)
     radio.initialize(FREQUENCY,NODEID,NETWORKID);
 	cdc_log_int("Initialized: ", rtc_get_time());
     radio.setHighPower();
-    radio.setPowerLevel(15);
+    radio.setPowerLevel(31);
     radio.promiscuous(true);
     while(1){
         //sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferSize, uint8_t retries, uint8_t retryWaitTime) 
         if(radio.sendWithRetry(TOID, payload, 30, NUM_RETRIES, 30)){
-            cdc_log_int("Holyshit I think I sent something ", rtc_get_time());
+            cdc_log_int("I think I sent something ", rtc_get_time());
         } else {
-            cdc_log_int("I didn't send anything because something borked ", rtc_get_time());
+            //cdc_log_int("I didn't send anything because something borked ", rtc_get_time());
         }
 
         if (radio.receiveDone())
@@ -105,6 +105,7 @@ int main (void)
                 cdc_write_string(" - ACK sent");
             }
         }
+
     cdc_log_int("RX_RSSI: ", (uint32_t)radio.RSSI);
     //cdc_log_int("Temp   : ", (uint32_t)radio.readTemperature());
     }

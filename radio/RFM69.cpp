@@ -32,7 +32,7 @@
 #include "RFM69registers.h"
 
 #include "user_board.h"
-//#include "port_driver.h"
+#include "util/atomic.h"
 
 struct spi_device spi_device_conf = {
     .id = IOPORT_CREATE_PIN(PORTE, 4)
@@ -218,28 +218,28 @@ void RFM69::setMode(uint8_t newMode)
             //cdc_log_int("Setting to TX mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER);
 			if (_isRFM69HW) setHighPowerRegs(true);
-            cdc_log_int("Set to TX mode ", newMode);
+            //cdc_log_int("Set to TX mode ", rtc_get_time());
 			break;
 		case RF69_MODE_RX:
             //cdc_log_int("Setting to RX mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER);
 			if (_isRFM69HW) setHighPowerRegs(false);
-            cdc_log_int("Set to RX mode ", newMode);
+            //cdc_log_int("Set to RX mode ", rtc_get_time());
 			break;
 		case RF69_MODE_SYNTH:
             //cdc_log_int("Setting to Synth mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER);
-            cdc_log_int("Set to Synth mode ", newMode);
+            //cdc_log_int("Set to Synth mode ", rtc_get_time());
 			break;
 		case RF69_MODE_STANDBY:
             //cdc_log_int("Setting to standby mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY);
-            cdc_log_int("Set to standby mode ", newMode);
+            //cdc_log_int("Set to standby mode ", newMode);
 			break;
 		case RF69_MODE_SLEEP:
             //cdc_log_int("Setting to sleep mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP);
-            cdc_log_int("Set to sleep mode ", newMode);
+            //cdc_log_int("Set to sleep mode ", rtc_get_time());
 			break;
 		default:
 			return;
@@ -370,7 +370,7 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 	// no need to wait for transmit mode to be ready since its handled by the radio
 	setMode(RF69_MODE_TX);
 	uint32_t txStart = millis();
-	while (readInterruptPin() == 0 && millis() - txStart < RF69_TX_LIMIT_MS); // wait for DIO0 to turn HIGH signalling transmission finish
+	while (ioport_get_pin_level(_interruptPin) == 0 && millis() - txStart < RF69_TX_LIMIT_MS); // wait for DIO0 to turn HIGH signalling transmission finish
 	//while (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PACKETSENT == 0x00); // wait for ModeReady
 	setMode(RF69_MODE_STANDBY);
 }
@@ -418,7 +418,7 @@ void RFM69::interruptHandler() {
 
 //void RFM69::isr0() { selfPointer->interruptHandler(); }
 
-ISR(PORTF_INT0_vect) { RFM69::selfPointer->interruptHandler(); }
+ISR(PORTF_INT0_vect) { RFM69::selfPointer->interruptHandler(); }//cdc_log_int("Interrupt", rtc_get_time()); }
 
 
 void RFM69::receiveBegin() {
@@ -436,22 +436,21 @@ void RFM69::receiveBegin() {
 }
 
 bool RFM69::receiveDone() {
-//ATOMIC_BLOCK(ATOMIC_FORCEON)
-//{
-	cli();//noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
-	if (_mode == RF69_MODE_RX && PAYLOADLEN > 0)
-	{
-		setMode(RF69_MODE_STANDBY); // enables interrupts
-		return true;
-	}
-	else if (_mode == RF69_MODE_RX) // already in RX no payload yet
-	{
-		sei();//interrupts(); // explicitly re-enable interrupts
+	ATOMIC_BLOCK(ATOMIC_FORCEON){
+		cli();//noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
+		if (_mode == RF69_MODE_RX && PAYLOADLEN > 0)
+		{
+			setMode(RF69_MODE_STANDBY); // enables interrupts
+			return true;
+		}
+		else if (_mode == RF69_MODE_RX) // already in RX no payload yet
+		{
+			sei();//interrupts(); // explicitly re-enable interrupts
+			return false;
+		}
+		receiveBegin();
 		return false;
 	}
-	receiveBegin();
-	return false;
-//}
 }
 
 // To enable encryption: radio.encrypt("ABCDEFGHIJKLMNOP");
