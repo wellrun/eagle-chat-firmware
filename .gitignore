@@ -47,3 +47,7 @@ conf.mk
 *.txt
 **/.txt
 
+# Sublime text
+*.sublime-project
+*.sublime-workspace
+

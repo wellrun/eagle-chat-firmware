@@ -28,13 +28,16 @@
  /**
  * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
  */
-#include "asf.h"
-#include <avr/io.h>
-#include "cdc.h"
-#include <string.h>
 
-#include "sha204.h"
+extern "C" {
+	#include "asf.h"
+	#include <avr/io.h>
+	#include "cdc.h"
+}
 
+#include "RFM69.h"
+
+RFM69 module;
 
 int main (void)
 {
@@ -46,50 +49,18 @@ int main (void)
 
 	sysclk_init();
 
-	board_init();
+	rtc_init();
 
 	cdc_start();
 
-	cdc_write_line("Waiting 1s");
-	sha204h_delay_ms(1000);
+	while (udi_cdc_getc() != 'a');
+	cdc_write_string("About to instantiate module");
 
-	uint8_t result;
-	while(udi_cdc_getc() == 0);
-	cdc_write_line("\nPress 'a' to perform lock procedure on connected board. Press 'b' to run demo");
-	result = udi_cdc_getc();
+	module = RFM69();
+	int s = module.initialize(0x00, 0x00, 0x00);
 
+	cdc_log_int("Initialized: ", s);
 
-	if (result == 'a') {
-
-		uint8_t r = fullLock();
-
-		cdc_log_int("Lock returned: ", r);
-
-		for (int i = 0; i < 50; i ++) {
-			cdc_write_string("Done! ");
-		}
-
-	} else if (result == 'b') {
-		
-		cdc_write_line("Press a to generate random number");
-		
-		uint8_t rand[32];
-
-		while (true) {
-
-			while(udi_cdc_getc() != 'a');
-
-			cdc_log_int("Wakeup: ", sha204p_wakeup());
-
-			cdc_log_int("Device Revision: ", getDeviceRevision());
-			getRandom32(&rand);
-
-			cdc_log_hex_string("Random: ", rand, 32);
-
-			sha204p_sleep();
-
-		}
-	}
-
+	module.readAllRegs();
 
 }
