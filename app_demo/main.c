@@ -6,6 +6,9 @@
 
 #define BUF_SIZE (1 << 6)
 
+#define EXAMPLE_PAGE 2
+#define EXAMPLE_ADDR EXAMPLE_PAGE * EEPROM_PAGE_SIZE
+
 typedef struct {
 	uint8_t buf[BUF_SIZE];
 	volatile bool msg_recvd;
@@ -41,33 +44,26 @@ void rx_callback(void) {
 
 void do_read(void);
 void do_read() {
-	cdc_write_line("Sentinel");
+	uint8_t read_buf[32];
+
+	status_code_t status = nvm_read(INT_EEPROM, (uint32_t) EXAMPLE_ADDR, (void *)read_buf, 32);
+
+	cdc_log_string("Read back: ", read_buf);
+	cdc_log_string("return:success:", read_buf);
 }
-
-#define EXAMPLE_PAGE 2
-#define EXAMPLE_ADDR EXAMPLE_PAGE * EEPROM_PAGE_SIZE
-#define TEST_ADDRESS_INT (PROGMEM_START + FLASH_SIZE - FLASH_PAGE_SIZE)
-
 
 uint8_t do_write(uint8_t * buf, uint8_t size);
 uint8_t do_write(uint8_t * buf, uint8_t size) {
-	cdc_log_string("Writing to eeproom: ", (const char *) buf);
-	
-
-	mem_type_t mem;
-
-	/* Test internal flash */
-	mem = INT_EEPROM;
+	cdc_log_string("Writing to eeprom: ", (const char *) buf);
 
 	/* Initialize the non volatile memory */
-	if (nvm_init(mem) != STATUS_OK) {
+	if (nvm_init(INT_EEPROM) != STATUS_OK) {
 		return ERR_INVALID_ARG;
 	}
 
 	/* Write test pattern to the specified address */
-	uint8_t status = nvm_write(mem, (uint32_t) TEST_ADDRESS_INT, buf, size);
+	uint8_t status = nvm_write(INT_EEPROM, (uint32_t) EXAMPLE_ADDR, buf, size);
 	if (status == ERR_INVALID_ARG) {
-		
 		cdc_write_line("nvm_write failed");
 	}
 	return STATUS_OK;
@@ -88,7 +84,6 @@ int main (void)
 	volatile cdc_message_t local_msg;
 	reset_message(&local_msg);
 	msg = &local_msg;
-	
 	while (udi_cdc_getc() == 0);
 	cdc_set_rx_callback(&rx_callback);
 	
@@ -96,7 +91,7 @@ int main (void)
 	while (1) {
 		
 		if (local_msg.msg_recvd) {
-			cdc_write_line("Message received!");
+			//cdc_write_line("Message received!");
 			uint8_t msg_copy[BUF_SIZE];
 			uint8_t msg_count = local_msg.ctr;
 			memcpy(msg_copy, local_msg.buf, local_msg.ctr+1); // make a copy of the msg contents, including null terminator
@@ -112,9 +107,11 @@ int main (void)
 				
 				if (status == ERR_INVALID_ARG) {
 					cdc_write_line("nvm_init failed");
+					cdc_write_line("return:error");
 				}
 				else if (status == STATUS_OK) {
 					cdc_write_line("do_write succeeded!");
+					cdc_write_line("return:success");
 				}
 			}
 		}
