@@ -194,7 +194,7 @@ LDFLAGS += \
 
 # Extra flags to use when linking
 LDFLAGS += \
-	-Wl,--section-start=.BOOT=0x30000 
+	-Wl,--section-start=.BOOT=0x20000 
 
 # Pre- and post-build commands
 PREBUILD_CMD = 
