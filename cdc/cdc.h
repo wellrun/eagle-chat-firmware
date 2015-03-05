@@ -113,7 +113,7 @@ void cdc_log_hex_string(const char *message, uint8_t *value, uint32_t len);
 /**
  * Prints a newline character
  */
-void cdc_newline();
+void cdc_newline(void);
 
 /**
  * Prints a message followed by a string representation of 'value',

@@ -106,7 +106,7 @@ void cdc_write_hex_string(char *string, uint32_t length) {
 	}
 }
 
-void cdc_newline() {
+void cdc_newline(void) {
 	udi_cdc_putc('\n');
 }
 
