@@ -10,6 +10,7 @@ CSRCS += \
     common/components/crypto/sha204/xmega_sha204/sha204_timer.c \
     xmega/drivers/twi/twim.c \
     xmega/drivers/tc/tc.c \
+    sha204.c \
 
 
 USER_INC_PATH += \
