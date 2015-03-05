@@ -86,6 +86,7 @@ void cdc_write_string(const char *buf) {
 		++temp;
 		++size;
 	}
+	while (udi_cdc_get_free_tx_buffer() < size);
 	udi_cdc_write_buf((void *) buf, size);
 }
 
@@ -96,6 +97,7 @@ void cdc_write_line(const char *message) {
 
 void cdc_write_hex(const uint8_t c) {
 	const uint8_t table[] = "0123456789ABCDEF";
+	while (udi_cdc_get_free_tx_buffer() < 2);
 	udi_cdc_putc(table[(c>>4) & 0x0F]);
 	udi_cdc_putc(table[c & 0x0F]);
 }
@@ -107,6 +109,7 @@ void cdc_write_hex_string(char *string, uint32_t length) {
 }
 
 void cdc_newline(void) {
+	while (!udi_cdc_is_tx_ready());
 	udi_cdc_putc('\n');
 }
 

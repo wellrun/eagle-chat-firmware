@@ -52,11 +52,9 @@ void do_read() {
 uint8_t do_write(uint8_t * buf, uint8_t size);
 uint8_t do_write(uint8_t * buf, uint8_t size) {
 	cdc_log_string("Writing to eeproom: ", (const char *) buf);
+	
 
 	mem_type_t mem;
-
-	sysclk_init();
-	board_init();
 
 	/* Test internal flash */
 	mem = INT_EEPROM;
@@ -68,8 +66,10 @@ uint8_t do_write(uint8_t * buf, uint8_t size) {
 
 	/* Write test pattern to the specified address */
 	uint8_t status = nvm_write(mem, (uint32_t) TEST_ADDRESS_INT, buf, size);
-	if (status == ERR_INVALID_ARG)
+	if (status == ERR_INVALID_ARG) {
+		
 		cdc_write_line("nvm_write failed");
+	}
 	return STATUS_OK;
 }
 
@@ -95,20 +95,27 @@ int main (void)
 	cdc_write_line("Beginning demo.");
 	while (1) {
 		
-		if (local_msg.msg_recvd == 1) {
+		if (local_msg.msg_recvd) {
 			cdc_write_line("Message received!");
 			uint8_t msg_copy[BUF_SIZE];
 			uint8_t msg_count = local_msg.ctr;
 			memcpy(msg_copy, local_msg.buf, local_msg.ctr+1); // make a copy of the msg contents, including null terminator
 			reset_message(&local_msg);
 			if (msg_copy[0] == 'R') {
+				cdc_write_line("Doing read");
 				do_read();
 			} else if (msg_copy[0] == 'W') {
-				uint8_t status = do_write(local_msg.buf+1, msg_count);
-				if (status == ERR_INVALID_ARG)
-					cdc_write_line("nvm_init failed.");
-				else if (status == STATUS_OK)
+				cdc_write_line("Doing write");
+				
+				uint8_t status = STATUS_OK;
+				status = do_write(local_msg.buf+1, msg_count);
+				
+				if (status == ERR_INVALID_ARG) {
+					cdc_write_line("nvm_init failed");
+				}
+				else if (status == STATUS_OK) {
 					cdc_write_line("do_write succeeded!");
+				}
 			}
 		}
 		/*
