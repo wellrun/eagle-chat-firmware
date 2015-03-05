@@ -80,14 +80,21 @@ void cdc_disable(void)
 }
 
 void cdc_write_string(const char *buf) {
-	iram_size_t size = 0;
+	/*iram_size_t size = 0;
 	uint8_t* temp = buf;
 	while (*temp != 0) {
 		++temp;
 		++size;
+	}*/
+	while (*buf != 0) {
+		while (!udi_cdc_is_tx_ready());
+		udi_cdc_putc(*buf);
+		++buf;
 	}
+	/*
 	while (udi_cdc_get_free_tx_buffer() < size);
 	udi_cdc_write_buf((void *) buf, size);
+	*/
 }
 
 void cdc_write_line(const char *message) {
