@@ -113,7 +113,7 @@ void cdc_log_hex_string(const char *message, uint8_t *value, uint32_t len);
 /**
  * Prints a newline character
  */
-void cdc_newline();
+void cdc_newline(void);
 
 /**
  * Prints a message followed by a string representation of 'value',
@@ -127,5 +127,7 @@ void cdc_log_int(const char *message, uint32_t value);
  * is encountered or 'maxlen' is reached
  */
 uint32_t cdc_read_string(uint8_t *buffer, uint32_t maxlen);
+
+void cdc_set_rx_callback(void (*rx_callback)(void));
 
 #endif /* CDC_H_INCLUDED */
