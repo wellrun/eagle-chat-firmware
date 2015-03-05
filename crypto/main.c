@@ -27,8 +27,10 @@ void encrypt() {
 	cdc_write_string("First, generate a public and private key for us\n");
 
 	randombytes(randomSeed, crypto_box_SECRETKEYBYTES);
+	//getRandom32(randomSeed);
 	cr_generate_keypair(aPublic, aPrivate, randomSeed);
 	randombytes(randomSeed, crypto_box_SECRETKEYBYTES);
+	//getRandom32(randomSeed);
 	cr_generate_keypair(bPublic, bPrivate, randomSeed);
 
 	cdc_log_hex_string("A Private: ", aPrivate, crypto_box_SECRETKEYBYTES);
