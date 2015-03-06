@@ -118,8 +118,8 @@ void cdc_newline(void) {
 
 void cdc_log_int(const void *message, uint32_t value) {
 	cdc_write_string(message);
-	char v[12];
-	itoa(value, v, 10);
+	char v[11];
+	ultoa(value, v, 10);
 	cdc_write_string((void *)v);
 	cdc_newline();
 }
