@@ -12,30 +12,45 @@
 typedef struct {
 	uint8_t buf[BUF_SIZE];
 	bool msg_recvd;
-	uint8_t ctr;
+	uint8_t ctr; // the number of non-null bytes in this message
 } cdc_message_t;
 
-cdc_message_t *msg;
+volatile cdc_message_t *msg;
 
 void update_message(volatile cdc_message_t * msg);
 void update_message(volatile cdc_message_t * msg) {
-	uint8_t c = udi_cdc_getc();
-	if (msg->ctr < BUF_SIZE) {
-		if (c == '\r' || c == '\n' ) {
-			msg->buf[msg->ctr] = '\0';
+	iram_size_t nb = udi_cdc_get_nb_received_data();
+	if ((msg->ctr + nb - 1) < BUF_SIZE) {
+		udi_cdc_read_buf((void *)(msg->buf + msg->ctr), nb); // read into buffer
+		msg->ctr += nb; // Update counter
+		if (msg->ctr == BUF_SIZE) {
+				msg->buf[BUF_SIZE - 1] = '\0';
+				msg->ctr = BUF_SIZE - 1;
+				msg->msg_recvd = true;
+				return;
+		} else if (msg->buf[msg->ctr-1] == '\r' || msg->buf[msg->ctr-1] == '\n') {
+			msg->buf[msg->ctr-1] = '\0';
 			msg->msg_recvd = true;
-		} else if (!msg->msg_recvd) {
-			msg->buf[msg->ctr] = c;
-			++(msg->ctr);
+			return;
 		}
-	}
+	} else {
+		iram_size_t num_to_read = BUF_SIZE - msg->ctr - 1; // Number of bytes we can read
+		msg->buf[BUF_SIZE - 1] = '\0';
+		msg->ctr = BUF_SIZE - 1;
+		msg->msg_recvd = true;
+		if (num_to_read <= 0) {
+			return;
+		}
+		udi_cdc_read_buf((void *)(msg->buf + msg->ctr), num_to_read);
+		return;
+	} 
 }
 
 void reset_message(volatile cdc_message_t * msg);
 void reset_message(volatile cdc_message_t * msg) {
 	msg->ctr = 0;
 	msg->msg_recvd = false;
-	memset(msg->buf, 0, BUF_SIZE);
+	memset((void *)msg->buf, 0, BUF_SIZE);
 }
 
 void rx_callback(void);
@@ -47,7 +62,7 @@ void do_read(void);
 void do_read() {
 	uint8_t read_buf[32];
 
-	status_code_t status = nvm_read(INT_EEPROM, (uint32_t) EXAMPLE_ADDR, (void *)read_buf, 32);
+	nvm_read(INT_EEPROM, (uint32_t) EXAMPLE_ADDR, (void *)read_buf, 32);
 
 	//cdc_log_string("Read back: ", read_buf);
 	cdc_log_string("return:success:", read_buf);
@@ -55,7 +70,7 @@ void do_read() {
 
 uint8_t do_write(uint8_t * buf, uint8_t size);
 uint8_t do_write(uint8_t * buf, uint8_t size) {
-	//cdc_log_string("Writing to eeprom: ", (const char *) buf);
+	cdc_log_string("Writing to eeprom: ", buf);
 
 	/* Initialize the non volatile memory */
 	if (nvm_init(INT_EEPROM) != STATUS_OK) {
@@ -63,11 +78,9 @@ uint8_t do_write(uint8_t * buf, uint8_t size) {
 	}
 
 	/* Write test pattern to the specified address */
-	uint8_t status = nvm_write(INT_EEPROM, (uint32_t) EXAMPLE_ADDR, buf, size);
-	if (status == ERR_INVALID_ARG) {
-		cdc_write_line("nvm_write failed");
-	}
-	return STATUS_OK;
+	uint8_t status = nvm_write(INT_EEPROM, (uint32_t) EXAMPLE_ADDR, buf, size <= 32 ? size : 32);
+
+	return status;
 }
 
 
@@ -85,59 +98,30 @@ int main (void)
 	volatile cdc_message_t local_msg;
 	reset_message(&local_msg);
 	msg = &local_msg;
-	while (udi_cdc_getc() == 0);
-	//cdc_set_rx_callback(&rx_callback);
+	while (!cdc_opened());
+	cdc_set_rx_callback(&rx_callback);
 	
 	cdc_write_line("Beginning demo.");
 	while (1) {
 		
-		//if (local_msg.msg_recvd) {
-			//cdc_write_line("Message received!");
+		if (local_msg.msg_recvd) {
 			uint8_t msg_copy[BUF_SIZE];
-			uint8_t msg_count = cdc_read_string(local_msg.buf, BUF_SIZE);
-			//cdc_write_line("Message received!");
-			local_msg.ctr = msg_count;
-			memcpy(msg_copy, local_msg.buf, local_msg.ctr+1); // make a copy of the msg contents, including null terminator
+			uint8_t msg_count = local_msg.ctr;
+			memcpy((void *)msg_copy, (void *)local_msg.buf, local_msg.ctr+1); // make a copy of the msg contents, including null terminator
+			reset_message(&local_msg);
 			if (msg_copy[0] == 'R') {
-				//cdc_write_line("Doing read");
 				do_read();
-			} else if (msg_copy[0] == 'W') {
-				//cdc_write_line("Doing write");
-				
+			} else if (msg_copy[0] == 'W') {			
 				uint8_t status = STATUS_OK;
-				status = do_write(local_msg.buf+1, msg_count);
-				
+				status = do_write((uint8_t *)msg_copy+1, msg_count);
 				if (status == ERR_INVALID_ARG) {
-					//cdc_write_line("nvm_init failed");
 					cdc_write_line("return:error");
 				}
 				else if (status == STATUS_OK) {
-					//cdc_write_line("do_write succeeded!");
 					cdc_write_line("return:success");
 				}
 			}
-			reset_message(&local_msg);
-		//}
-		/*
-		cdc_write_line("Enter message: ");
-		uint32_t len = cdc_read_line(buf, 50);
-		cdc_write_line("Message was: ");
-		cdc_write_line(buf);
-		cdc_newline();
-		cdc_log_int("Bytes received: ", len);
-		cdc_log_int("Max length of buffer is: ", 50);
-		*/
-		//cdc_write_hex(0xAA);
-
-		//cdc_read_line(buf, 50);
-
-		//delay_s(5);
-
-		//cdc_write_line(buf);
-
-		//while (1) {
-		//	udi_cdc_getc();
-		//}
+		}
 	}
 
 }
