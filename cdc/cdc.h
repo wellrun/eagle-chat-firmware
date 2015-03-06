@@ -81,6 +81,11 @@ bool cdc_enable(void);
 void cdc_disable(void);
 
 /**
+ * \brief Indicates whether the CDC port has been opened by host
+ */
+bool cdc_opened(void);
+
+/**
  * \brief Called by CDC interface
  *
  * Callback when data has been received
@@ -90,24 +95,23 @@ void cdc_rx_notify(uint8_t);
 /**
  * Prints a null terminated string over USB
  */
-void cdc_write_string(const char *buf);
+void cdc_write_string(const void *buf);
 
 /**
  * cdc_write_string followed by a newline
  */
-void cdc_write_line(const char *message);
+void cdc_write_line(const void *message);
 
 /**
  * Prints a byte as its human-readable HEX form over USB
  */
 void cdc_write_hex(const uint8_t c);
 
-void cdc_write_hex_string(char *string, uint32_t length);
+void cdc_write_hex_string(const void *string, uint32_t length);
 
-void cdc_log_int(const char *message, uint32_t value);
-void cdc_log_string(const char *message, const char *value);
-void cdc_log_hex(const char *message, uint8_t value);
-void cdc_log_hex_string(const char *message, uint8_t *value, uint32_t len);
+void cdc_log_int(const void *message, uint32_t value);
+void cdc_log_hex(const void *message, uint8_t value);
+void cdc_log_hex_string(const void *message, const void *value, uint32_t len);
 
 
 /**
@@ -120,13 +124,13 @@ void cdc_newline(void);
  * and finishes with a newline.
  * E.g. cdc_log_int("The value is: ", 5);
  */
-void cdc_log_int(const char *message, uint32_t value);
+void cdc_log_string(const void *message, const void *value);
 
 /**
  * Reads USB input into 'buffer' until a newline character
  * is encountered or 'maxlen' is reached
  */
-uint32_t cdc_read_string(uint8_t *buffer, uint32_t maxlen);
+uint32_t cdc_read_string(void *buffer, uint32_t maxlen);
 
 void cdc_set_rx_callback(void (*rx_callback)(void));
 
