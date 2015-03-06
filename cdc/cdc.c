@@ -85,10 +85,11 @@ bool cdc_opened(void)
 }
 
 void cdc_write_string(const void *buf) {
-	while (*buf != 0) {
+	const uint8_t *buffer = (uint8_t *)buf;
+	while (*buffer != 0) {
 		while (!udi_cdc_is_tx_ready());
-		udi_cdc_putc(*buf);
-		++buf;
+		udi_cdc_putc(*buffer);
+		++buffer;
 	}
 }
 
