@@ -53,7 +53,7 @@
 
 uint8_t cdc_serial_number[USB_DEVICE_GET_SERIAL_NAME_LENGTH + 1] = USB_SERIAL_NUMBER; // Just a random string for now
 
-static bool cdc_opened = false;
+static bool is_opened = false;
 static bool cdc_enabled = false;
 
 static void (*rx_callback)(void);
@@ -65,7 +65,7 @@ void cdc_start(void)
 
 void cdc_set_dtr(bool enable)
 {
-	cdc_opened = enable;
+	is_opened = enable;
 }
 
 bool cdc_enable(void)
@@ -79,25 +79,20 @@ void cdc_disable(void)
 	cdc_enabled = false;
 }
 
-void cdc_write_string(const char *buf) {
-	/*iram_size_t size = 0;
-	uint8_t* temp = buf;
-	while (*temp != 0) {
-		++temp;
-		++size;
-	}*/
+bool cdc_opened(void) 
+{
+	return is_opened;
+}
+
+void cdc_write_string(const void *buf) {
 	while (*buf != 0) {
 		while (!udi_cdc_is_tx_ready());
 		udi_cdc_putc(*buf);
 		++buf;
 	}
-	/*
-	while (udi_cdc_get_free_tx_buffer() < size);
-	udi_cdc_write_buf((void *) buf, size);
-	*/
 }
 
-void cdc_write_line(const char *message) {
+void cdc_write_line(const void *message) {
 	cdc_write_string(message);
 	cdc_newline();
 }
@@ -109,9 +104,9 @@ void cdc_write_hex(const uint8_t c) {
 	udi_cdc_putc(table[c & 0x0F]);
 }
 
-void cdc_write_hex_string(char *string, uint32_t length) {
+void cdc_write_hex_string(const void *string, uint32_t length) {
 	for (uint8_t i = 0; i < length; ++i) {
-		cdc_write_hex(string[i]);
+		cdc_write_hex(((uint8_t *)string)[i]);
 	}
 }
 
@@ -120,38 +115,39 @@ void cdc_newline(void) {
 	udi_cdc_putc('\n');
 }
 
-void cdc_log_int(const char *message, uint32_t value) {
-	cdc_write_string((uint8_t *)message);
-	uint8_t v[12];
+void cdc_log_int(const void *message, uint32_t value) {
+	cdc_write_string(message);
+	char v[12];
 	itoa(value, v, 10);
-	cdc_write_string(v);
+	cdc_write_string((void *)v);
 	cdc_newline();
 }
 
-void cdc_log_string(const char *message, const char *value) {
-	cdc_write_string((uint8_t *)message);
-	cdc_write_string((uint8_t *)value);
+void cdc_log_string(const void *message, const void *value) {
+	cdc_write_string(message);
+	cdc_write_string(value);
 	cdc_newline();
 }
 
-void cdc_log_hex(const char *message, uint8_t value) {
-	cdc_write_string((uint8_t *)message);
+void cdc_log_hex(const void *message, uint8_t value) {
+	cdc_write_string(message);
 	cdc_write_hex(value);
 	cdc_newline();
 }
 
-void cdc_log_hex_string(const char *message, uint8_t *value, uint32_t len) {
+void cdc_log_hex_string(const void *message, const void *value, uint32_t len) {
 	cdc_write_string(message);
 	cdc_write_hex_string(value, len);
 	cdc_newline();
 }
 
-uint32_t cdc_read_string(uint8_t *buffer, uint32_t maxlen) {
+uint32_t cdc_read_string(void *buffer, uint32_t maxlen) {
 	uint32_t i = 0;
+	uint8_t * buf = (uint8_t *) buffer;
     while (i < maxlen) {
-        buffer[i] = udi_cdc_getc();
-        if ((buffer[i] == '\n') || (buffer[i] == '\r')) {
-            buffer[i] = 0;
+        buf[i] = udi_cdc_getc();
+        if ((buf[i] == '\n') || (buf[i] == '\r')) {
+            buf[i] = 0;
             return i;
         }
         i++;
