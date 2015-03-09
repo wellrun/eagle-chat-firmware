@@ -31,6 +31,7 @@
 #include "asf.h"
 #include "board.h"
 #include "sram.h"
+#include <string.h>
 #include <avr/io.h>
 
 int main (void)
@@ -47,16 +48,72 @@ int main (void)
 
 	sysclk_init();
 
+	sram_init();
+
 	cdc_start();
 
-	while (1) {
-		uint8_t read = udi_cdc_getc();
-		//if (read != 0)
-			//cdc_write_string("Hello. This is quite a long string.\n");
-		cdc_write_hex(read);
-		cdc_write_string(" ");
+	while(!cdc_opened());
+
+	cdc_write_line("Starting SRAM demo.");
+
+	cdc_write_line("Setting byte mode.");
+
+	bool success = sram_set_mode(SRAM_MODE_BYTE);
+
+	if (success) {
+		cdc_write_line("Byte mode set.");
+	} else {
+		cdc_write_line("Failure: byte mode not set.");
 	}
 
+	uint8_t test_value = 0xAA;
+	cdc_log_hex("Writing to SRAM: ", test_value);
+	sram_write_byte(0, test_value);
+	test_value = 0;
+	test_value = sram_read_byte(0);
+	cdc_log_hex("Read back: ", test_value);
 
-	// Insert application code here, after the board has been initialized.
+	uint8_t data[] = "This is a long string of data. Que?";
+	size_t len = sizeof(data);
+	uint8_t read_data[len];
+
+	memset(read_data, 0, len);
+	cdc_newline();
+	cdc_write_line("Testing sequential writes and reads.");
+	cdc_log_string("Wrote: ", data);
+	sram_set_mode(SRAM_MODE_SEQUENTIAL);
+	sram_write_packet(0, data, len);
+	sram_read_packet(0, read_data, len);
+	cdc_log_string("Read: ", read_data);
+
+	memset(read_data, 0, len);
+	cdc_newline();
+	cdc_write_line("Testing page writes and reads.");
+	cdc_log_string("Wrote: ", data);
+	sram_set_mode(SRAM_MODE_PAGE);
+	sram_write_packet(100, data, len);
+	sram_read_packet(100, read_data, len);
+	cdc_write_line("Read:");
+	for (size_t i = 0; i < len; ++i) {
+		udi_cdc_putc(read_data[i]);
+	}
+	cdc_newline();
+
+	memset(read_data, 0, len);
+	cdc_newline();
+	cdc_write_line("Testing byte writes and reads.");
+	cdc_log_string("Wrote: ", data);
+	sram_set_mode(SRAM_MODE_BYTE);
+	sram_write_packet(200, data, len-1);
+	sram_read_packet(200, read_data, len-1);
+	cdc_write_line("Read:");
+	for (size_t i = 0; i < len-1; ++i) {
+		udi_cdc_putc(read_data[i]);
+	}
+	cdc_newline();
+
+
+	while (1) {
+		
+	}
 }
