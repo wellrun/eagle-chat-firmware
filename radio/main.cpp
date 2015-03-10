@@ -88,7 +88,7 @@ int main (void)
 
 
     while(1){
-        // _delay_ms(10000);
+        //_delay_ms(10000);
         //sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferSize, uint8_t retries, uint8_t retryWaitTime) 
         // if(radio.sendWithRetry(TOID, payload, 30, NUM_RETRIES, 4000)){
         //     cdc_log_int("I think I sent something ", (uint32_t)radio.RSSI);
