@@ -88,9 +88,9 @@ int main (void)
 
 
     while(1){
-        _delay_ms(10000);
+        // _delay_ms(10000);
         //sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferSize, uint8_t retries, uint8_t retryWaitTime) 
-        // if(radio.sendWithRetry(TOID, payload, 30, NUM_RETRIES, 30)){
+        // if(radio.sendWithRetry(TOID, payload, 30, NUM_RETRIES, 4000)){
         //     cdc_log_int("I think I sent something ", (uint32_t)radio.RSSI);
         // } else {
         //     cdc_log_int("I sent but I didn't recieve an ACK ", rtc_get_time());
@@ -100,16 +100,17 @@ int main (void)
         {
             //cdc_write_line("RECEIVED");
             cdc_log_int("Recieved Packet from ", radio.SENDERID);
-            cdc_write_string("Message: ");
+            cdc_write_line("Message: ");
             for (char i = 0; i < radio.DATALEN; i++)
                 udi_cdc_putc((char)radio.DATA[i]);
+            cdc_newline();
             cdc_log_int(" RX_RSSI: -", radio.RSSI);
 
             if (radio.ACKRequested())
             {
-                cdc_write_string("ACK requested");
+                cdc_write_line("ACK requested");
                 radio.sendACK();
-                cdc_write_string(" - ACK sent");
+                cdc_write_line(" - ACK sent");
                 //cdc_log_int("RX_RSSI: ", (uint32_t)radio.RSSI);
             }
         }

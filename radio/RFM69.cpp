@@ -382,7 +382,7 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 void RFM69::interruptHandler() {
 	//pinMode(4, OUTPUT);
 	//digitalWrite(4, 1);
-	//cdc_write_string("##interrupt##");
+	//cdc_write_line("##interrupt##");
 	if (_mode == RF69_MODE_RX && (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY))
 	{
 		//RSSI = readRSSI();
@@ -406,6 +406,7 @@ void RFM69::interruptHandler() {
 		SENDERID = SPITransfer(0);
 		uint8_t CTLbyte = SPITransfer(0);
 
+		cdc_log_hex("CTLbyte: ", CTLbyte);
 		ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
 		ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
 
