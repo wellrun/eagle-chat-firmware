@@ -175,9 +175,11 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 						PMIC.CTRL |= PMIC_MEDLVLEN_bm;
 						// Enable the global interrupt flag.
 						sei();*/
+	//ioport_set_pin_sense_mode(RF_DIO0_pin, IOPORT_SENSE_RISING);
 	PORTF.INTCTRL =  (PORTF.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
     uint8_t pin_mask = ioport_pin_to_mask(0x01); // Get which pin we are listening on  
     PORTF.INT0MASK = 0x01; // Set which pin should be source of interrupt
+    sei();
 
 
 	selfPointer = this;
@@ -303,6 +305,7 @@ bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferS
 	uint32_t sentTime;
 	for (uint8_t i = 0; i <= retries; i++)
 	{
+		//cdc_log_int("Attempting to send. ", rtc_get_time());
 		send(toAddress, buffer, bufferSize, true);
 		sentTime = millis();
 		while (millis() - sentTime < retryWaitTime)
@@ -310,6 +313,7 @@ bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferS
 			if (ACKReceived(toAddress))
 			{
 				//Serial.print(" ~ms:"); Serial.print(millis() - sentTime);
+				cdc_log_int("Ack response time(ms): ", millis() - sentTime);
 				return true;
 			}
 		}
@@ -349,7 +353,7 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 	if (bufferSize > RF69_MAX_DATA_LEN) bufferSize = RF69_MAX_DATA_LEN;
 
 	// control byte
-	uint8_t CTLbyte = 0x00;
+	uint8_t CTLbyte = 0x00;	
 	if (sendACK)
 		CTLbyte = 0x80;
 	else if (requestACK)
@@ -378,6 +382,7 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 void RFM69::interruptHandler() {
 	//pinMode(4, OUTPUT);
 	//digitalWrite(4, 1);
+	//cdc_write_string("##interrupt##");
 	if (_mode == RF69_MODE_RX && (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY))
 	{
 		//RSSI = readRSSI();
@@ -418,8 +423,7 @@ void RFM69::interruptHandler() {
 
 //void RFM69::isr0() { selfPointer->interruptHandler(); }
 
-ISR(PORTF_INT0_vect) { RFM69::selfPointer->interruptHandler(); }//cdc_log_int("Interrupt", rtc_get_time()); }
-
+ISR(PORTF_INT0_vect) { RFM69::selfPointer->interruptHandler(); }
 
 void RFM69::receiveBegin() {
 	DATALEN = 0;
@@ -477,7 +481,7 @@ int16_t RFM69::readRSSI(bool forceTrigger) {
 		writeReg(REG_RSSICONFIG, RF_RSSI_START);
 		while ((readReg(REG_RSSICONFIG) & RF_RSSI_DONE) == 0x00); // wait for RSSI_Ready
 	}
-	rssi = -readReg(REG_RSSIVALUE);
+	rssi = readReg(REG_RSSIVALUE);
 	rssi >>= 1;
 	return rssi;
 }
@@ -503,7 +507,7 @@ void RFM69::writeReg(uint8_t addr, uint8_t value)
 
 // select the transceiver
 void RFM69::select() {
-	//noInterrupts();
+	cli();//noInterrupts();
 	// save current SPI settings
 	// _SPCR = SPCR;
 	// _SPSR = SPSR;
@@ -526,7 +530,7 @@ void RFM69::unselect() {
 	// restore SPI settings to what they were before talking to RFM69
 	// SPCR = _SPCR;
 	// SPSR = _SPSR;
-	//interrupts();
+	sei();//interrupts();
 }
 
 // ON  = disable filtering to capture all frames on network
