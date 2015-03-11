@@ -4,7 +4,40 @@
 
 static key_table_t key_table;
 
-#define TABLE_BYTES_START PAGE_SIZE * PAGE_TABLE // the byte address the table starts at
+#define TABLE_BYTES_START   PAGE_SIZE * PAGE_TABLE // the byte address the table starts at
+#define STATUS_BYTES_START  PAGE_SIZE * PAGE_STATUS
+
+static key_setup_status_t status;
+
+uint8_t keys_load_status(void)
+{
+	memset((void*)&status, 0, sizeof(key_setup_status_t));  // zero out table (look at me being secure)
+	if (nvm_init(INT_EEPROM) != STATUS_OK)
+		return ERR_INVALID_ARG;
+
+	return nvm_read(INT_EEPROM, STATUS_BYTES_START, (uint8_t*)&status, sizeof(key_setup_status_t));
+}
+
+const key_setup_status_t * keys_get_status(void)
+{
+	return (const key_setup_status_t*)&status;
+}
+
+uint8_t key_store_status(void)
+{
+	return nvm_write(INT_EEPROM, STATUS_BYTES_START, (uint8_t*)&status, sizeof(key_setup_status_t));
+}
+
+void key_set_flag(uint8_t mask)
+{
+	status.flags = KEYS_SET_BIT(status.flags, mask);
+}
+
+void key_unset_flag(uint8_t mask)
+{
+	status.flags = KEYS_CLEAR_BIT(status.flags, mask);
+}
+
 
 static bool keys_find_free_slot(uint8_t * slot);
 
@@ -60,10 +93,10 @@ uint8_t keys_store_key(uint8_t network_id, uint8_t key[PAGE_SIZE])
 
 uint8_t keys_read_key(uint8_t slot, uint8_t dest[PAGE_SIZE])
 {
-    if (slot >= MAX_KEY_SLOTS)
-        return ERR_INVALID_ARG;
+	if (slot >= MAX_KEY_SLOTS)
+		return ERR_INVALID_ARG;
 
-    return nvm_read(INT_EEPROM, (slot + PAGE_KEY_START) * PAGE_SIZE, dest, PAGE_SIZE);
+	return nvm_read(INT_EEPROM, (slot + PAGE_KEY_START) * PAGE_SIZE, dest, PAGE_SIZE);
 }
 
 

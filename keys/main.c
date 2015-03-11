@@ -1,7 +1,6 @@
 #include "asf.h"
 #include "cdc.h"
 #include "keys.h"
-//#include "eeprom.h"
 #include <string.h>
 
 int main(void)
@@ -17,6 +16,14 @@ int main(void)
 	while (!cdc_opened());
 
 	cdc_write_line("Beginning key store demo.");
+
+	keys_load_status();
+
+	const key_setup_status_t * status = keys_get_status();
+	cdc_log_hex_string("Status:\n", status, sizeof(key_setup_status_t));
+
+
+
 
 	const key_table_t * table = keys_get_table();
 

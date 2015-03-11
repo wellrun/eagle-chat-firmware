@@ -15,11 +15,28 @@
 #define PAGE_TABLE          3 /* Page that holds the user key look-up table */
 #define PAGE_KEY_START      4
 
+#define FLAGS_UNSET         0xFF
+#define FLAGS_CONFIGURED    0b10000000
+
+#define KEYS_BIT_SET(val, mask)     !(val & mask) // provides inverted view of set bits
+#define KEYS_SET_BIT(val, mask)     (val & ~mask)
+#define KEYS_CLEAR_BIT(val, mask)   (val | mask)
+
 typedef struct {
-    uint8_t flags;
-    uint8_t network_id;
-    uint8_t password[16];
+	uint8_t flags;
+	uint8_t network_id;
+	uint8_t password[16];
 } key_setup_status_t;
+
+uint8_t keys_load_status(void);
+
+const key_setup_status_t * keys_get_status(void);
+
+uint8_t key_store_status(void);
+
+void key_set_flag(uint8_t mask);
+
+void key_unset_flag(uint8_t mask);
 
 typedef struct {
 	uint8_t network_id;
