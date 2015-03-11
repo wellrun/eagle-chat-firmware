@@ -52,3 +52,7 @@ conf.mk
 *.sublime-project
 *.sublime-workspace
 
+# Mac crap
+.DS_Store
+**/.DS_Store
+
