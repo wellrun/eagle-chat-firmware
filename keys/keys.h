@@ -16,18 +16,24 @@
 #define PAGE_KEY_START      4
 
 typedef struct {
+    uint8_t flags;
     uint8_t network_id;
-    uint8_t key_page;
+    uint8_t password[16];
+} key_setup_status_t;
+
+typedef struct {
+	uint8_t network_id;
+	uint8_t key_page;
 } key_table_entry_t;
 
 typedef struct {
-    key_table_entry_t table[MAX_KEY_SLOTS];
+	key_table_entry_t table[MAX_KEY_SLOTS];
 } key_table_t;
 
 
 /*  Read the key lookup table from EEPROM and store it
     Returns STATUS_OK if all went well
-*/
+ */
 uint8_t keys_load_table(void);
 
 uint8_t keys_store_table(void);
