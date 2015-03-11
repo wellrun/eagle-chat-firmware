@@ -43,7 +43,8 @@ conf.mk
 
 # Sam's crap
 **/*~
-
+*.pdf
+**/*.pdf
 *.txt
 **/.txt
 
