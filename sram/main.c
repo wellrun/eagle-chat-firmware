@@ -82,8 +82,8 @@ int main (void)
 	cdc_write_line("Testing sequential writes and reads.");
 	cdc_log_string("Wrote: ", data);
 	sram_set_mode(SRAM_MODE_SEQUENTIAL);
-	sram_write_packet(0, data, len);
-	sram_read_packet(0, read_data, len);
+	sram_write_packet(1000, data, len);
+	sram_read_packet(1000, read_data, len);
 	cdc_log_string("Read: ", read_data);
 
 	memset(read_data, 0, len);
@@ -114,6 +114,6 @@ int main (void)
 
 
 	while (1) {
-		
+
 	}
 }

@@ -4,9 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define SRAM_MAX_ADDRESS 0x1FFF
+
 typedef enum {
-	SRAM_MODE_BYTE = 0, 
-	SRAM_MODE_PAGE = 0b10000000, 
+	SRAM_MODE_BYTE = 0,
+	SRAM_MODE_PAGE = 0b10000000,
 	SRAM_MODE_SEQUENTIAL = 0b01000000
 } sram_mode_t;
 

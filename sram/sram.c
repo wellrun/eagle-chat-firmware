@@ -20,9 +20,9 @@ void sram_init(void) {
 
 	ioport_set_pin_high(SRAM_HOLD_pin); // Make sure our own CS pin doesn't trigger the SPI module to go into slave mode
 	ioport_set_pin_high(SRAM_CS_pin); // Make sure our own CS pin doesn't trigger the SPI module to go into slave mode
-	
+
 	spi_master_init(&SRAM_SPI);
-    spi_master_setup_device(&SRAM_SPI, &spi_device_conf, SPI_MODE_0, 31000000, 0);
+    spi_master_setup_device(&SRAM_SPI, &spi_device_conf, SPI_MODE_0, 4000000, 0);
     spi_enable(&SRAM_SPI);
 }
 
@@ -78,6 +78,3 @@ uint8_t sram_read_status() {
 	spi_deselect_device(&SRAM_SPI, &spi_device_conf);
 	return packet[1];
 }
-
-
-
