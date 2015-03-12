@@ -15,8 +15,12 @@
 #define PAGE_TABLE          3 /* Page that holds the user key look-up table */
 #define PAGE_KEY_START      4
 
-#define FLAGS_UNSET         0xFF
+#define FLAGS_UNSET         0xFF // The status register looks like this when it is unconfigured
 #define FLAGS_CONFIGURED    0b10000000
+#define FLAGS_PRIVATE_KEY 	0b01000000
+#define FLAGS_PUBLIC_KEY 	0b00100000
+#define FLAGS_NETWORK_ID 	0b00010000
+#define FLAGS_PASSWORD  	0b00001000
 
 #define KEYS_BIT_SET(val, mask)     !(val & mask) // provides inverted view of set bits
 #define KEYS_SET_BIT(val, mask)     (val & ~mask)
@@ -32,19 +36,19 @@ uint8_t keys_load_status(void);
 
 const key_setup_status_t * keys_get_status(void);
 
-uint8_t key_store_status(void);
+uint8_t keys_store_status(void);
 
-void key_set_flag(uint8_t mask);
+void keys_set_flag(uint8_t mask);
 
-void key_unset_flag(uint8_t mask);
+void keys_unset_flag(uint8_t mask);
 
 typedef struct {
-	uint8_t network_id;
-	uint8_t key_page;
+								uint8_t network_id;
+								uint8_t key_page;
 } key_table_entry_t;
 
 typedef struct {
-	key_table_entry_t table[MAX_KEY_SLOTS];
+								key_table_entry_t table[MAX_KEY_SLOTS];
 } key_table_t;
 
 

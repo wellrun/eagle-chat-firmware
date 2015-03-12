@@ -21,26 +21,29 @@ int main(void)
 
 	const key_setup_status_t * status = keys_get_status();
 	cdc_log_hex_string("Status:\n", status, sizeof(key_setup_status_t));
-
-
-
+	cdc_newline();
 
 	const key_table_t * table = keys_get_table();
-
 	cdc_log_hex("Loading table: ", keys_load_table());
-	cdc_log_hex_string("Table:\n", (void*)table, PAGE_SIZE);
+	cdc_log_hex_string("Table:\n", table, PAGE_SIZE);
+	cdc_newline();
 
+	if (!KEYS_BIT_SET(status->flags, FLAGS_CONFIGURED)) {
+		cdc_write_line("Device is not initialized. Resetting table");
 
-	cdc_log_hex("Resetting table: ", keys_reset_table());
-	keys_load_table();
-	cdc_log_hex_string("Table:\n", (void*)table, PAGE_SIZE);
+		cdc_log_hex("Resetting table: ", keys_reset_table());
+		keys_load_table();
+		cdc_log_hex_string("Table:\n", table, PAGE_SIZE);
+		keys_set_flag(FLAGS_CONFIGURED);
+		keys_store_status();
+	}
 
 	cdc_newline(); cdc_newline();
 
 	uint8_t slot;
 	bool has_key;
 	uint8_t key[PAGE_SIZE];
-	for (uint8_t user = 1; user <= MAX_KEY_SLOTS+1; ++user) {
+	for (uint8_t user = 1; user <= MAX_KEY_SLOTS + 1; ++user) {
 		slot = 0;
 		has_key = false;
 		memset(key, 0xA, PAGE_SIZE);
@@ -70,7 +73,7 @@ int main(void)
 	cdc_newline();
 
 	keys_load_table();
-	cdc_log_hex_string("Table:\n", (void*)table, PAGE_SIZE);
+	cdc_log_hex_string("Table:\n", table, PAGE_SIZE);
 
 	while (1) {
 

@@ -23,17 +23,17 @@ const key_setup_status_t * keys_get_status(void)
 	return (const key_setup_status_t*)&status;
 }
 
-uint8_t key_store_status(void)
+uint8_t keys_store_status(void)
 {
 	return nvm_write(INT_EEPROM, STATUS_BYTES_START, (uint8_t*)&status, sizeof(key_setup_status_t));
 }
 
-void key_set_flag(uint8_t mask)
+void keys_set_flag(uint8_t mask)
 {
 	status.flags = KEYS_SET_BIT(status.flags, mask);
 }
 
-void key_unset_flag(uint8_t mask)
+void keys_unset_flag(uint8_t mask)
 {
 	status.flags = KEYS_CLEAR_BIT(status.flags, mask);
 }
