@@ -28,6 +28,7 @@
  /**
  * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
  */
+#define F_CPU 32000000L
 
 extern "C" {
 	#include "asf.h"
@@ -36,7 +37,6 @@ extern "C" {
     #include <util/delay.h>
 }
 #include "RFM69.h"
-
 
 #define NODEID        1    //unique for each node on same network
 #define NETWORKID     100  //the same on all nodes that talk to each other
@@ -93,17 +93,21 @@ int main (void)
 		mode = udi_cdc_getc();
 	}
 
+	cdc_write_string("Mode: "); udi_cdc_putc(mode); cdc_newline();
 
-    while(1){
-		if (mode == 'S') {
-	        _delay_ms(10000);
+	if (mode == 'S') {
+		while (1) {
+			cdc_write_line("Send mode.");
 	        //sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferSize, uint8_t retries, uint8_t retryWaitTime)
 	        if(radio.sendWithRetry(TOID, payload, 30, NUM_RETRIES, 4000)){
 	             cdc_log_int("I think I sent something ", (uint32_t)radio.RSSI);
 	        } else {
 	        	cdc_log_int("I sent but I didn't recieve an ACK ", rtc_get_time());
 	        }
-		} else {
+		}
+	} else {
+		_delay_ms(10000);
+		while(1) {
 	        if (radio.receiveDone())
 	        {
 	            //cdc_write_line("RECEIVED");
@@ -123,6 +127,7 @@ int main (void)
 	            }
 	        }
 		}
+
 
     //cdc_log_int("RX_RSSI: ", (uint32_t)radio.RSSI);
     //cdc_log_int("Temp   : ", (uint32_t)radio.readTemperature());
