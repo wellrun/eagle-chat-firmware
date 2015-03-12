@@ -5,7 +5,7 @@
 
 // The length required to hold the encrypted message corresponding to
 // a plaintext string with length x
-#define ENCRYPTED_LENGTH(x) 	(x + crypto_box_ZEROBYTES)
+#define ENCRYPTED_LENGTH(x) 	(x + crypto_box_ZEROBYTES - crypto_box_BOXZEROBYTES)
 
 // The length required to hold the plaintext string corresponding to
 // an encrypted message with length x

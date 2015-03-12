@@ -43,11 +43,16 @@ conf.mk
 
 # Sam's crap
 **/*~
-
+*.pdf
+**/*.pdf
 *.txt
 **/.txt
 
 # Sublime text
 *.sublime-project
 *.sublime-workspace
+
+# Mac crap
+.DS_Store
+**/.DS_Store
 
