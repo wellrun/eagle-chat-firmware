@@ -12,35 +12,36 @@
 
 #include "sram/sram.h"
 
-#define MSGBUF_MAX_ADDRESS  0x0EFF  /* Highest memory address we can use */
-#define MSGBUF_PAGE_SIZE    256     /* Page size in bytes */
-#define MSGBUF_PACKET_SIZE  MSGBUF_PAGE_SIZE - 1
-#define MSGBUF_MAX_PAGES    15      /* Max number of pages we can store */
+#define PACKETBUF_MAX_ADDRESS   0x1DFF  /* Highest memory address we can use */
+#define PACKETBUF_MIN_ADDRESS   0x0F00
+#define PACKETBUF_PAGE_SIZE     256     /* Page size in bytes */
+#define PACKETBUF_MAX_PAGES     15      /* Max number of pages we can store */
+
 
 /*
 Page memory layout:
-[len (byte)] | [message (0 ... MSGBUF_PAGE_SIZE - 1)]
+[message (0 ... PACKETBUF_PAGE_SIZE )]
 */
 
-void msgbuf_init(void);
+void packetbuf_init(void);
 
 /* Returns the length of the next message if there is an unconsumed message in the buffer
     return - Length of next message, 0 if no message
 */
-uint8_t msgbuf_next_length(void);
+bool packetbuf_has_next(void);
 
 /* Stores a message in SRAM
     param msg - Pointer to array holding message contents
     param len - Length of message to store
     return - true if successfully, false if buffer is full
 */
-bool msgbuf_store_message(uint8_t * msg, uint8_t len);
+bool packetbuf_store_packet(uint8_t * msg, uint8_t len);
 
 /* Reads a message from SRAM into memory
     param dest - Pointer to buffer to hold message. Must be long enough to hold entire message
     return - true if successful read message, false if no message was available
 */
-bool msgbuf_read_message(uint8_t * dest);
+bool packetbuf_read_packet(uint8_t * dest);
 
 
 #endif
