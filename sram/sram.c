@@ -7,6 +7,8 @@
 #define RDSR	0b101
 #define WRSR	0b001
 
+#define SWAP_BYTES(address)		(address >> 8) | (address << 8) // Have to swap bytes on little endian
+
 struct spi_device spi_device_conf = {
 	.id = SRAM_CS_pin
 };
@@ -27,7 +29,7 @@ void sram_init(void) {
 }
 
 void sram_write_byte(uint16_t address, uint8_t byte) {
-	sram_start_t start = {WRITE, address};
+	sram_start_t start = {WRITE, SWAP_BYTES(address)};
 	spi_select_device(&SRAM_SPI, &spi_device_conf);
 	spi_write_packet(&SRAM_SPI, (uint8_t *) &start, sizeof(sram_start_t));
 	spi_write_packet(&SRAM_SPI, &byte, 1);
@@ -35,7 +37,7 @@ void sram_write_byte(uint16_t address, uint8_t byte) {
 }
 
 void sram_write_packet(uint16_t address, const void * source, uint16_t len) {
-	sram_start_t start = {WRITE, address};
+	sram_start_t start = {WRITE, SWAP_BYTES(address)};
 	spi_select_device(&SRAM_SPI, &spi_device_conf);
 	spi_write_packet(&SRAM_SPI, (uint8_t *) &start, sizeof(sram_start_t));
 	spi_write_packet(&SRAM_SPI, (uint8_t *) source, len);
@@ -44,7 +46,7 @@ void sram_write_packet(uint16_t address, const void * source, uint16_t len) {
 
 uint8_t sram_read_byte(uint16_t address) {
 	uint8_t byte;
-	sram_start_t start = {READ, address};
+	sram_start_t start = {READ, SWAP_BYTES(address)};
 	spi_select_device(&SRAM_SPI, &spi_device_conf);
 	spi_write_packet(&SRAM_SPI, (uint8_t *) &start, sizeof(sram_start_t));
 	spi_read_packet(&SRAM_SPI, &byte, 1);
@@ -53,7 +55,7 @@ uint8_t sram_read_byte(uint16_t address) {
 }
 
 uint8_t * sram_read_packet(uint16_t address, uint8_t * dest, uint16_t len) {
-	sram_start_t start = {READ, address};
+	sram_start_t start = {READ, SWAP_BYTES(address)};
 	spi_select_device(&SRAM_SPI, &spi_device_conf);
 	spi_write_packet(&SRAM_SPI, (uint8_t *) &start, sizeof(sram_start_t));
 	spi_read_packet(&SRAM_SPI, dest, len);

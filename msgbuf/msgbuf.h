@@ -12,9 +12,10 @@
 
 #include "sram/sram.h"
 
-#define MSGBUF_MAX_ADDRESS  0x0EFF  /* Highest memory address we can use */
+#define MSGBUF_MAX_ADDRESS  0x3EFF  /* Highest memory address we can use */
 #define MSGBUF_PAGE_SIZE    256     /* Page size in bytes */
-#define MSGBUF_MAX_PAGES    16      /* Max number of pages we can store */
+#define MSGBUF_PACKET_SIZE  MSGBUF_PAGE_SIZE - 1
+#define MSGBUF_MAX_PAGES    63      /* Max number of pages we can store */
 
 /*
 Page memory layout:
