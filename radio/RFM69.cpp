@@ -6,23 +6,23 @@
 // **********************************************************************************
 // License
 // **********************************************************************************
-// This program is free software; you can redistribute it 
-// and/or modify it under the terms of the GNU General    
-// Public License as published by the Free Software       
-// Foundation; either version 3 of the License, or        
-// (at your option) any later version.                    
-//                                                        
-// This program is distributed in the hope that it will   
-// be useful, but WITHOUT ANY WARRANTY; without even the  
-// implied warranty of MERCHANTABILITY or FITNESS FOR A   
-// PARTICULAR PURPOSE. See the GNU General Public        
-// License for more details.                              
-//                                                        
-// You should have received a copy of the GNU General    
+// This program is free software; you can redistribute it
+// and/or modify it under the terms of the GNU General
+// Public License as published by the Free Software
+// Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will
+// be useful, but WITHOUT ANY WARRANTY; without even the
+// implied warranty of MERCHANTABILITY or FITNESS FOR A
+// PARTICULAR PURPOSE. See the GNU General Public
+// License for more details.
+//
+// You should have received a copy of the GNU General
 // Public License along with this program.
 // If not, see <http://www.gnu.org/licenses/>.
-//                                                        
-// Licence can be viewed at                               
+//
+// Licence can be viewed at
 // http://www.gnu.org/licenses/gpl-3.0.txt
 //
 // Please maintain this license information along with authorship
@@ -55,11 +55,11 @@ uint8_t SPITransfer(const uint8_t val) {
 	if (val == 0) {
 		spi_write_single(&SPIE,0); //Dummy write
 		while (!spi_is_rx_full(&SPIE)) {
-		}        
+		}
 		spi_read_single(&SPIE, &ret);
 		return ret;
 	} else {
-		spi_write_single(&SPIE, val);        
+		spi_write_single(&SPIE, val);
 		while (!spi_is_rx_full(&SPIE)) {
 		}
 		return 0;
@@ -147,7 +147,7 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00);
 
 	PORTF.INTCTRL =  (PORTF.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
-	uint8_t pin_mask = ioport_pin_to_mask(0x01); // Get which pin we are listening on  
+	uint8_t pin_mask = ioport_pin_to_mask(0x01); // Get which pin we are listening on
 	PORTF.INT0MASK = 0x01; // Set which pin should be source of interrupt
 	sei();
 
@@ -183,7 +183,7 @@ void RFM69::setMode(uint8_t newMode)
 {
 	if (newMode == _mode)
 		return;
-	
+
 	switch (newMode) {
 		case RF69_MODE_TX:
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER);
@@ -283,8 +283,16 @@ bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferS
 
 // should be polled immediately after sending a packet with ACK request
 bool RFM69::ACKReceived(uint8_t fromNodeID) {
-	if (receiveDone())
+	bool rcd = receiveDone();
+	cdc_log_int("rcd = ", rcd);
+	cdc_log_int("_mode = ", _mode);
+	if (rcd) {
+		cdc_log_int("SENDERID: ", SENDERID);
+		cdc_log_int("fromNodeID: ", fromNodeID);
+		cdc_log_int("RF69_BROADCAST_ADDR: ", RF69_BROADCAST_ADDR);
+		cdc_log_int("ACK_RECEIVED: ", ACK_RECEIVED);
 		return (SENDERID == fromNodeID || fromNodeID == RF69_BROADCAST_ADDR) && ACK_RECEIVED;
+	}
 	return false;
 }
 
@@ -312,7 +320,7 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 	if (bufferSize > RF69_MAX_DATA_LEN) bufferSize = RF69_MAX_DATA_LEN;
 
 	// control byte
-	uint8_t CTLbyte = 0x00; 
+	uint8_t CTLbyte = 0x00;
 	if (sendACK)
 		CTLbyte = 0x80;
 	else if (requestACK)
@@ -367,8 +375,10 @@ void RFM69::interruptHandler() {
 
 		cdc_log_hex("CTLbyte: ", CTLbyte);
 		ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
-		cdc_log_int("ACK_RECEIVED: ", ACK_RECEIVED);
+		cdc_log_hex("ACK_RECEIVED: ", ACK_RECEIVED);
 		ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
+
+		cdc_log_int("DATALEN: ", DATALEN);
 
 		for (uint8_t i = 0; i < DATALEN; i++)
 		{
@@ -405,6 +415,7 @@ bool RFM69::receiveDone() {
 		cli();//noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
 		if (_mode == RF69_MODE_RX && PAYLOADLEN > 0)
 		{
+			cdc_write_line("rcd = true");
 			setMode(RF69_MODE_STANDBY); // enables interrupts
 			return true;
 		}
@@ -504,7 +515,7 @@ void RFM69::setHighPowerRegs(bool onOff) {
 }
 
 void RFM69::setCS(uint8_t newSPISlaveSelect) {
-	
+
 }
 
 // for debugging

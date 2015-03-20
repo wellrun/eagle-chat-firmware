@@ -48,12 +48,12 @@ int main (void)
 	while (!cdc_opened());
 	cdc_log_int("About to instantiate module ", rtc_get_time());
 	radio = RFM69();
-	
+
 	cdc_log_int("About to intialize module ", rtc_get_time());
 	radio.initialize(FREQUENCY,NODEID,NETWORKID);
-	
+
 	cdc_log_int("Initialized: ", rtc_get_time());
-	
+
 	radio.setHighPower();
 	radio.setPowerLevel(31);
 	radio.promiscuous(true);
@@ -92,7 +92,7 @@ int main (void)
 	            if (radio.ACKRequested() && mode == 'R')
 	            {
 	                cdc_write_line("ACK requested");
-	                radio.sendACK();
+	                radio.sendACK("ACK", 3);
 	                cdc_write_line(" - ACK sent");
 	                //cdc_log_int("RX_RSSI: ", (uint32_t)radio.RSSI);
 	            }
