@@ -74,6 +74,14 @@ uint32_t millis() {
 	return rtc_get_time();
 }
 
+inline void radio_enable_interrupt() {
+	RF_DIO_PORT.INT0MASK = ioport_pin_to_mask(RF_DIO0_pin);
+}
+
+inline void radio_disable_interrupt() {
+	RF_DIO_PORT.INT0MASK = 0;
+}
+
 volatile uint8_t RFM69::DATA[RF69_MAX_DATA_LEN];
 volatile uint8_t RFM69::_mode;        // current transceiver state
 volatile uint8_t RFM69::DATALEN;
@@ -146,10 +154,8 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	setMode(RF69_MODE_STANDBY);
 	while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00);
 
-	PORTF.INTCTRL =  (PORTF.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
-	uint8_t pin_mask = ioport_pin_to_mask(0x01); // Get which pin we are listening on
-	PORTF.INT0MASK = 0x01; // Set which pin should be source of interrupt
-	sei();
+	RF_DIO_PORT.INTCTRL =  (PORTF.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
+	radio_enable_interrupt();
 
 	selfPointer = this;
 	_address = nodeID;
@@ -284,8 +290,6 @@ bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferS
 // should be polled immediately after sending a packet with ACK request
 bool RFM69::ACKReceived(uint8_t fromNodeID) {
 	bool rcd = receiveDone();
-	cdc_log_int("rcd = ", rcd);
-	cdc_log_int("_mode = ", _mode);
 	if (rcd) {
 		cdc_log_int("SENDERID: ", SENDERID);
 		cdc_log_int("fromNodeID: ", fromNodeID);
@@ -412,7 +416,7 @@ void RFM69::receiveBegin() {
 
 bool RFM69::receiveDone() {
 	//ATOMIC_BLOCK(ATOMIC_FORCEON){
-		cli();//noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
+		radio_disable_interrupt();//noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
 		if (_mode == RF69_MODE_RX && PAYLOADLEN > 0)
 		{
 			cdc_write_line("rcd = true");
@@ -421,7 +425,7 @@ bool RFM69::receiveDone() {
 		}
 		else if (_mode == RF69_MODE_RX) // already in RX no payload yet
 		{
-			sei();//interrupts(); // explicitly re-enable interrupts
+			radio_enable_interrupt();//interrupts(); // explicitly re-enable interrupts
 			return false;
 		}
 		receiveBegin();
@@ -479,7 +483,7 @@ void RFM69::writeReg(uint8_t addr, uint8_t value)
 
 // select the transceiver
 void RFM69::select() {
-	cli();//noInterrupts();
+	radio_disable_interrupt();//noInterrupts();
 
 	spi_select_device(&SPIE, &spi_device_conf);
 }
@@ -490,7 +494,7 @@ void RFM69::unselect() {
 
 	spi_deselect_device(&SPIE, &spi_device_conf);
 
-	sei();//interrupts();
+	radio_enable_interrupt();//interrupts();
 }
 
 // ON  = disable filtering to capture all frames on network
