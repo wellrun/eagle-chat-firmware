@@ -1,9 +1,12 @@
+#define F_CPU	32000000L
+
 extern "C" {
 	#include "asf.h"
 	#include <avr/io.h>
 	#include "cdc.h"
 	#include <util/delay.h>
 }
+#include <string.h>
 #include "RFM69.h"
 
 
@@ -17,7 +20,7 @@ extern "C" {
 //#define FREQUENCY     RF69_915MHZ
 //#define ENCRYPTKEY    "sampleEncryptKey" //exactly the same 16 characters/bytes on all nodes!
 #define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
-#define ACK_TIME      1000 // max # of ms to wait for an ack
+#define ACK_TIME      3000 // max # of ms to wait for an ack
 #define NUM_RETRIES   5
 
 int TRANSMITPERIOD = 150; //transmit a packet to gateway so often (in ms)
@@ -42,10 +45,9 @@ int main (void)
 	rtc_init();
 
 	cdc_start();
-	_delay_ms(10);
-
 
 	while (!cdc_opened());
+	rtc_set_time(0);
 	cdc_log_int("About to instantiate module ", rtc_get_time());
 	radio = RFM69();
 
@@ -68,20 +70,24 @@ int main (void)
 	radio.readAllRegs();
 
 	if (mode == 'S') {
+		uint8_t count = 0;
 		while (1) {
-			cdc_write_line("Send mode.");
-	        if(radio.sendWithRetry(TOID, payload, 30, NUM_RETRIES, 4000)){
+			cdc_log_int("Send attempt: ", count);
+			memset(payload, 0, 5);
+			itoa(count, payload, 10);
+	        if(radio.sendWithRetry(TOID, payload, 30, NUM_RETRIES, 2000)){
 	             cdc_log_int("I think I sent something ", (uint32_t)radio.RSSI);
 	        } else {
 	        	cdc_log_int("I sent but I didn't recieve an ACK ", rtc_get_time());
 	        }
+			++count;
 		}
 	} else {
-		_delay_ms(10000);
+		//_delay_ms(10000);
 		while(1) {
 	        if (radio.receiveDone())
 	        {
-	            //cdc_write_line("RECEIVED");
+	            cdc_write_line("RECEIVED");
 	            cdc_log_int("Recieved Packet from ", radio.SENDERID);
 	            cdc_write_line("Message: ");
 	            for (char i = 0; i < radio.DATALEN; i++)
@@ -91,10 +97,10 @@ int main (void)
 
 	            if (radio.ACKRequested() && mode == 'R')
 	            {
+					radio.sendACK("ACK", 3);
 	                cdc_write_line("ACK requested");
-	                radio.sendACK("ACK", 3);
 	                cdc_write_line(" - ACK sent");
-	                //cdc_log_int("RX_RSSI: ", (uint32_t)radio.RSSI);
+	                cdc_log_int("RX_RSSI: ", (uint32_t)radio.RSSI);
 	            }
 	        }
 		}

@@ -71,15 +71,24 @@ int readInterruptPin() {
 }
 
 uint32_t millis() {
+	/*static uint32_t currentTime = 0;
+	currentTime += rtc_get_time();
+	rtc_set_time(0);
+	return currentTime;
+	*/
 	return rtc_get_time();
 }
 
 inline void radio_enable_interrupt() {
-	RF_DIO_PORT.INT0MASK = ioport_pin_to_mask(RF_DIO0_pin);
+	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
+	//RF_DIO_PORT.INT0MASK = 1;
+	//sei();
 }
 
 inline void radio_disable_interrupt() {
-	RF_DIO_PORT.INT0MASK = 0;
+	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_OFF_gc;
+	//RF_DIO_PORT.INT0MASK = 0;
+	//cli();
 }
 
 volatile uint8_t RFM69::DATA[RF69_MAX_DATA_LEN];
@@ -154,8 +163,12 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	setMode(RF69_MODE_STANDBY);
 	while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00);
 
-	RF_DIO_PORT.INTCTRL =  (PORTF.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
+	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
+	ioport_set_pin_dir(RF_DIO0_pin, IOPORT_DIR_INPUT);
+	ioport_set_pin_sense_mode(RF_DIO0_pin, IOPORT_SENSE_RISING);
 	radio_enable_interrupt();
+	RF_DIO_PORT.INT0MASK = 1;
+	sei();
 
 	selfPointer = this;
 	_address = nodeID;
@@ -266,13 +279,15 @@ void RFM69::send(uint8_t toAddress, const void* buffer, uint8_t bufferSize, bool
 // The reason for the semi-automaton is that the lib is interrupt driven and
 // requires user action to read the received data and decide what to do with it
 // replies usually take only 5..8ms at 50kbps@915MHz
-bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferSize, uint8_t retries, uint8_t retryWaitTime) {
+bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferSize, uint8_t retries, uint16_t retryWaitTime) {
 	uint32_t sentTime;
 	for (uint8_t i = 0; i <= retries; i++)
 	{
-		//cdc_log_int("Attempting to send. ", rtc_get_time());
+		cdc_log_int("Attempting to send. ", rtc_get_time());
 		send(toAddress, buffer, bufferSize, true);
 		sentTime = millis();
+		cdc_write_line("Poll for ACK.");
+		radio_enable_interrupt();
 		while (millis() - sentTime < retryWaitTime)
 		{
 			if (ACKReceived(toAddress))
@@ -289,14 +304,10 @@ bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferS
 
 // should be polled immediately after sending a packet with ACK request
 bool RFM69::ACKReceived(uint8_t fromNodeID) {
-	bool rcd = receiveDone();
-	if (rcd) {
-		cdc_log_int("SENDERID: ", SENDERID);
-		cdc_log_int("fromNodeID: ", fromNodeID);
-		cdc_log_int("RF69_BROADCAST_ADDR: ", RF69_BROADCAST_ADDR);
-		cdc_log_int("ACK_RECEIVED: ", ACK_RECEIVED);
+	if (receiveDone()) {
 		return (SENDERID == fromNodeID || fromNodeID == RF69_BROADCAST_ADDR) && ACK_RECEIVED;
 	}
+	receiveBegin();
 	return false;
 }
 
@@ -377,12 +388,15 @@ void RFM69::interruptHandler() {
 		SENDERID = SPITransfer(0);
 		uint8_t CTLbyte = SPITransfer(0);
 
-		cdc_log_hex("CTLbyte: ", CTLbyte);
 		ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
-		cdc_log_hex("ACK_RECEIVED: ", ACK_RECEIVED);
 		ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
 
+		/*
+		cdc_log_hex("CTLbyte: ", CTLbyte);
+		cdc_log_hex("ACK_RECEIVED: ", ACK_RECEIVED);
 		cdc_log_int("DATALEN: ", DATALEN);
+		cdc_log_int("PAYLOADLEN: ", PAYLOADLEN);
+		*/
 
 		for (uint8_t i = 0; i < DATALEN; i++)
 		{
@@ -415,11 +429,12 @@ void RFM69::receiveBegin() {
 }
 
 bool RFM69::receiveDone() {
+	//cdc_write_line("receiveDone()");
 	//ATOMIC_BLOCK(ATOMIC_FORCEON){
 		radio_disable_interrupt();//noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
 		if (_mode == RF69_MODE_RX && PAYLOADLEN > 0)
 		{
-			cdc_write_line("rcd = true");
+			//cdc_write_line("rcd = true");
 			setMode(RF69_MODE_STANDBY); // enables interrupts
 			return true;
 		}
