@@ -6,23 +6,23 @@
 // **********************************************************************************
 // License
 // **********************************************************************************
-// This program is free software; you can redistribute it 
-// and/or modify it under the terms of the GNU General    
-// Public License as published by the Free Software       
-// Foundation; either version 3 of the License, or        
-// (at your option) any later version.                    
-//                                                        
-// This program is distributed in the hope that it will   
-// be useful, but WITHOUT ANY WARRANTY; without even the  
-// implied warranty of MERCHANTABILITY or FITNESS FOR A   
-// PARTICULAR PURPOSE. See the GNU General Public        
-// License for more details.                              
-//                                                        
-// You should have received a copy of the GNU General    
+// This program is free software; you can redistribute it
+// and/or modify it under the terms of the GNU General
+// Public License as published by the Free Software
+// Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will
+// be useful, but WITHOUT ANY WARRANTY; without even the
+// implied warranty of MERCHANTABILITY or FITNESS FOR A
+// PARTICULAR PURPOSE. See the GNU General Public
+// License for more details.
+//
+// You should have received a copy of the GNU General
 // Public License along with this program.
 // If not, see <http://www.gnu.org/licenses/>.
-//                                                        
-// Licence can be viewed at                               
+//
+// Licence can be viewed at
 // http://www.gnu.org/licenses/gpl-3.0.txt
 //
 // Please maintain this license information along with authorship
@@ -35,35 +35,35 @@
 #include "util/atomic.h"
 
 struct spi_device spi_device_conf = {
-    .id = IOPORT_CREATE_PIN(PORTE, 4)
+	.id = IOPORT_CREATE_PIN(PORTE, 4)
 };
 
 void SPIBegin() {
-    ioport_configure_port_pin(&PORTE, PIN4_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // Own CS being used as Module CS
-    ioport_configure_port_pin(&PORTE, PIN5_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // MOSI
-    ioport_configure_port_pin(&PORTE, PIN6_bm, IOPORT_DIR_INPUT);                      // MISO
-    ioport_configure_port_pin(&PORTE, PIN7_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // SCL
+	ioport_configure_port_pin(&PORTE, PIN4_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // Own CS being used as Module CS
+	ioport_configure_port_pin(&PORTE, PIN5_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // MOSI
+	ioport_configure_port_pin(&PORTE, PIN6_bm, IOPORT_DIR_INPUT);                      // MISO
+	ioport_configure_port_pin(&PORTE, PIN7_bm, IOPORT_INIT_HIGH | IOPORT_DIR_OUTPUT);  // SCL
 
 
-    spi_master_init(&SPIE);
-    spi_master_setup_device(&SPIE, &spi_device_conf, SPI_MODE_0, 4500000, 0);
-    spi_enable(&SPIE);
+	spi_master_init(&SPIE);
+	spi_master_setup_device(&SPIE, &spi_device_conf, SPI_MODE_0, 4500000, 0);
+	spi_enable(&SPIE);
 }
 
 uint8_t SPITransfer(const uint8_t val) {
-    uint8_t ret;
-    if (val == 0) {
-        spi_write_single(&SPIE,0); //Dummy write
-        while (!spi_is_rx_full(&SPIE)) {
-        }        
-        spi_read_single(&SPIE, &ret);
-        return ret;
-    } else {
-        spi_write_single(&SPIE, val);        
-        while (!spi_is_rx_full(&SPIE)) {
-        }
-        return 0;
-    }
+	uint8_t ret;
+	if (val == 0) {
+		spi_write_single(&SPIE,0); //Dummy write
+		while (!spi_is_rx_full(&SPIE)) {
+		}
+		spi_read_single(&SPIE, &ret);
+		return ret;
+	} else {
+		spi_write_single(&SPIE, val);
+		while (!spi_is_rx_full(&SPIE)) {
+		}
+		return 0;
+	}
 }
 
 int readInterruptPin() {
@@ -71,7 +71,24 @@ int readInterruptPin() {
 }
 
 uint32_t millis() {
+	/*static uint32_t currentTime = 0;
+	currentTime += rtc_get_time();
+	rtc_set_time(0);
+	return currentTime;
+	*/
 	return rtc_get_time();
+}
+
+inline void radio_enable_interrupt() {
+	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
+	//RF_DIO_PORT.INT0MASK = 1;
+	//sei();
+}
+
+inline void radio_disable_interrupt() {
+	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_OFF_gc;
+	//RF_DIO_PORT.INT0MASK = 0;
+	//cli();
 }
 
 volatile uint8_t RFM69::DATA[RF69_MAX_DATA_LEN];
@@ -91,10 +108,10 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	{
 		/* 0x01 */ { REG_OPMODE, RF_OPMODE_SEQUENCER_ON | RF_OPMODE_LISTEN_OFF | RF_OPMODE_STANDBY },
 		/* 0x02 */ { REG_DATAMODUL, RF_DATAMODUL_DATAMODE_PACKET | RF_DATAMODUL_MODULATIONTYPE_FSK | RF_DATAMODUL_MODULATIONSHAPING_00 }, // no shaping
-		 /* 0x03 */ { REG_BITRATEMSB, RF_BITRATEMSB_19200}, //default:4.8 KBPS
-    	/* 0x04 */ { REG_BITRATELSB, RF_BITRATELSB_19200},
-    	/* 0x05 */ { REG_FDEVMSB, RF_FDEVMSB_25000}, //default:5khz, (FDEV + BitRate/2 <= 500Khz)
-    	/* 0x06 */ { REG_FDEVLSB, RF_FDEVLSB_25000},
+		/* 0x03 */ { REG_BITRATEMSB, RF_BITRATEMSB_55555}, // default: 4.8 KBPS
+		/* 0x04 */ { REG_BITRATELSB, RF_BITRATELSB_55555},
+		/* 0x05 */ { REG_FDEVMSB, RF_FDEVMSB_50000}, // default: 5KHz, (FDEV + BitRate / 2 <= 500KHz)
+		/* 0x06 */ { REG_FDEVLSB, RF_FDEVLSB_50000},
 
 		/* 0x07 */ { REG_FRFMSB, (uint8_t) (freqBand==RF69_315MHZ ? RF_FRFMSB_315 : (freqBand==RF69_433MHZ ? RF_FRFMSB_433 : (freqBand==RF69_868MHZ ? RF_FRFMSB_868 : RF_FRFMSB_915))) },
 		/* 0x08 */ { REG_FRFMID, (uint8_t) (freqBand==RF69_315MHZ ? RF_FRFMID_315 : (freqBand==RF69_433MHZ ? RF_FRFMID_433 : (freqBand==RF69_868MHZ ? RF_FRFMID_868 : RF_FRFMID_915))) },
@@ -109,12 +126,12 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 		///* 0x13 */ { REG_OCP, RF_OCP_ON | RF_OCP_TRIM_95 }, // over current protection (default is 95mA)
 
 		// RXBW defaults are { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_5} (RxBw: 10.4KHz)
-		/* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_16 | RF_RXBW_EXP_3 }, // (BitRate < 3 * RxBw)
+		/* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_16 | RF_RXBW_EXP_2 }, // (BitRate < 2 * RxBw)
 		//for BR-19200: /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_3 },
 		/* 0x25 */ { REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01 }, // DIO0 is the only IRQ we're using
 		/* 0x26 */ { REG_DIOMAPPING2, RF_DIOMAPPING2_CLKOUT_OFF }, // DIO5 ClkOut disable for power saving
 		/* 0x28 */ { REG_IRQFLAGS2, RF_IRQFLAGS2_FIFOOVERRUN }, // writing to this bit ensures that the FIFO & status flags are reset
-		/* 0x29 */ { REG_RSSITHRESH, 228 }, // must be set to dBm = (-Sensitivity / 2), default is 0xE4 = 228 so -114dBm
+		/* 0x29 */ { REG_RSSITHRESH, 220 }, // must be set to dBm = (-Sensitivity / 2), default is 0xE4 = 228 so -114dBm
 		///* 0x2D */ { REG_PREAMBLELSB, RF_PREAMBLESIZE_LSB_VALUE } // default 3 preamble bytes 0xAAAAAA
 		/* 0x2E */ { REG_SYNCCONFIG, RF_SYNC_ON | RF_SYNC_FIFOFILL_AUTO | RF_SYNC_SIZE_2 | RF_SYNC_TOL_0 },
 		/* 0x2F */ { REG_SYNCVALUE1, 0x2D },      // attempt to make this compatible with sync1 byte of RFM12B lib
@@ -123,62 +140,35 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 		/* 0x38 */ { REG_PAYLOADLENGTH, 66 }, // in variable length mode: the max frame size, not used in TX
 		///* 0x39 */ { REG_NODEADRS, nodeID }, // turned off because we're not using address filtering
 		/* 0x3C */ { REG_FIFOTHRESH, RF_FIFOTHRESH_TXSTART_FIFONOTEMPTY | RF_FIFOTHRESH_VALUE }, // TX on FIFO not empty
-		/* 0x3D */ { REG_PACKETCONFIG2, RF_PACKET2_RXRESTARTDELAY_NONE | RF_PACKET2_AUTORXRESTART_ON | RF_PACKET2_AES_OFF }, //RXRESTARTDELAY must match transmitter PA ramp-down time (bitrate dependent)
+		/* 0x3D */ { REG_PACKETCONFIG2, RF_PACKET2_RXRESTARTDELAY_2BITS | RF_PACKET2_AUTORXRESTART_ON | RF_PACKET2_AES_OFF }, // RXRESTARTDELAY must match transmitter PA ramp-down time (bitrate dependent)
 		//for BR-19200: /* 0x3D */ { REG_PACKETCONFIG2, RF_PACKET2_RXRESTARTDELAY_NONE | RF_PACKET2_AUTORXRESTART_ON | RF_PACKET2_AES_OFF }, // RXRESTARTDELAY must match transmitter PA ramp-down time (bitrate dependent)
 		/* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode for Fading Margin Improvement, recommended default for AfcLowBetaOn=0
 		{255, 0}
 	};
-    cdc_log_int("About to initialize SPI ", rtc_get_time());
 	SPIBegin();
-    uint32_t ljcount = 0;
-    uint8_t ljreg = 0;
-    cdc_log_int("Initized SPI, attempting to write/read some registers ", rtc_get_time());
-	do {writeReg(REG_SYNCVALUE1, 0xAA); ++ljcount; ljreg=readReg(REG_SYNCVALUE1);} while (ljreg != 0xAA);
-    ljreg=0;
-    ljreg=readReg(REG_SYNCVALUE1);
-    cdc_log_int("Successfully wrote and read SYNCVALUE1 0xAA, number of attempts: ", ljcount);
-    ljcount=0;
-	do {writeReg(REG_SYNCVALUE1, 0x55); ++ljcount; ljreg=readReg(REG_SYNCVALUE1);} while (ljreg != 0x55);
-    ljreg=0;
-    ljreg=readReg(REG_SYNCVALUE1);
-    cdc_log_int("Successfully wrote and read SYNCVALUE1 0X55, number of attempts: ", ljcount);
-    ljcount=0;
+
+	writeReg(REG_SYNCVALUE1, 0xAA);
+	while (readReg(REG_SYNCVALUE1) != 0xAA);
+	writeReg(REG_SYNCVALUE1, 0x55);
+	while (readReg(REG_SYNCVALUE1) != 0x55);
+
 	for (uint8_t i = 0; CONFIG[i][0] != 255; i++)
 		writeReg(CONFIG[i][0], CONFIG[i][1]);
-    cdc_log_int("Successfully wrote configs ", rtc_get_time());
+
 	// Encryption is persistent between resets and can trip you up during debugging.
 	// Disable it during initialization so we always start from a known state.
 	encrypt(0);
-    cdc_log_int("Successfully set encrypt mode ", rtc_get_time());
+
 	setHighPower(_isRFM69HW); // called regardless if it's a RFM69W or RFM69HW
-    cdc_log_int("Successfully set high power mode ", rtc_get_time());
 	setMode(RF69_MODE_STANDBY);
-    cdc_log_int("Mode set function has been called, waiting for ModeReady ", rtc_get_time());
-    while ((ljreg & RF_IRQFLAGS1_MODEREADY) == 0x00){  // wait for ModeReady
-        ljreg = readReg(REG_IRQFLAGS1);
-        ++ljcount;        
-        if(ljcount>10){
-            cdc_log_hex("Timing out for ModeReady, read ", ljreg);
-            break;
-        }
-    }
-    cdc_log_int("ModeReady if no timeout message ", rtc_get_time());/*
-						//attachInterrupt(_interruptNum, RFM69::isr0, RISING);
+	while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00);
 
-					    // Configure PF0 as input, triggered on rising edge.
-						PORT_ConfigurePins( &PORTF, 0x01, false, false, PORT_OPC_TOTEM_gc, PORT_ISC_RISING_gc );
-						// Configure Interrupt0 to have medium interrupt level, triggered by pin 0.
-						PORT_SetPinsAsInput( &PORTF, 0x01 );
-						//ioport_set_pin_sense_mode(_interruptNum, IOPORT_SENSE_RISING);
-						PORT_ConfigureInterrupt0( &PORTF, PORT_INT0LVL_MED_gc, 0x01 );
-						// Enable medium level interrupts in the PMIC.
-						PMIC.CTRL |= PMIC_MEDLVLEN_bm;
-						// Enable the global interrupt flag.
-						sei();*/
-	PORTF.INTCTRL =  (PORTF.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
-    uint8_t pin_mask = ioport_pin_to_mask(0x01); // Get which pin we are listening on  
-    PORTF.INT0MASK = 0x01; // Set which pin should be source of interrupt
-
+	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
+	ioport_set_pin_dir(RF_DIO0_pin, IOPORT_DIR_INPUT);
+	ioport_set_pin_sense_mode(RF_DIO0_pin, IOPORT_SENSE_RISING);
+	radio_enable_interrupt();
+	RF_DIO_PORT.INT0MASK = 1;
+	sei();
 
 	selfPointer = this;
 	_address = nodeID;
@@ -212,34 +202,24 @@ void RFM69::setMode(uint8_t newMode)
 {
 	if (newMode == _mode)
 		return;
-    //cdc_log_int("About to set a mode ", rtc_get_time());
+
 	switch (newMode) {
 		case RF69_MODE_TX:
-            //cdc_log_int("Setting to TX mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER);
 			if (_isRFM69HW) setHighPowerRegs(true);
-            //cdc_log_int("Set to TX mode ", rtc_get_time());
 			break;
 		case RF69_MODE_RX:
-            //cdc_log_int("Setting to RX mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER);
 			if (_isRFM69HW) setHighPowerRegs(false);
-            //cdc_log_int("Set to RX mode ", rtc_get_time());
 			break;
 		case RF69_MODE_SYNTH:
-            //cdc_log_int("Setting to Synth mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER);
-            //cdc_log_int("Set to Synth mode ", rtc_get_time());
 			break;
 		case RF69_MODE_STANDBY:
-            //cdc_log_int("Setting to standby mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY);
-            //cdc_log_int("Set to standby mode ", newMode);
 			break;
 		case RF69_MODE_SLEEP:
-            //cdc_log_int("Setting to sleep mode ", rtc_get_time());
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP);
-            //cdc_log_int("Set to sleep mode ", rtc_get_time());
 			break;
 		default:
 			return;
@@ -299,20 +279,25 @@ void RFM69::send(uint8_t toAddress, const void* buffer, uint8_t bufferSize, bool
 // The reason for the semi-automaton is that the lib is interrupt driven and
 // requires user action to read the received data and decide what to do with it
 // replies usually take only 5..8ms at 50kbps@915MHz
-bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferSize, uint8_t retries, uint8_t retryWaitTime) {
+bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferSize, uint8_t retries, uint16_t retryWaitTime) {
 	uint32_t sentTime;
 	for (uint8_t i = 0; i <= retries; i++)
 	{
+		//cdc_log_int("Attempting to send. ", rtc_get_time());
 		send(toAddress, buffer, bufferSize, true);
 		sentTime = millis();
+		//cdc_write_line("Poll for ACK.");
+		radio_enable_interrupt();
 		while (millis() - sentTime < retryWaitTime)
 		{
 			if (ACKReceived(toAddress))
 			{
 				//Serial.print(" ~ms:"); Serial.print(millis() - sentTime);
+				cdc_log_int("Ack response time(ms): ", millis() - sentTime);
 				return true;
 			}
 		}
+		cdc_log_int("Failed attempt #", i + 1);
 		//Serial.print(" RETRY#"); Serial.println(i + 1);
 	}
 	return false;
@@ -320,8 +305,10 @@ bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferS
 
 // should be polled immediately after sending a packet with ACK request
 bool RFM69::ACKReceived(uint8_t fromNodeID) {
-	if (receiveDone())
+	if (receiveDone()) {
 		return (SENDERID == fromNodeID || fromNodeID == RF69_BROADCAST_ADDR) && ACK_RECEIVED;
+	}
+	receiveBegin();
 	return false;
 }
 
@@ -378,6 +365,7 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 void RFM69::interruptHandler() {
 	//pinMode(4, OUTPUT);
 	//digitalWrite(4, 1);
+	//cdc_write_line("##interrupt##");
 	if (_mode == RF69_MODE_RX && (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY))
 	{
 		//RSSI = readRSSI();
@@ -404,6 +392,13 @@ void RFM69::interruptHandler() {
 		ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
 		ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
 
+		/*
+		cdc_log_hex("CTLbyte: ", CTLbyte);
+		cdc_log_hex("ACK_RECEIVED: ", ACK_RECEIVED);
+		cdc_log_int("DATALEN: ", DATALEN);
+		cdc_log_int("PAYLOADLEN: ", PAYLOADLEN);
+		*/
+
 		for (uint8_t i = 0; i < DATALEN; i++)
 		{
 			DATA[i] = SPITransfer(0);
@@ -418,8 +413,7 @@ void RFM69::interruptHandler() {
 
 //void RFM69::isr0() { selfPointer->interruptHandler(); }
 
-ISR(PORTF_INT0_vect) { RFM69::selfPointer->interruptHandler(); }//cdc_log_int("Interrupt", rtc_get_time()); }
-
+ISR(PORTF_INT0_vect) { RFM69::selfPointer->interruptHandler(); }
 
 void RFM69::receiveBegin() {
 	DATALEN = 0;
@@ -436,21 +430,23 @@ void RFM69::receiveBegin() {
 }
 
 bool RFM69::receiveDone() {
-	ATOMIC_BLOCK(ATOMIC_FORCEON){
-		cli();//noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
+	//cdc_write_line("receiveDone()");
+	//ATOMIC_BLOCK(ATOMIC_FORCEON){
+		radio_disable_interrupt();//noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
 		if (_mode == RF69_MODE_RX && PAYLOADLEN > 0)
 		{
+			//cdc_write_line("rcd = true");
 			setMode(RF69_MODE_STANDBY); // enables interrupts
 			return true;
 		}
 		else if (_mode == RF69_MODE_RX) // already in RX no payload yet
 		{
-			sei();//interrupts(); // explicitly re-enable interrupts
+			radio_enable_interrupt();//interrupts(); // explicitly re-enable interrupts
 			return false;
 		}
 		receiveBegin();
 		return false;
-	}
+	//}
 }
 
 // To enable encryption: radio.encrypt("ABCDEFGHIJKLMNOP");
@@ -477,24 +473,25 @@ int16_t RFM69::readRSSI(bool forceTrigger) {
 		writeReg(REG_RSSICONFIG, RF_RSSI_START);
 		while ((readReg(REG_RSSICONFIG) & RF_RSSI_DONE) == 0x00); // wait for RSSI_Ready
 	}
-	rssi = -readReg(REG_RSSIVALUE);
-	rssi >>= 1;
+	rssi = -(readReg(REG_RSSIVALUE)/2);
+	//rssi >>= 1;
+	//rssi = -rssi;
 	return rssi;
 }
 
 uint8_t RFM69::readReg(uint8_t addr)
 {
-    //_delay_ms(SPIDELAY);
-    select();
-    SPITransfer(addr & 0x7F);
-    uint8_t regval = SPITransfer(0);
-    unselect();
+	//_delay_ms(SPIDELAY);
+	select();
+	SPITransfer(addr & 0x7F);
+	uint8_t regval = SPITransfer(0);
+	unselect();
 	return regval;
 }
 
 void RFM69::writeReg(uint8_t addr, uint8_t value)
 {
-    //_delay_ms(SPIDELAY);
+	//_delay_ms(SPIDELAY);
 	select();
 	SPITransfer(addr | 0x80);
 	SPITransfer(value);
@@ -503,30 +500,18 @@ void RFM69::writeReg(uint8_t addr, uint8_t value)
 
 // select the transceiver
 void RFM69::select() {
-	//noInterrupts();
-	// save current SPI settings
-	// _SPCR = SPCR;
-	// _SPSR = SPSR;
-	// set RFM69 SPI settings
-	// SPI.setDataMode(SPI_MODE0);
-	// SPI.setBitOrder(MSBFIRST);
-	// SPI.setClockDivider(SPI_CLOCK_DIV4); // decided to slow down from DIV2 after SPI stalling in some instances, especially visible on mega1284p when RFM69 and FLASH chip both present
-	
-    //slaveSelectLow();
+	radio_disable_interrupt();//noInterrupts();
 
-    spi_select_device(&SPIE, &spi_device_conf);
+	spi_select_device(&SPIE, &spi_device_conf);
 }
 
 // UNselect the transceiver chip
 void RFM69::unselect() {
 	//slaveSelectHigh();
 
-    spi_deselect_device(&SPIE, &spi_device_conf);
+	spi_deselect_device(&SPIE, &spi_device_conf);
 
-	// restore SPI settings to what they were before talking to RFM69
-	// SPCR = _SPCR;
-	// SPSR = _SPSR;
-	//interrupts();
+	radio_enable_interrupt();//interrupts();
 }
 
 // ON  = disable filtering to capture all frames on network
@@ -551,9 +536,7 @@ void RFM69::setHighPowerRegs(bool onOff) {
 }
 
 void RFM69::setCS(uint8_t newSPISlaveSelect) {
-	// _slaveSelectPin = newSPISlaveSelect;
-	// digitalWrite(_slaveSelectPin, HIGH);
-	// pinMode(_slaveSelectPin, OUTPUT);
+
 }
 
 // for debugging
@@ -565,8 +548,8 @@ void RFM69::readAllRegs()
 	{
 		regVal = readReg(regAddr);
 		cdc_write_string("Address: 0x");
-        cdc_write_hex(regAddr);
-        cdc_log_hex(" : Value 0x", regVal);
+		cdc_write_hex(regAddr);
+		cdc_log_hex(" : Value 0x", regVal);
 	}
 }
 

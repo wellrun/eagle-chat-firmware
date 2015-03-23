@@ -79,7 +79,7 @@ void cdc_disable(void)
 	cdc_enabled = false;
 }
 
-bool cdc_opened(void) 
+bool cdc_opened(void)
 {
 	return is_opened;
 }
@@ -120,6 +120,14 @@ void cdc_log_int(const void *message, uint32_t value) {
 	cdc_write_string(message);
 	char v[11];
 	ultoa(value, v, 10);
+	cdc_write_string((void *)v);
+	cdc_newline();
+}
+
+void cdc_log_signed(const void *message, int32_t value) {
+	cdc_write_string(message);
+	char v[12];
+	ltoa(value, v, 10);
 	cdc_write_string((void *)v);
 	cdc_newline();
 }
@@ -165,4 +173,3 @@ void cdc_rx_notify(uint8_t port) {
 		(*rx_callback)();
 	}
 }
-
