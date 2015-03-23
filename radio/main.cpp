@@ -20,7 +20,7 @@ extern "C" {
 //#define FREQUENCY     RF69_915MHZ
 //#define ENCRYPTKEY    "sampleEncryptKey" //exactly the same 16 characters/bytes on all nodes!
 #define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
-#define ACK_TIME      3000 // max # of ms to wait for an ack
+#define ACK_TIME      100 // max # of ms to wait for an ack
 #define NUM_RETRIES   5
 
 int TRANSMITPERIOD = 150; //transmit a packet to gateway so often (in ms)
@@ -70,17 +70,22 @@ int main (void)
 	radio.readAllRegs();
 
 	if (mode == 'S') {
+		uint32_t start_time;
 		uint8_t count = 0;
 		while (1) {
-			cdc_log_int("Send attempt: ", count);
-			memset(payload, 0, 5);
-			itoa(count, payload, 10);
-	        if(radio.sendWithRetry(TOID, payload, 30, NUM_RETRIES, 2000)){
-	             cdc_log_int("I think I sent something ", (uint32_t)radio.RSSI);
-	        } else {
-	        	cdc_log_int("I sent but I didn't recieve an ACK ", rtc_get_time());
-	        }
-			++count;
+			start_time = rtc_get_time();
+			for (count = 0; count < 0xFF; ++count) {
+				cdc_log_int("Send attempt: ", count);
+				memset(payload, 0, 5);
+				itoa(count, payload, 10);
+		        if(radio.sendWithRetry(TOID, payload, 30, NUM_RETRIES, ACK_TIME)){
+		             cdc_log_signed("I think I sent something ", radio.RSSI);
+		        } else {
+		        	cdc_log_int("I sent but I didn't recieve an ACK ", rtc_get_time());
+		        }
+			}
+			cdc_log_int("Time to send 255 packets: ", rtc_get_time() - start_time);
+			_delay_ms(3000);
 		}
 	} else {
 		//_delay_ms(10000);
@@ -93,14 +98,14 @@ int main (void)
 	            for (char i = 0; i < radio.DATALEN; i++)
 	                udi_cdc_putc((char)radio.DATA[i]);
 	            cdc_newline();
-	            cdc_log_int(" RX_RSSI: -", radio.RSSI);
+	            cdc_log_signed(" RX_RSSI: ", radio.RSSI);
 
 	            if (radio.ACKRequested() && mode == 'R')
 	            {
 					radio.sendACK("ACK", 3);
 	                cdc_write_line("ACK requested");
 	                cdc_write_line(" - ACK sent");
-	                cdc_log_int("RX_RSSI: ", (uint32_t)radio.RSSI);
+	                cdc_log_signed("RX_RSSI: ", radio.RSSI);
 	            }
 	        }
 		}

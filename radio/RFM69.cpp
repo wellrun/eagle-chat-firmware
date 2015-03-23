@@ -283,10 +283,10 @@ bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferS
 	uint32_t sentTime;
 	for (uint8_t i = 0; i <= retries; i++)
 	{
-		cdc_log_int("Attempting to send. ", rtc_get_time());
+		//cdc_log_int("Attempting to send. ", rtc_get_time());
 		send(toAddress, buffer, bufferSize, true);
 		sentTime = millis();
-		cdc_write_line("Poll for ACK.");
+		//cdc_write_line("Poll for ACK.");
 		radio_enable_interrupt();
 		while (millis() - sentTime < retryWaitTime)
 		{
@@ -297,6 +297,7 @@ bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferS
 				return true;
 			}
 		}
+		cdc_log_int("Failed attempt #", i + 1);
 		//Serial.print(" RETRY#"); Serial.println(i + 1);
 	}
 	return false;
@@ -472,8 +473,9 @@ int16_t RFM69::readRSSI(bool forceTrigger) {
 		writeReg(REG_RSSICONFIG, RF_RSSI_START);
 		while ((readReg(REG_RSSICONFIG) & RF_RSSI_DONE) == 0x00); // wait for RSSI_Ready
 	}
-	rssi = readReg(REG_RSSIVALUE);
-	rssi >>= 1;
+	rssi = -(readReg(REG_RSSIVALUE)/2);
+	//rssi >>= 1;
+	//rssi = -rssi;
 	return rssi;
 }
 
