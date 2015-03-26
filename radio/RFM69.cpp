@@ -397,12 +397,12 @@ void RFM69::interruptHandler() {
 		ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
 		ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
 
-		/*
-		cdc_log_hex("CTLbyte: ", CTLbyte);
-		cdc_log_hex("ACK_RECEIVED: ", ACK_RECEIVED);
-		cdc_log_int("DATALEN: ", DATALEN);
-		cdc_log_int("PAYLOADLEN: ", PAYLOADLEN);
-		*/
+		
+		// cdc_log_hex("CTLbyte: ", CTLbyte);
+		// cdc_log_hex("ACK_RECEIVED: ", ACK_RECEIVED);
+		// cdc_log_int("DATALEN: ", DATALEN);
+		// cdc_log_int("PAYLOADLEN: ", PAYLOADLEN);
+		
 
 		for (uint8_t i = 0; i < DATALEN; i++)
 		{

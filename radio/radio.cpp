@@ -36,6 +36,7 @@ void broadcastPacket(uint8_t *packet, uint8_t size) {
 }
 
 bool packetsToRead() {
+	radio.receiveDone();
 	return !fifo_isEmpty(&radio.RXFIFO);
 }
 

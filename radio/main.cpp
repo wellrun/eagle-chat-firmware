@@ -71,13 +71,13 @@ int main ()
 		uint8_t length;
 		uint8_t rbuf[256];
 
+		uint32_t p = 0;
+
 		while(1) {
 
 			while (packetsToRead()) {
+				cdc_log_int("Packets: ", ++p);
 				getNextPacket(&senderId, &length, rbuf);
-				cdc_log_int("Got packet from: ", senderId);
-				cdc_log_int("Length: ", length);
-				cdc_log_hex_string("Contents: ", rbuf, length);
 			}
 
 		}
