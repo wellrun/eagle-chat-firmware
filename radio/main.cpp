@@ -6,33 +6,20 @@ extern "C" {
 	#include "cdc.h"
 	#include <util/delay.h>
 }
+
 #include <string.h>
-#include "RFM69.h"
+
+#include "radio.h"
+#include "fifo.h"
 
 
-#define NODEID        1    //unique for each node on same network
-#define NETWORKID     100  //the same on all nodes that talk to each other
-#define GATEWAYID     5
-#define TOID          1
-//Match frequency to the hardware version of the radio on your Moteino (uncomment one):
-//#define FREQUENCY   RF69_433MHZ
-#define FREQUENCY   RF69_868MHZ
-//#define FREQUENCY     RF69_915MHZ
-//#define ENCRYPTKEY    "sampleEncryptKey" //exactly the same 16 characters/bytes on all nodes!
-#define IS_RFM69HW    //uncomment only for RFM69HW! Leave out if you have RFM69W!
-#define ACK_TIME      100 // max # of ms to wait for an ack
-#define NUM_RETRIES   5
+uint32_t TRANSMITPERIOD = 150; //transmit a packet to gateway so often (in ms)
+uint8_t payload[] = "123 ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+uint8_t buff[20];
+uint8_t sendSize=0;
+uint8_t requestACK = true;
 
-int TRANSMITPERIOD = 150; //transmit a packet to gateway so often (in ms)
-char payload[] = "123 ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-char buff[20];
-char sendSize=0;
-bool requestACK = true;
-RFM69 radio;
-
-int timethen = rtc_get_time();
-
-int main (void)
+int main ()
 {
 	cpu_irq_enable();
 
@@ -49,66 +36,55 @@ int main (void)
 	while (!cdc_opened());
 	rtc_set_time(0);
 	cdc_log_int("About to instantiate module ", rtc_get_time());
-	radio = RFM69();
-
-	cdc_log_int("About to intialize module ", rtc_get_time());
-	radio.initialize(FREQUENCY,NODEID,NETWORKID);
-
-	cdc_log_int("Initialized: ", rtc_get_time());
-
-	radio.setHighPower();
-	radio.setPowerLevel(31);
-	radio.promiscuous(true);
+	
+	setupRadio();
 
 	uint8_t mode = 0;
 	while (mode != 'S' && mode != 'R') {
-		cdc_write_string("Enter S for send or R for receive: ");
+		cdc_write_string("Enter S for send or R for receive, or F for fifo test: ");
 		mode = udi_cdc_getc();
 	}
-
-
-	radio.readAllRegs();
 
 	if (mode == 'S') {
 		uint32_t start_time;
 		uint8_t count = 0;
 		while (1) {
+			
 			start_time = rtc_get_time();
 			for (count = 0; count < 0xFF; ++count) {
+
 				cdc_log_int("Send attempt: ", count);
 				memset(payload, 0, 5);
-				itoa(count, payload, 10);
-		        if(radio.sendWithRetry(TOID, payload, 30, NUM_RETRIES, ACK_TIME)){
-		             cdc_log_signed("I think I sent something ", radio.RSSI);
-		        } else {
-		        	cdc_log_int("I sent but I didn't recieve an ACK ", rtc_get_time());
-		        }
+				itoa(count, (char *)payload, 10);
+		        
+				broadcastPacket(payload, 30);
+
 			}
+			
 			cdc_log_int("Time to send 255 packets: ", rtc_get_time() - start_time);
 			_delay_ms(3000);
 		}
-	} else {
-		//_delay_ms(10000);
-		while(1) {
-	        if (radio.receiveDone())
-	        {
-	            cdc_write_line("RECEIVED");
-	            cdc_log_int("Recieved Packet from ", radio.SENDERID);
-	            cdc_write_line("Message: ");
-	            for (char i = 0; i < radio.DATALEN; i++)
-	                udi_cdc_putc((char)radio.DATA[i]);
-	            cdc_newline();
-	            cdc_log_signed(" RX_RSSI: ", radio.RSSI);
 
-	            if (radio.ACKRequested() && mode == 'R')
-	            {
-					radio.sendACK("ACK", 3);
-	                cdc_write_line("ACK requested");
-	                cdc_write_line(" - ACK sent");
-	                cdc_log_signed("RX_RSSI: ", radio.RSSI);
-	            }
-	        }
-		}
+	} else if (mode == 'R') {
+
+		// Todo
+
+    } else if (mode == 'F') {
+
+    	// Play around with FIFO
+
+    	fifo_t F;
+
+    	fifo_init(&F);
+
+    	fifo_write(&F, payload, 30);
+    	fifo_write(&F, payload, 30);
+
+    	uint8_t buf[FIFO_UNIT_LEN];
+
+    	fifo_read(&F, buf);
+
     }
+
 	while (1);
 }
