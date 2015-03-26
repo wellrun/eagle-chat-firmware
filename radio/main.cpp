@@ -36,7 +36,7 @@ int main ()
 	while (!cdc_opened());
 	rtc_set_time(0);
 	cdc_log_int("About to instantiate module ", rtc_get_time());
-	
+
 	setupRadio();
 
 	uint8_t mode = 0;
@@ -49,18 +49,18 @@ int main ()
 		uint32_t start_time;
 		uint8_t count = 0;
 		while (1) {
-			
+
 			start_time = rtc_get_time();
 			for (count = 0; count < 0xFF; ++count) {
 
 				cdc_log_int("Send attempt: ", count);
 				memset(payload, 0, 5);
 				itoa(count, (char *)payload, 10);
-		        
-				broadcastPacket(payload, 30);
 
+				broadcastPacket(payload, 30);
+				_delay_ms(50);
 			}
-			
+
 			cdc_log_int("Time to send 255 packets: ", rtc_get_time() - start_time);
 			_delay_ms(3000);
 		}

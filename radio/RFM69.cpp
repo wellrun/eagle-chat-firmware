@@ -378,7 +378,7 @@ void RFM69::interruptHandler() {
 		select();
 		SPITransfer(REG_FIFO & 0x7F);
 		PAYLOADLEN = SPITransfer(0);
-		PAYLOADLEN = PAYLOADLEN > 66 ? 66 : PAYLOADLEN; // precaution
+		//PAYLOADLEN = PAYLOADLEN > 66 ? 66 : PAYLOADLEN; // precaution
 		TARGETID = SPITransfer(0);
 		if(!(_promiscuousMode || TARGETID == _address || TARGETID == RF69_BROADCAST_ADDR) // match this node's address, or broadcast address or anything in promiscuous mode
 			 || PAYLOADLEN < 3) // address situation could receive packets that are malformed and don't fit this libraries extra fields
@@ -397,19 +397,19 @@ void RFM69::interruptHandler() {
 		ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
 		ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
 
-		
+
 		// cdc_log_hex("CTLbyte: ", CTLbyte);
 		// cdc_log_hex("ACK_RECEIVED: ", ACK_RECEIVED);
 		// cdc_log_int("DATALEN: ", DATALEN);
 		// cdc_log_int("PAYLOADLEN: ", PAYLOADLEN);
-		
+
 
 		for (uint8_t i = 0; i < DATALEN; i++)
 		{
 			DATA[i] = SPITransfer(0);
 		}
 		if (DATALEN < RF69_MAX_DATA_LEN) DATA[DATALEN] = 0; // add null at end of string
-		
+
 		uint8_t tofifo[DATALEN+2];
 		tofifo[0] = SENDERID;
 		tofifo[1] = DATALEN;
