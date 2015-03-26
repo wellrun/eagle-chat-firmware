@@ -35,6 +35,7 @@
 
 extern "C" {
   #include "asf.h"
+  #include "fifo.h"
 }
 
 //#include <Arduino.h>            // assumes Arduino IDE v1.0 or greater
@@ -79,6 +80,9 @@ extern "C" {
 
 class RFM69 {
   public:
+
+    static fifo_t  RXFIFO;
+
     static volatile uint8_t DATA[RF69_MAX_DATA_LEN]; // recv/xmit buf, including header & crc bytes
     static volatile uint8_t DATALEN;
     static volatile uint8_t SENDERID;

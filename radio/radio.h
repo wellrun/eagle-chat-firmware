@@ -19,6 +19,8 @@ void setupRadio(void);
 
 void broadcastPacket(uint8_t *packet, uint8_t size);
 
-void handleReceived(void);
+bool packetsToRead(void);
+
+void getNextPacket(uint8_t *senderId, uint8_t *length, uint8_t *buf);
 
 #endif /*RADIO_H_INCLUDED*/

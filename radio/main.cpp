@@ -67,7 +67,20 @@ int main ()
 
 	} else if (mode == 'R') {
 
-		// Todo
+		uint8_t senderId;
+		uint8_t length;
+		uint8_t rbuf[256];
+
+		while(1) {
+
+			while (packetsToRead()) {
+				getNextPacket(&senderId, &length, rbuf);
+				cdc_log_int("Got packet from: ", senderId);
+				cdc_log_int("Length: ", length);
+				cdc_log_hex_string("Contents: ", rbuf, length);
+			}
+
+		}
 
     } else if (mode == 'F') {
 

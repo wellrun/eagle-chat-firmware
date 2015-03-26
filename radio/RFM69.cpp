@@ -34,6 +34,8 @@
 #include "user_board.h"
 #include "util/atomic.h"
 
+#include <string.h>
+
 struct spi_device spi_device_conf = {
 	.id = IOPORT_CREATE_PIN(PORTE, 4)
 };
@@ -91,6 +93,7 @@ inline void radio_disable_interrupt() {
 	//cli();
 }
 
+fifo_t  		 RFM69::RXFIFO;
 volatile uint8_t RFM69::DATA[RF69_MAX_DATA_LEN];
 volatile uint8_t RFM69::_mode;        // current transceiver state
 volatile uint8_t RFM69::DATALEN;
@@ -169,6 +172,8 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	radio_enable_interrupt();
 	RF_DIO_PORT.INT0MASK = 1;
 	sei();
+
+	fifo_init(&RXFIFO);
 
 	selfPointer = this;
 	_address = nodeID;
@@ -404,6 +409,13 @@ void RFM69::interruptHandler() {
 			DATA[i] = SPITransfer(0);
 		}
 		if (DATALEN < RF69_MAX_DATA_LEN) DATA[DATALEN] = 0; // add null at end of string
+		
+		uint8_t tofifo[DATALEN+2];
+		tofifo[0] = SENDERID;
+		tofifo[1] = DATALEN;
+		memcpy(&tofifo[2], (const void *)DATA, DATALEN);
+		fifo_write(&RXFIFO, tofifo, DATALEN+2);
+
 		unselect();
 		setMode(RF69_MODE_RX);
 	}
