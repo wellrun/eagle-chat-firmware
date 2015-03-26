@@ -3,9 +3,9 @@
 
 #include "asf.h"
 
-#define FIFO_UNIT_LEN 	256
-#define FIFO_SLOTS 		16
-#define FIFO_SIZE		(FIFO_SLOTS*FIFO_UNIT_LEN)
+#define FIFO_UNIT_LEN   256
+#define FIFO_SLOTS      4
+#define FIFO_SIZE       (FIFO_SLOTS*FIFO_UNIT_LEN)
 
 typedef struct {
 	uint8_t data[FIFO_SIZE];
