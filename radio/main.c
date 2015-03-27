@@ -1,11 +1,9 @@
 #define F_CPU	32000000L
 
-extern "C" {
-	#include "asf.h"
-	#include <avr/io.h>
-	#include "cdc.h"
-	#include <util/delay.h>
-}
+#include "asf.h"
+#include <avr/io.h>
+#include "cdc.h"
+#include <util/delay.h>
 
 #include <string.h>
 

@@ -2,7 +2,7 @@
 TARGET = main.elf
 
 CSRCS += \
-    main.cpp \
+    main.c \
     radio.cpp \
     RFM69.cpp \
     fifo.c \
