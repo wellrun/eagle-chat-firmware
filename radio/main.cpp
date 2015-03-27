@@ -14,7 +14,7 @@ extern "C" {
 
 
 uint32_t TRANSMITPERIOD = 150; //transmit a packet to gateway so often (in ms)
-uint8_t payload[] = "123 ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+uint8_t payload[128];
 uint8_t buff[20];
 uint8_t sendSize=0;
 uint8_t requestACK = true;
@@ -51,13 +51,15 @@ int main ()
 		while (1) {
 
 			start_time = rtc_get_time();
+			memset(payload, 'A', sizeof(payload));
+			payload[sizeof(payload)-1] = 0;
 			for (count = 0; count < 0xFF; ++count) {
 
 				cdc_log_int("Send attempt: ", count);
-				memset(payload, 0, 5);
-				itoa(count, (char *)payload, 10);
+				//memset(payload, 0, 5);
+				//itoa(count, (char *)payload, 10);
 
-				broadcastPacket(payload, 30);
+				broadcastPacket(payload, sizeof(payload));
 				_delay_ms(50);
 			}
 

@@ -140,7 +140,7 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 		/* 0x2F */ { REG_SYNCVALUE1, 0x2D },      // attempt to make this compatible with sync1 byte of RFM12B lib
 		/* 0x30 */ { REG_SYNCVALUE2, networkID }, // NETWORK ID
 		/* 0x37 */ { REG_PACKETCONFIG1, RF_PACKET1_FORMAT_VARIABLE | RF_PACKET1_DCFREE_OFF | RF_PACKET1_CRC_ON | RF_PACKET1_CRCAUTOCLEAR_ON | RF_PACKET1_ADRSFILTERING_OFF },
-		/* 0x38 */ { REG_PAYLOADLENGTH, 66 }, // in variable length mode: the max frame size, not used in TX
+		/* 0x38 */ { REG_PAYLOADLENGTH, 255 }, // in variable length mode: the max frame size, not used in TX
 		///* 0x39 */ { REG_NODEADRS, nodeID }, // turned off because we're not using address filtering
 		/* 0x3C */ { REG_FIFOTHRESH, RF_FIFOTHRESH_TXSTART_FIFONOTEMPTY | RF_FIFOTHRESH_VALUE }, // TX on FIFO not empty
 		/* 0x3D */ { REG_PACKETCONFIG2, RF_PACKET2_RXRESTARTDELAY_2BITS | RF_PACKET2_AUTORXRESTART_ON | RF_PACKET2_AES_OFF }, // RXRESTARTDELAY must match transmitter PA ramp-down time (bitrate dependent)
@@ -333,6 +333,14 @@ void RFM69::sendACK(const void* buffer, uint8_t bufferSize) {
 	RSSI = _RSSI; // restore payload RSSI
 }
 
+static inline bool radio_fifoNotEmpty(void) {
+	return ioport_get_pin_level(RF_DIO2_pin);
+}
+
+static inline bool radio_fifoFull(void) {
+	return ioport_get_pin_level(RF_DIO3_pin);
+}
+
 void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize, bool requestACK, bool sendACK)
 {
 	setMode(RF69_MODE_STANDBY); // turn off receiver to prevent reception while filling fifo
@@ -355,12 +363,38 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 	SPITransfer(_address);
 	SPITransfer(CTLbyte);
 
-	for (uint8_t i = 0; i < bufferSize; i++)
+	// fifo has 4 bytes, 66 - 4 = 62 remaining
+
+	//uint8_t prefill = bufferSize > 61 ? 61 : bufferSize;
+	uint8_t i = 0;
+	//for (; i < prefill; i++)
+	//	SPITransfer(((uint8_t*) buffer)[i]);
+
+	/* Prefill the FIFO until we're out of message or room in the buffer */
+	while (!radio_fifoFull() && i < bufferSize) {
 		SPITransfer(((uint8_t*) buffer)[i]);
+		++i;
+	}
 	unselect();
 
 	// no need to wait for transmit mode to be ready since its handled by the radio
 	setMode(RF69_MODE_TX);
+
+	// Radio is now transmitting our data and fifo is being emptied
+
+	if (i < bufferSize) { // if we still have bytes to send
+		select();
+		SPITransfer(REG_FIFO | 0x80);
+		while(i < bufferSize) {
+			while (!radio_fifoNotEmpty()); // wait till fifo has room
+			while (!radio_fifoFull() && i < bufferSize) { // avoid overfilling fifo
+				SPITransfer(((uint8_t*) buffer)[i]); // send byte
+				++i;
+			}
+		}
+		unselect();
+	}
+
 	uint32_t txStart = millis();
 	while (ioport_get_pin_level(_interruptPin) == 0 && millis() - txStart < RF69_TX_LIMIT_MS); // wait for DIO0 to turn HIGH signalling transmission finish
 	//while (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PACKETSENT == 0x00); // wait for ModeReady
