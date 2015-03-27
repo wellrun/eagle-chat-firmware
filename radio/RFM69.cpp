@@ -81,6 +81,14 @@ uint32_t millis() {
 	return rtc_get_time();
 }
 
+inline void radio_set_interrupt_pin() {
+	RF_DIO_PORT.INT0MASK = ioport_pin_to_mask(RF_DIO2_pin);
+}
+
+inline void radio_clear_interrupt_pin() {
+	RF_DIO_PORT.INT0MASK = 0;
+}
+
 inline void radio_enable_interrupt() {
 	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
 	//RF_DIO_PORT.INT0MASK = 1;
@@ -167,10 +175,11 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00);
 
 	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
-	ioport_set_pin_dir(RF_DIO0_pin, IOPORT_DIR_INPUT);
-	ioport_set_pin_sense_mode(RF_DIO0_pin, IOPORT_SENSE_RISING);
+	ioport_set_pin_dir(RF_DIO2_pin, IOPORT_DIR_INPUT);
+	ioport_set_pin_sense_mode(RF_DIO2_pin, IOPORT_SENSE_RISING);
+	radio_set_interrupt_pin();
 	radio_enable_interrupt();
-	RF_DIO_PORT.INT0MASK = 1;
+	//RF_DIO_PORT.INT0MASK = ;
 	sei();
 
 	fifo_init(&RXFIFO);
@@ -341,6 +350,12 @@ static inline bool radio_fifoFull(void) {
 	return ioport_get_pin_level(RF_DIO3_pin);
 }
 
+static inline bool radio_CrcOk(void) {
+	return ioport_get_pin_level(RF_DIO0_pin);
+}
+
+
+
 void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize, bool requestACK, bool sendACK)
 {
 	setMode(RF69_MODE_STANDBY); // turn off receiver to prevent reception while filling fifo
@@ -401,32 +416,72 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 	setMode(RF69_MODE_STANDBY);
 }
 
+/*
+	Receive interrupt handler. Is triggered by pin DIO2, which goes high on radio's FifoNotEmpty
+*/
 void RFM69::interruptHandler() {
 	//pinMode(4, OUTPUT);
 	//digitalWrite(4, 1);
 	//cdc_write_line("##interrupt##");
-	if (_mode == RF69_MODE_RX && (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY))
+	// Check that we are in receive mode and the FifoNotEmpty interrupt has fired
+	if (_mode == RF69_MODE_RX && (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_FIFONOTEMPTY))
 	{
 		//RSSI = readRSSI();
-		setMode(RF69_MODE_STANDBY);
+		//setMode(RF69_MODE_STANDBY); // do not go into standby mode as we are probably still receiving
+		radio_disable_interrupt();
+		radio_clear_interrupt_pin();
+
 		select();
 		SPITransfer(REG_FIFO & 0x7F);
 		PAYLOADLEN = SPITransfer(0);
+
+		if (PAYLOADLEN < 3) { // BAIL!!!!
+			radio_set_interrupt_pin();
+			PAYLOADLEN = 0;
+			unselect();
+			receiveBegin();
+			return;
+		}
+
+		unselect();
 		//PAYLOADLEN = PAYLOADLEN > 66 ? 66 : PAYLOADLEN; // precaution
+		select();
+		while (!radio_fifoNotEmpty()) {
+			unselect();
+			select();
+		}
+		SPITransfer(REG_FIFO & 0x7F);
 		TARGETID = SPITransfer(0);
 		if(!(_promiscuousMode || TARGETID == _address || TARGETID == RF69_BROADCAST_ADDR) // match this node's address, or broadcast address or anything in promiscuous mode
 			 || PAYLOADLEN < 3) // address situation could receive packets that are malformed and don't fit this libraries extra fields
 		{
+			radio_set_interrupt_pin();
 			PAYLOADLEN = 0;
 			unselect();
 			receiveBegin();
-			//digitalWrite(4, 0);
 			return;
 		}
+		unselect();
 
 		DATALEN = PAYLOADLEN - 3;
+
+		select();
+		while (!radio_fifoNotEmpty()) {
+			unselect();
+			select();
+		}
+		SPITransfer(REG_FIFO & 0x7F);
 		SENDERID = SPITransfer(0);
+		unselect();
+
+		select();
+		while (!radio_fifoNotEmpty()) {
+			unselect();
+			select();
+		}
+		SPITransfer(REG_FIFO & 0x7F);
 		uint8_t CTLbyte = SPITransfer(0);
+		unselect();
 
 		ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
 		ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
@@ -437,12 +492,44 @@ void RFM69::interruptHandler() {
 		// cdc_log_int("DATALEN: ", DATALEN);
 		// cdc_log_int("PAYLOADLEN: ", PAYLOADLEN);
 
+		uint8_t i = 0;
+		bool crc_okay = false;
 
+		while (i < DATALEN && !(crc_okay = radio_CrcOk())) {
+			select();
+			while (!radio_fifoNotEmpty()) {
+				unselect();
+				select();
+			}
+			SPITransfer(REG_FIFO & 0x7F);
+			DATA[i] = SPITransfer(0);
+			++i;
+			unselect();
+		}
+		setMode(RF69_MODE_STANDBY); // Packet is finished receiving, safe to go to standby
+		radio_set_interrupt_pin();
+
+		if (!crc_okay) { // Bail if crc's not okay
+			PAYLOADLEN = 0;
+			receiveBegin();
+			return;
+		}
+		if (i < DATALEN) {
+			select();
+			SPITransfer(REG_FIFO & 0x7F);
+			for (; i < DATALEN; ++i) { // Finish reading rest of data
+				DATA[i] = SPITransfer(0);
+			}
+			unselect();
+		}
+
+		/*
 		for (uint8_t i = 0; i < DATALEN; i++)
 		{
 			DATA[i] = SPITransfer(0);
 		}
 		if (DATALEN < RF69_MAX_DATA_LEN) DATA[DATALEN] = 0; // add null at end of string
+		*/
 
 		uint8_t tofifo[DATALEN+2];
 		tofifo[0] = SENDERID;
@@ -450,7 +537,6 @@ void RFM69::interruptHandler() {
 		memcpy(&tofifo[2], (const void *)DATA, DATALEN);
 		fifo_write(&RXFIFO, tofifo, DATALEN+2);
 
-		unselect();
 		setMode(RF69_MODE_RX);
 	}
 	RSSI = readRSSI();
@@ -471,7 +557,7 @@ void RFM69::receiveBegin() {
 	RSSI = 0;
 	if (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY)
 		writeReg(REG_PACKETCONFIG2, (readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART); // avoid RX deadlocks
-	writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01); // set DIO0 to "PAYLOADREADY" in receive mode
+	writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO2_00); // set DIO2 to "FifoNotEmpty" in receive mode
 	setMode(RF69_MODE_RX);
 }
 
