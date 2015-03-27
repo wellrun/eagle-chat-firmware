@@ -6,10 +6,6 @@ extern "C" {
 #endif
  
 #include "asf.h"
- 
-#ifdef __cplusplus
-}
-#endif
 
 #define FREQUENCY   	RF69_868MHZ
 #define NODEID        	1    //unique for each node on same network
@@ -22,5 +18,9 @@ void broadcastPacket(uint8_t *packet, uint8_t size);
 bool packetsToRead(void);
 
 void getNextPacket(uint8_t *senderId, uint8_t *length, uint8_t *buf);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*RADIO_H_INCLUDED*/
