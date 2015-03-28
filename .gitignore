@@ -56,3 +56,7 @@ conf.mk
 .DS_Store
 **/.DS_Store
 
+# Floobits
+.floo
+.flooignore
+
