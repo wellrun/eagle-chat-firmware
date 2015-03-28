@@ -422,7 +422,7 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 void RFM69::interruptHandler() {
 	//pinMode(4, OUTPUT);
 	//digitalWrite(4, 1);
-	//cdc_write_line("##interrupt##");
+	cdc_write_line("##interrupt##");
 	// Check that we are in receive mode and the FifoNotEmpty interrupt has fired
 	if (_mode == RF69_MODE_RX && (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_FIFONOTEMPTY))
 	{
@@ -495,7 +495,7 @@ void RFM69::interruptHandler() {
 		uint8_t i = 0;
 		bool crc_okay = false;
 
-		while (i < DATALEN && !(crc_okay = radio_CrcOk())) {
+		while (i < DATALEN && !(crc_okay = readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_CRCOK)) {
 			select();
 			while (!radio_fifoNotEmpty()) {
 				unselect();
@@ -506,10 +506,14 @@ void RFM69::interruptHandler() {
 			++i;
 			unselect();
 		}
+
 		setMode(RF69_MODE_STANDBY); // Packet is finished receiving, safe to go to standby
 		radio_set_interrupt_pin();
 
 		if (!crc_okay) { // Bail if crc's not okay
+			cdc_write_line("Bailing, failed CRC");
+			DATA[128] = 0;
+			cdc_write_line((uint8_t *)DATA);
 			PAYLOADLEN = 0;
 			receiveBegin();
 			return;
@@ -557,7 +561,7 @@ void RFM69::receiveBegin() {
 	RSSI = 0;
 	if (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY)
 		writeReg(REG_PACKETCONFIG2, (readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART); // avoid RX deadlocks
-	writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO2_00); // set DIO2 to "FifoNotEmpty" in receive mode
+	writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO2_00 | RF_DIOMAPPING1_DIO0_01); // set DIO2 to "FifoNotEmpty" in receive mode, DIO0 is payloadready
 	setMode(RF69_MODE_RX);
 }
 

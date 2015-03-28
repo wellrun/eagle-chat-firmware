@@ -12,7 +12,7 @@
 
 
 uint32_t TRANSMITPERIOD = 150; //transmit a packet to gateway so often (in ms)
-uint8_t payload[128];
+uint8_t payload[50];
 uint8_t buff[20];
 uint8_t sendSize=0;
 uint8_t requestACK = true;
