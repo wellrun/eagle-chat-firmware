@@ -41,6 +41,7 @@ int main ()
 	while (mode != 'S' && mode != 'R') {
 		cdc_write_string("Enter S for send or R for receive, or F for fifo test: ");
 		mode = udi_cdc_getc();
+		//mode = 'R';
 	}
 
 	if (mode == 'S') {
@@ -66,15 +67,18 @@ int main ()
 		}
 
 	} else if (mode == 'R') {
-
+		//cdc_write_string("\nRead mode.");
 		uint8_t senderId;
 		uint8_t length;
 		uint8_t rbuf[256];
 
 		uint32_t p = 0;
-
+		uint16_t now = rtc_get_time();
 		while(1) {
-
+			if (rtc_get_time() - now > 1000) {
+				now = rtc_get_time();
+				cdc_write_line("MAIN LOOP");
+			}
 			while (packetsToRead()) {
 				cdc_log_int("Packets: ", ++p);
 				getNextPacket(&senderId, &length, rbuf);
