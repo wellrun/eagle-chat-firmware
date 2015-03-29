@@ -12,7 +12,7 @@
 
 
 uint32_t TRANSMITPERIOD = 150; //transmit a packet to gateway so often (in ms)
-uint8_t payload[50];
+uint8_t payload[250];
 uint8_t buff[20];
 uint8_t sendSize=0;
 uint8_t requestACK = true;
@@ -54,6 +54,8 @@ int main ()
 			payload[sizeof(payload)-1] = 0;
 			for (count = 0; count < 0xFF; ++count) {
 
+				while (udi_cdc_getc() == 0);
+
 				cdc_log_int("Send attempt: ", count);
 				//memset(payload, 0, 5);
 				//itoa(count, (char *)payload, 10);
@@ -77,7 +79,7 @@ int main ()
 		while(1) {
 			if (rtc_get_time() - now > 1000) {
 				now = rtc_get_time();
-				cdc_write_line("MAIN LOOP");
+				//cdc_write_line("MAIN LOOP");
 			}
 			while (packetsToRead()) {
 				cdc_log_int("Packets: ", ++p);
@@ -99,7 +101,7 @@ int main ()
 
     	uint8_t buf[FIFO_UNIT_LEN];
 
-    	fifo_read(&F, buf);
+    	fifo_read(&F);
 
     }
 

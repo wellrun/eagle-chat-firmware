@@ -34,6 +34,8 @@
 #include "user_board.h"
 #include "util/atomic.h"
 
+#include <crc.h>
+
 #include <string.h>
 
 struct spi_device spi_device_conf = {
@@ -374,24 +376,24 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 
 	// write to FIFO
 	select();
-	SPITransfer(REG_FIFO | 0x80);
-	SPITransfer(bufferSize + 3);
-	SPITransfer(toAddress);
-	SPITransfer(_address);
-	SPITransfer(CTLbyte);
+		SPITransfer(REG_FIFO | 0x80);
+		SPITransfer(bufferSize + 3 + 2); // 3 bytes for the following frame header; 2 bytes for manual CRC at the end
+		SPITransfer(toAddress);
+		SPITransfer(_address);
+		SPITransfer(CTLbyte);
 
-	// fifo has 4 bytes, 66 - 4 = 62 remaining
+		// fifo has 4 bytes, 66 - 4 = 62 remaining
 
-	//uint8_t prefill = bufferSize > 61 ? 61 : bufferSize;
-	uint8_t i = 0;
-	//for (; i < prefill; i++)
-	//	SPITransfer(((uint8_t*) buffer)[i]);
+		//uint8_t prefill = bufferSize > 61 ? 61 : bufferSize;
+		uint8_t i = 0;
+		//for (; i < prefill; i++)
+		//	SPITransfer(((uint8_t*) buffer)[i]);
 
-	/* Prefill the FIFO until we're out of message or room in the buffer */
-	while (!radio_fifoFull() && i < bufferSize) {
-		SPITransfer(((uint8_t*) buffer)[i]);
-		++i;
-	}
+		/* Prefill the FIFO until we're out of message or room in the buffer */
+		while (!radio_fifoFull() && i < bufferSize) {
+			SPITransfer(((uint8_t*) buffer)[i]);
+			++i;
+		}
 	unselect();
 
 	// no need to wait for transmit mode to be ready since its handled by the radio
@@ -399,18 +401,28 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 
 	// Radio is now transmitting our data and fifo is being emptied
 
-	if (i < bufferSize) { // if we still have bytes to send
-		select();
+	select();
 		SPITransfer(REG_FIFO | 0x80);
-		while(i < bufferSize) {
-			while (!radio_fifoNotEmpty()); // wait till fifo has room
-			while (!radio_fifoFull() && i < bufferSize) { // avoid overfilling fifo
-				SPITransfer(((uint8_t*) buffer)[i]); // send byte
-				++i;
+		if (i < bufferSize) { // if we still have bytes to send
+			while(i < bufferSize) {
+				//while (!radio_fifoNotEmpty()); // wait till fifo has room
+				while (!radio_fifoFull() && i < bufferSize) { // avoid overfilling fifo
+					SPITransfer(((uint8_t*) buffer)[i]); // send byte
+					++i;
+				}
 			}
 		}
-		unselect();
-	}
+		uint16_t result = (uint16_t)crc_io_checksum((void *)buffer, bufferSize, CRC_16BIT);
+
+		// Write the CRC bits
+		while (radio_fifoFull());
+		SPITransfer(((uint8_t *)&result)[0]);
+		while (radio_fifoFull());
+		SPITransfer(((uint8_t *)&result)[1]);
+
+	unselect();
+
+	cdc_log_int("sendFrame CRC result: ", result);
 
 	uint32_t txStart = millis();
 	while (ioport_get_pin_level(_interruptPin) == 0 && millis() - txStart < RF69_TX_LIMIT_MS); // wait for DIO0 to turn HIGH signalling transmission finish
@@ -422,16 +434,11 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 	Receive interrupt handler. Is triggered by pin DIO2, which goes high on radio's FifoNotEmpty
 */
 void RFM69::interruptHandler() {
-	//pinMode(4, OUTPUT);
-	//digitalWrite(4, 1);
-	//cdc_write_line("##interrupt##");
-	uint32_t startTime = millis();
 	// Check that we are in receive mode and the FifoNotEmpty interrupt has fired
 	if (_mode == RF69_MODE_RX && (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_FIFONOTEMPTY))
 	{
-		//RSSI = readRSSI();
-		//setMode(RF69_MODE_STANDBY); // do not go into standby mode as we are probably still receiving
-		cli();
+		uint32_t now = millis();
+
 		radio_disable_interrupt();
 		radio_clear_interrupt_pin();
 
@@ -439,134 +446,67 @@ void RFM69::interruptHandler() {
 		SPITransfer(REG_FIFO & 0x7F);
 		PAYLOADLEN = SPITransfer(0);
 
-		if (PAYLOADLEN < 3) { // BAIL!!!!
+		if (PAYLOADLEN < 5) { // BAIL!!!!
 			radio_set_interrupt_pin();
-			PAYLOADLEN = 0;
 			unselect();
 			receiveBegin();
-			sei();
 			return;
 		}
 
-		//unselect();
-		//PAYLOADLEN = PAYLOADLEN > 66 ? 66 : PAYLOADLEN; // precaution
-		//select();
-		while (!radio_fifoNotEmpty()) {
-		//	unselect();
-		//	select();
-		}
-		//SPITransfer(REG_FIFO & 0x7F);
+		while (!radio_fifoNotEmpty());
+
 		TARGETID = SPITransfer(0);
+
 		if(!(_promiscuousMode || TARGETID == _address || TARGETID == RF69_BROADCAST_ADDR) // match this node's address, or broadcast address or anything in promiscuous mode
-			 || PAYLOADLEN < 3) // address situation could receive packets that are malformed and don't fit this libraries extra fields
+			 || PAYLOADLEN < 5) // address situation could receive packets that are malformed and don't fit this libraries extra fields
 		{
 			radio_set_interrupt_pin();
-			PAYLOADLEN = 0;
 			unselect();
 			receiveBegin();
-			sei();
 			return;
 		}
-		//unselect();
 
-		DATALEN = PAYLOADLEN - 3;
+		DATALEN = PAYLOADLEN - 3 - 2;
 
-		//select();
-		while (!radio_fifoNotEmpty()) {
-		//	unselect();
-		//	select();
-		}
-		//SPITransfer(REG_FIFO & 0x7F);
+		while (!radio_fifoNotEmpty());
 		SENDERID = SPITransfer(0);
-		//unselect();
 
-		//select();
-		while (!radio_fifoNotEmpty()) {
-		//	unselect();
-		//	select();
-		}
-		//SPITransfer(REG_FIFO & 0x7F);
+		while (!radio_fifoNotEmpty());
 		uint8_t CTLbyte = SPITransfer(0);
-		//unselect();
 
 		ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
 		ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
 
-
-		// //cdc_log_hex("CTLbyte: ", CTLbyte);
-		// //cdc_log_hex("ACK_RECEIVED: ", ACK_RECEIVED);
-		// //cdc_log_int("DATALEN: ", DATALEN);
-		// //cdc_log_int("PAYLOADLEN: ", PAYLOADLEN);
-
 		uint8_t i = 0;
 		uint8_t crc_okay = false;
-		
-		int datalen = DATALEN;
-		uint8_t buf_test[100];
-		//select();
-		//SPITransfer(REG_FIFO & 0x7F);
+
 		while (i < DATALEN) {
-			//crc_okay = readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_CRCOK;
-			
-			//select();
 			while (!radio_fifoNotEmpty());
-			//SPITransfer(REG_FIFO & 0x7F);
 			DATA[i] = SPITransfer(0);
-			buf_test[i] = 0;
-			++i;
-			//unselect();
-			
-			crc_okay = radio_CrcOk();
-			if (crc_okay) {
-				nop();
-				break;
-			}
+			++i;			
 		}
-		
-		uint8_t j = 0;
-		while(radio_fifoNotEmpty() && j < 100) {
-			buf_test[j] = SPITransfer(0);
-			++j;
-		}
+
+		uint8_t crc_bytes[2];
+		while (!radio_fifoNotEmpty());
+		crc_bytes[0] = SPITransfer(0);
+		while (!radio_fifoNotEmpty());
+		crc_bytes[1] = SPITransfer(0);
+
 		unselect();
 		
-		uint32_t now = millis();
-		while(!((crc_okay = readReg(REG_IRQFLAGS2)) & RF_IRQFLAGS2_CRCOK) && millis() - now < 100);
-		
-		uint32_t then = millis() - now;
-		
-		if (crc_okay & RF_IRQFLAGS2_CRCOK) {
-			uint32_t totalTime = millis() - startTime;
-		}
+		uint16_t our_crc = (uint16_t) crc_io_checksum((void *)DATA, DATALEN, CRC_16BIT);
+		uint16_t their_crc = *((uint16_t *)crc_bytes);
+
+		crc_okay = (our_crc == their_crc);
+
 		radio_set_interrupt_pin();
 
 		setMode(RF69_MODE_STANDBY); // Packet is finished receiving, safe to go to standby
 
 		if (!crc_okay) { // Bail if crc's not okay
-			//cdc_write_line("Bailing, failed CRC");
-			DATA[128] = 0;
-			//cdc_write_line((uint8_t *)DATA);
-			PAYLOADLEN = 0;
 			receiveBegin();
-			sei();
 			return;
 		}
-		if (i < DATALEN) {
-			select();
-			SPITransfer(REG_FIFO & 0x7F);
-			for (; i < DATALEN; ++i) { // Finish reading rest of data
-				DATA[i] = SPITransfer(0);
-			}
-			unselect();
-		}
-
-		/*
-		for (uint8_t i = 0; i < DATALEN; i++)
-		{
-			DATA[i] = SPITransfer(0);
-		}
-		if (DATALEN < RF69_MAX_DATA_LEN) DATA[DATALEN] = 0; // add null at end of string
-		*/
 
 		uint8_t tofifo[DATALEN+2];
 		tofifo[0] = SENDERID;
@@ -574,8 +514,10 @@ void RFM69::interruptHandler() {
 		memcpy(&tofifo[2], (const void *)DATA, DATALEN);
 		fifo_write(&RXFIFO, tofifo, DATALEN+2);
 
+		uint32_t then = millis() - now;
+		cdc_log_int("Total time: ", then);
+
 		setMode(RF69_MODE_RX);
-		sei();
 	}
 	RSSI = readRSSI();
 	//digitalWrite(4, 0);
