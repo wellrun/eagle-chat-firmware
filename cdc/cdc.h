@@ -107,12 +107,12 @@ void cdc_write_line(const void *message);
  */
 void cdc_write_hex(const uint8_t c);
 
-void cdc_write_hex_string(const void *string, uint32_t length);
+void cdc_write_hex_string(const void *string, uint8_t length);
 
 void cdc_log_int(const void *message, uint32_t value);
 void cdc_log_signed(const void *message, int32_t value);
 void cdc_log_hex(const void *message, uint8_t value);
-void cdc_log_hex_string(const void *message, const void *value, uint32_t len);
+void cdc_log_hex_string(const void *message, const void *value, uint8_t len);
 
 
 /**
