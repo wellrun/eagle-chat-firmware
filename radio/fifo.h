@@ -33,12 +33,11 @@ uint8_t fifo_isEmpty(fifo_t *f);
 */
 void fifo_write(fifo_t *f, uint8_t *buf, uint8_t len);
 
-//! Reads one FIFO_UNIT_LEN slot of the fifo
+//! Returns a pointer to the next FIFO_UNIT_LEN bytes of data
 /*!
   \param f 		The fifo structure
-  \param buf 	The destination to write to. It should have size at least FIFO_UNIT_LEN.
 */
-void fifo_read(fifo_t *f, uint8_t *buf);
+uint8_t * fifo_read(fifo_t *f);
 
 
 #endif /* FIFO_H_INCLUDED */
