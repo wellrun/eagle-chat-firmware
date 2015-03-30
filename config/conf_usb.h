@@ -93,6 +93,7 @@
 /**
  * USB Device Driver Configuration
  */
+ #define UDD_USB_INT_LEVEL USB_INTLVL_HI_gc
 //@{
 //@}
 
