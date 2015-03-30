@@ -41,8 +41,8 @@ bool packetsToRead() {
 void getNextPacket(uint8_t *senderId, uint8_t *length, uint8_t *buf) {
 
 	uint8_t *fbuf = fifo_read(&radio.RXFIFO);
-	*senderId = fbuf[0];
-	*length = fbuf[1];
-	memcpy(buf, &fbuf[2], *length);
+	*senderId = fbuf[OFFSET_SENDER_ADDRESS];
+	*length = fbuf[OFFSET_LENGTH];
+	memcpy(buf, &fbuf[OFFSET_DATA], *length);
 
 }

@@ -11,6 +11,13 @@ extern "C" {
 #define NODEID        	1    //unique for each node on same network
 #define NETWORKID     	100  //the same on all nodes that talk to each other
 
+#define OFFSET_TARGET_ADDRESS 	0
+#define OFFSET_SENDER_ADDRESS 	1
+#define OFFSET_CTL				2
+#define OFFSET_LENGTH			3
+#define OFFSET_DATA				4
+
+
 void setupRadio(void);
 
 void broadcastPacket(uint8_t *packet, uint8_t size);
