@@ -107,6 +107,11 @@ void cdc_write_line(const void *message);
  */
 void cdc_write_hex(const uint8_t c);
 
+/**
+ * Prints a 32-bit int as its human-readable base-10 form over USB
+ */
+void cdc_write_int(uint32_t value);
+
 void cdc_write_hex_string(const void *string, uint8_t length);
 
 void cdc_log_int(const void *message, uint32_t value);
