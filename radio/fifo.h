@@ -39,5 +39,18 @@ void fifo_write(fifo_t *f, uint8_t *buf, uint8_t len);
 */
 uint8_t * fifo_read(fifo_t *f);
 
+//! Returns the byte at offset in the current tail
+/*!
+  \param f 		The fifo structure
+  \param offset	The byte offset to read
+*/
+uint8_t fifo_peek(fifo_t *f, uint16_t offset);
+
+//! Moves tail forward one slot
+/*!
+  \param f 		The fifo structure
+*/
+void fifo_skip(fifo_t *f);
+
 
 #endif /* FIFO_H_INCLUDED */
