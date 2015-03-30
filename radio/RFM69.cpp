@@ -374,13 +374,22 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 	else if (requestACK)
 		CTLbyte = 0x40;
 
+	// initialize checksum calculation
+	crc_io_checksum_byte_start(CRC_16BIT);
+
+	uint8_t length = bufferSize + 3 + 2;
+
 	// write to FIFO
 	select();
 		SPITransfer(REG_FIFO | 0x80);
-		SPITransfer(bufferSize + 3 + 2); // 3 bytes for the following frame header; 2 bytes for manual CRC at the end
+		SPITransfer(length); // 3 bytes for the following frame header; 2 bytes for manual CRC at the end
+		crc_io_checksum_byte_add(length);		
 		SPITransfer(toAddress);
+		crc_io_checksum_byte_add(toAddress);
 		SPITransfer(_address);
+		crc_io_checksum_byte_add(_address);
 		SPITransfer(CTLbyte);
+		crc_io_checksum_byte_add(CTLbyte);
 
 		// fifo has 4 bytes, 66 - 4 = 62 remaining
 
@@ -392,6 +401,7 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 		/* Prefill the FIFO until we're out of message or room in the buffer */
 		while (!radio_fifoFull() && i < bufferSize) {
 			SPITransfer(((uint8_t*) buffer)[i]);
+			crc_io_checksum_byte_add(((uint8_t*) buffer)[i]);
 			++i;
 		}
 	unselect();
@@ -408,11 +418,12 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 				//while (!radio_fifoNotEmpty()); // wait till fifo has room
 				while (!radio_fifoFull() && i < bufferSize) { // avoid overfilling fifo
 					SPITransfer(((uint8_t*) buffer)[i]); // send byte
+					crc_io_checksum_byte_add(((uint8_t*) buffer)[i]);
 					++i;
 				}
 			}
 		}
-		uint16_t result = (uint16_t)crc_io_checksum((void *)buffer, bufferSize, CRC_16BIT);
+		uint16_t result = (uint16_t)crc_io_checksum_byte_stop();
 
 		// Write the CRC bits
 		while (radio_fifoFull());
@@ -442,9 +453,13 @@ void RFM69::interruptHandler() {
 		radio_disable_interrupt();
 		radio_clear_interrupt_pin();
 
+		// Start checksum calculation
+		crc_io_checksum_byte_start(CRC_16BIT);
+
 		select();
 		SPITransfer(REG_FIFO & 0x7F);
 		PAYLOADLEN = SPITransfer(0);
+		crc_io_checksum_byte_add(PAYLOADLEN);
 
 		if (PAYLOADLEN < 5) { // BAIL!!!!
 			radio_set_interrupt_pin();
@@ -456,6 +471,7 @@ void RFM69::interruptHandler() {
 		while (!radio_fifoNotEmpty());
 
 		TARGETID = SPITransfer(0);
+		crc_io_checksum_byte_add(TARGETID);
 
 		if(!(_promiscuousMode || TARGETID == _address || TARGETID == RF69_BROADCAST_ADDR) // match this node's address, or broadcast address or anything in promiscuous mode
 			 || PAYLOADLEN < 5) // address situation could receive packets that are malformed and don't fit this libraries extra fields
@@ -470,9 +486,11 @@ void RFM69::interruptHandler() {
 
 		while (!radio_fifoNotEmpty());
 		SENDERID = SPITransfer(0);
+		crc_io_checksum_byte_add(SENDERID);
 
 		while (!radio_fifoNotEmpty());
 		uint8_t CTLbyte = SPITransfer(0);
+		crc_io_checksum_byte_add(CTLbyte);
 
 		ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
 		ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
@@ -483,6 +501,7 @@ void RFM69::interruptHandler() {
 		while (i < DATALEN) {
 			while (!radio_fifoNotEmpty());
 			DATA[i] = SPITransfer(0);
+			crc_io_checksum_byte_add(DATA[i]);
 			++i;			
 		}
 
@@ -493,15 +512,15 @@ void RFM69::interruptHandler() {
 		crc_bytes[1] = SPITransfer(0);
 
 		unselect();
+
+		setMode(RF69_MODE_STANDBY); // Packet is finished receiving, safe to go to standby
 		
-		uint16_t our_crc = (uint16_t) crc_io_checksum((void *)DATA, DATALEN, CRC_16BIT);
+		uint16_t our_crc = (uint16_t) crc_io_checksum_byte_stop();
 		uint16_t their_crc = *((uint16_t *)crc_bytes);
 
 		crc_okay = (our_crc == their_crc);
 
 		radio_set_interrupt_pin();
-
-		setMode(RF69_MODE_STANDBY); // Packet is finished receiving, safe to go to standby
 
 		if (!crc_okay) { // Bail if crc's not okay
 			receiveBegin();
