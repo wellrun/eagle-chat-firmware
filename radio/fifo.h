@@ -9,8 +9,9 @@
 
 typedef struct {
 	uint8_t data[FIFO_SIZE];
-	uint32_t h;
-	uint32_t t;
+	uint8_t h;
+	uint8_t t;
+  uint8_t stored;
 } fifo_t;
 
 //! Initializes a fifo_t structure
@@ -24,6 +25,8 @@ void fifo_init(fifo_t *f);
   \param f 		The fifo structure
 */
 uint8_t fifo_isEmpty(fifo_t *f);
+
+uint8_t fifo_isFull(fifo_t *f);
 
 //! Writes one FIFO_UNIT_LEN slot of the fifo
 /*!
