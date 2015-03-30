@@ -525,8 +525,6 @@ void RFM69::interruptHandler() {
 
 		crc_okay = (our_crc == their_crc);
 
-		crc_okay = (our_crc == their_crc);
-
 		if (!crc_okay) { // Bail if crc's not okay
 			receiveBegin();
 			return;
@@ -534,7 +532,7 @@ void RFM69::interruptHandler() {
 
 		fifo_write(&RXFIFO, (uint8_t *)DATA, DATALEN+4);
 
-		uint32_t then = millis() - now;
+		then = millis() - now;
 		cdc_log_int("Total time: ", then);
 
 		setMode(RF69_MODE_RX);
