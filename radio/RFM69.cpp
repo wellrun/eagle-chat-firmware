@@ -146,10 +146,12 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 		/* 0x28 */ { REG_IRQFLAGS2, RF_IRQFLAGS2_FIFOOVERRUN }, // writing to this bit ensures that the FIFO & status flags are reset
 		/* 0x29 */ { REG_RSSITHRESH, 220 }, // must be set to dBm = (-Sensitivity / 2), default is 0xE4 = 228 so -114dBm
 		///* 0x2D */ { REG_PREAMBLELSB, RF_PREAMBLESIZE_LSB_VALUE } // default 3 preamble bytes 0xAAAAAA
-		/* 0x2E */ { REG_SYNCCONFIG, RF_SYNC_ON | RF_SYNC_FIFOFILL_AUTO | RF_SYNC_SIZE_2 | RF_SYNC_TOL_0 },
+		/* 0x2E */ { REG_SYNCCONFIG, RF_SYNC_ON | RF_SYNC_FIFOFILL_AUTO | RF_SYNC_SIZE_4 | RF_SYNC_TOL_0 },
 		/* 0x2F */ { REG_SYNCVALUE1, 0x2D },      // attempt to make this compatible with sync1 byte of RFM12B lib
 		/* 0x30 */ { REG_SYNCVALUE2, networkID }, // NETWORK ID
-		/* 0x37 */ { REG_PACKETCONFIG1, RF_PACKET1_FORMAT_VARIABLE | RF_PACKET1_DCFREE_OFF | RF_PACKET1_CRC_ON | RF_PACKET1_CRCAUTOCLEAR_ON | RF_PACKET1_ADRSFILTERING_OFF },
+		/* 0x31 */ { REG_SYNCVALUE3, 0xAE }, 	  // Extra sync byte
+		/* 0x32 */ { REG_SYNCVALUE4, 0x75 }, 	  // Extra sync byte
+		/* 0x37 */ { REG_PACKETCONFIG1, RF_PACKET1_FORMAT_VARIABLE | RF_PACKET1_DCFREE_WHITENING | RF_PACKET1_CRC_OFF | RF_PACKET1_CRCAUTOCLEAR_OFF | RF_PACKET1_ADRSFILTERING_OFF },
 		/* 0x38 */ { REG_PAYLOADLENGTH, 255 }, // in variable length mode: the max frame size, not used in TX
 		///* 0x39 */ { REG_NODEADRS, nodeID }, // turned off because we're not using address filtering
 		/* 0x3C */ { REG_FIFOTHRESH, RF_FIFOTHRESH_TXSTART_FIFONOTEMPTY | RF_FIFOTHRESH_VALUE }, // TX on FIFO not empty
@@ -176,7 +178,6 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 	setMode(RF69_MODE_STANDBY);
 	while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00);
 
-	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
 	ioport_set_pin_dir(RF_DIO2_pin, IOPORT_DIR_INPUT);
 	ioport_set_pin_dir(RF_DIO0_pin, IOPORT_DIR_INPUT);
 	ioport_set_pin_dir(RF_DIO1_pin, IOPORT_DIR_INPUT);
@@ -449,6 +450,7 @@ void RFM69::interruptHandler() {
 	if (_mode == RF69_MODE_RX && (readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_FIFONOTEMPTY))
 	{
 		uint32_t now = millis();
+		uint32_t then;
 
 		radio_disable_interrupt();
 		radio_clear_interrupt_pin();
@@ -462,7 +464,6 @@ void RFM69::interruptHandler() {
 		crc_io_checksum_byte_add(PAYLOADLEN);
 
 		if (PAYLOADLEN < 5) { // BAIL!!!!
-			radio_set_interrupt_pin();
 			unselect();
 			receiveBegin();
 			return;
@@ -472,11 +473,11 @@ void RFM69::interruptHandler() {
 
 		TARGETID = SPITransfer(0);
 		crc_io_checksum_byte_add(TARGETID);
+		DATA[0]  = TARGETID; // Store TARGETID
 
 		if(!(_promiscuousMode || TARGETID == _address || TARGETID == RF69_BROADCAST_ADDR) // match this node's address, or broadcast address or anything in promiscuous mode
 			 || PAYLOADLEN < 5) // address situation could receive packets that are malformed and don't fit this libraries extra fields
 		{
-			radio_set_interrupt_pin();
 			unselect();
 			receiveBegin();
 			return;
@@ -487,10 +488,14 @@ void RFM69::interruptHandler() {
 		while (!radio_fifoNotEmpty());
 		SENDERID = SPITransfer(0);
 		crc_io_checksum_byte_add(SENDERID);
+		DATA[1] = SENDERID; // Store SENDERID
 
 		while (!radio_fifoNotEmpty());
 		uint8_t CTLbyte = SPITransfer(0);
 		crc_io_checksum_byte_add(CTLbyte);
+		DATA[2] = CTLbyte; // Store CTLbyte
+
+		DATA[3] = DATALEN; // Store DATALEN
 
 		ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
 		ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
@@ -500,8 +505,8 @@ void RFM69::interruptHandler() {
 
 		while (i < DATALEN) {
 			while (!radio_fifoNotEmpty());
-			DATA[i] = SPITransfer(0);
-			crc_io_checksum_byte_add(DATA[i]);
+			DATA[i+4] = SPITransfer(0); //  i+4 because 0,1,2,3 in DATA are prefix bytes + DATALEN
+			crc_io_checksum_byte_add(DATA[i+4]);
 			++i;			
 		}
 
@@ -520,23 +525,20 @@ void RFM69::interruptHandler() {
 
 		crc_okay = (our_crc == their_crc);
 
-		radio_set_interrupt_pin();
+		crc_okay = (our_crc == their_crc);
 
 		if (!crc_okay) { // Bail if crc's not okay
 			receiveBegin();
 			return;
 		}
 
-		uint8_t tofifo[DATALEN+2];
-		tofifo[0] = SENDERID;
-		tofifo[1] = DATALEN;
-		memcpy(&tofifo[2], (const void *)DATA, DATALEN);
-		fifo_write(&RXFIFO, tofifo, DATALEN+2);
+		fifo_write(&RXFIFO, (uint8_t *)DATA, DATALEN+4);
 
 		uint32_t then = millis() - now;
 		cdc_log_int("Total time: ", then);
 
 		setMode(RF69_MODE_RX);
+		radio_set_interrupt_pin();
 	}
 	RSSI = readRSSI();
 	//digitalWrite(4, 0);
@@ -558,6 +560,7 @@ void RFM69::receiveBegin() {
 		writeReg(REG_PACKETCONFIG2, (readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART); // avoid RX deadlocks
 	writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO2_00 | RF_DIOMAPPING1_DIO0_00); // set DIO2 to "FifoNotEmpty" in receive mode, DIO0 is payloadready
 	setMode(RF69_MODE_RX);
+	radio_set_interrupt_pin();
 }
 
 bool RFM69::receiveDone() {
