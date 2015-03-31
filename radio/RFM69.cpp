@@ -115,7 +115,7 @@ volatile uint8_t RFM69::ACK_RECEIVED; // should be polled immediately after send
 volatile int16_t RFM69::RSSI;          // most accurate RSSI during reception (closest to the reception)
 RFM69* RFM69::selfPointer;
 
-volatile bool ACK_RECEIVED_CLEARED = false;
+volatile bool ACK_RECEIVED_CLEARED = true;
 
 bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 {
