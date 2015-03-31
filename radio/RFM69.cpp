@@ -495,10 +495,12 @@ void RFM69::interruptHandler() {
 		crc_io_checksum_byte_add(TARGETID);
 		DATA[0]  = TARGETID; // Store TARGETID
 
+
 		if(!(_promiscuousMode || TARGETID == _address || TARGETID == RF69_BROADCAST_ADDR) // match this node's address, or broadcast address or anything in promiscuous mode
 			 || PAYLOADLEN < 5) // address situation could receive packets that are malformed and don't fit this libraries extra fields
 		{
 			unselect();
+			setMode(RF69_MODE_STANDBY); // Need to change modes to clear the FIFO. TODO: find quicker way to do that
 			receiveBegin();
 			return;
 		}
