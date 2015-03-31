@@ -79,14 +79,14 @@ void cdc_disable(void)
 	cdc_enabled = false;
 }
 
-bool cdc_opened(void)
+inline bool cdc_opened(void)
 {
 	return is_opened;
 }
 
 void cdc_write_string(const void *buf) {
 	const uint8_t *buffer = (uint8_t *)buf;
-	while (*buffer != 0) {
+	while (*buffer != 0 && is_opened) {
 		while (!udi_cdc_is_tx_ready());
 		udi_cdc_putc(*buffer);
 		++buffer;
@@ -99,6 +99,8 @@ void cdc_write_line(const void *message) {
 }
 
 void cdc_write_hex(const uint8_t c) {
+	if (!is_opened)
+		return;
 	const uint8_t table[] = "0123456789ABCDEF";
 	while (udi_cdc_get_free_tx_buffer() < 2);
 	udi_cdc_putc(table[(c>>4) & 0x0F]);
@@ -112,6 +114,8 @@ void cdc_write_hex_string(const void *string, uint8_t length) {
 }
 
 void cdc_newline(void) {
+	if (!is_opened)
+		return;
 	while (!udi_cdc_is_tx_ready());
 	udi_cdc_putc('\n');
 }
@@ -158,6 +162,8 @@ uint32_t cdc_read_string(void *buffer, uint32_t maxlen) {
 	uint32_t i = 0;
 	uint8_t * buf = (uint8_t *) buffer;
     while (i < maxlen) {
+    	if (!is_opened)
+    		return 0;
         buf[i] = udi_cdc_getc();
         if ((buf[i] == '\n') || (buf[i] == '\r')) {
             buf[i] = 0;
