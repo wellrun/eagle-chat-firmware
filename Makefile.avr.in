@@ -51,6 +51,8 @@
 include ../project.mk
 include config.mk
 
+CPPFLAGS += $(foreach INC,$(addprefix $(CWD)/,$(USER_INC_PATH)),-I$(INC))
+
 # Tool to use to generate documentation from the source code
 DOCGEN          ?= doxygen
 

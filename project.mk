@@ -24,12 +24,10 @@ CPPFLAGS = \
     -D USB_SERIAL_NUMBER=\"$(SERIAL_NUMBER)\" \
     -D USB_DEVICE_GET_SERIAL_NAME_LENGTH=$(SERIAL_NUMBER_LENGTH)
 
-USER_INC_PATH = \
+USER_INC_PATH := \
 	. \
     config \
     cdc \
-
-CPPFLAGS += $(foreach INC,$(addprefix $(CWD)/,$(USER_INC_PATH)),-I$(INC))
 
 # C source files located from the top-level source directory
 CSRCS = \
