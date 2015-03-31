@@ -12,7 +12,7 @@
 
 
 uint32_t TRANSMITPERIOD = 150; //transmit a packet to gateway so often (in ms)
-uint8_t payload[250];
+uint8_t payload[100];
 uint8_t buff[20];
 uint8_t sendSize=0;
 uint8_t requestACK = true;
@@ -60,16 +60,17 @@ uint16_t failures = 0;
 
 // Tries to send a packet using the routing table
 void send_mode() {
-	dest = 2;
+	dest = 3;
 
 	uint8_t first_hop = route_table_node_1[dest-1];
 
 	while (1) {
-		payload[0] = dest;
-		payload[1] = 1; // my address
-
 		memset(payload + 2, 'A', sizeof(payload) - 3);
 		payload[sizeof(payload)-1] = 0;
+		bool success = false;
+
+		payload[0] = dest;
+		payload[1] = 1; // my address
 
 		start_time = rtc_get_time();
 
@@ -77,36 +78,32 @@ void send_mode() {
 		send_time = rtc_get_time();
 		acked = false;
 		while (rtc_get_time() - send_time < 50) {
-			if ((acked = ackReceived(dest)))
+			if ((acked = ackReceived(first_hop)))
 				break;
 		}
 		if (!acked) {
 			++failures;
-			//cdc_write_line("Got no ack, bro.");
 			cdc_write_line("Failed");
 		} else {
-			cdc_log_int("Received ack: ", rtc_get_time() - send_time);
-			cdc_write_line("Waiting for reply.");
-
 			send_time = rtc_get_time();
-			while (rtc_get_time() - send_time < 2000) {
+			while (rtc_get_time() - send_time < 100) {
 				if (packetsToRead()) {
 					getNextPacket(&senderId, &length, rbuf, &needsAck);
-					cdc_log_string("Got: ", rbuf);
 					if (needsAck) {
 						sendAck(senderId);
 					}
 					if (length >= 2 && rbuf[0] == 1 && rbuf[1] == dest) { // This may be our packet
-						cdc_log_string("Got: ", rbuf);
-						cdc_log_int("Waited for: ", rtc_get_time() - send_time);
+						success = true;
 						break;
 					}
 				}
 			}
+			if (!success)
+				++failures;
 		}
 		cdc_log_int("Round trip: ", rtc_get_time() - start_time);
 		cdc_log_int("Failures: ", failures);
-		_delay_ms(500);
+		//_delay_ms(500);
 	}
 }
 
@@ -114,6 +111,7 @@ void send_mode() {
 
 void router_mode_2() {
 	while (1) {
+		setAddress(2);
 		if (packetsToRead()) {
 			getNextPacket(&senderId, &length, rbuf, &needsAck);
 			if (needsAck) {
@@ -122,24 +120,21 @@ void router_mode_2() {
 			if (length >= 2) { // Try to route packet
 				dest = rbuf[0];
 				if (dest >= 1 && dest <= 3) {
-					cdc_log_string("Got: ", rbuf);
 					if (dest == 2) {
 						rbuf[0] = 1;
 						rbuf[1] = 2;
 						dest = 1;
 					}
 					uint8_t next_hop = route_table_node_2[dest-1];
-
 					sendPacket(next_hop, rbuf, length);
 					send_time = rtc_get_time();
 					acked = false;
 					while (rtc_get_time() - send_time < 50) {
-						if ((acked = ackReceived(dest)))
+						if ((acked = ackReceived(next_hop)))
 							break;
 					}
 					if (!acked) {
 						++failures;
-						//cdc_write_line("Got no ack, bro.");
 						cdc_write_line("Failed to ack. Lost packet?");
 					} else {
 						cdc_write_line("Sent packet on.");
@@ -161,31 +156,26 @@ void router_mode_3() {
 			}
 			if (length >= 2) { // Try to route packet
 				dest = rbuf[0];
-
 				if (dest >= 1 && dest <= 3) {
-					cdc_log_string("Got: ", rbuf);
 					if (dest == 3) {
 						rbuf[0] = 1;
 						rbuf[1] = 3;
 						dest = 1;
 					}
-
 					uint8_t next_hop = route_table_node_3[dest - 1];
-					cdc_log_int("Next hop: ", next_hop);
-
 					sendPacket(next_hop, rbuf, length);
 					send_time = rtc_get_time();
 					acked = false;
 					while (rtc_get_time() - send_time < 50) {
-						if ((acked = ackReceived(dest)))
+						if ((acked = ackReceived(next_hop)))
 							break;
 					}
 					if (!acked) {
 						++failures;
 						//cdc_write_line("Got no ack, bro.");
-						cdc_write_line("Failed to ack. Lost packet?");
+						//cdc_write_line("Failed to ack. Lost packet?");
 					} else {
-						cdc_write_line("Sent packet on.");
+						//cdc_write_line("Sent packet on.");
 					}
 				}
 			}
@@ -230,16 +220,17 @@ int main ()
 		cdc_write_line("Invalid address.");
 	}
 
-	setAddress(address);
-
 	cdc_write_line("Press any key to continue.");
 	while (udi_cdc_getc() == 0);
 
 	if (address == 1) {
+		setAddress(1);
 		send_mode();
 	} else if (address == 2) {
+		setAddress(2);
 		router_mode_2();
 	} else if (address == 3) {
+		setAddress(3);
 		router_mode_3();
 	}
 
