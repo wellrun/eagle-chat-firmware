@@ -17,14 +17,23 @@ extern "C" {
 #define OFFSET_LENGTH			3
 #define OFFSET_DATA				4
 
+#define MASK_ACK_REQUESTED		0x40
 
 void setupRadio(void);
 
+void setAddress(uint8_t address);
+
 void broadcastPacket(uint8_t *packet, uint8_t size);
+
+void sendPacket(uint8_t to_ddress, uint8_t *packet, uint8_t size);
+
+void sendAck(uint8_t to_address);
+
+bool ackReceived(uint8_t from_address);
 
 bool packetsToRead(void);
 
-void getNextPacket(uint8_t *senderId, uint8_t *length, uint8_t *buf);
+void getNextPacket(uint8_t *senderId, uint8_t *length, uint8_t *buf, bool *needsAck);
 
 #ifdef __cplusplus
 }

@@ -17,6 +17,7 @@ uint8_t buff[20];
 uint8_t sendSize=0;
 uint8_t requestACK = true;
 
+int main(void);
 int main ()
 {
 	cpu_irq_enable();
@@ -37,6 +38,24 @@ int main ()
 
 	setupRadio();
 
+	uint8_t address = 0;
+
+	while(1) {
+		cdc_write_string("My address: ");
+		cdc_read_string(payload, 3);
+		address = (uint8_t) atoi((const char *)payload);
+		cdc_newline();
+
+		if (address > 0) {
+			cdc_log_int("You said: ", address);
+			break;
+		}
+
+		cdc_write_line("Invalid address.");
+	}
+
+	setAddress(address);
+
 	uint8_t mode = 0;
 	while (mode != 'S' && mode != 'R') {
 		cdc_write_string("Enter S for send or R for receive, or F for fifo test: ");
@@ -45,27 +64,55 @@ int main ()
 	}
 
 	if (mode == 'S') {
+
 		uint32_t start_time;
-		uint8_t count = 0;
+		uint16_t  failures;
+		uint16_t count;
+		bool     acked;
+
+
+		memset(payload, 'A', sizeof(payload));
+		payload[sizeof(payload)-1] = 0;
+
 		while (1) {
+			while(1) {
+				cdc_write_string("To address: ");
+				cdc_read_string(payload, 4);
+				address = (uint8_t) atoi((const char *)payload);
 
-			start_time = rtc_get_time();
-			memset(payload, 'A', sizeof(payload));
-			payload[sizeof(payload)-1] = 0;
-			for (count = 0; count < 0xFF; ++count) {
+				if (address > 0) {
+					cdc_log_int("You said: ", address);
+					break;
+				}
+				cdc_write_line("Invalid address.");
+			}
 
-				while (udi_cdc_getc() == 0);
+			cdc_newline();
+			failures = 0;
 
-				cdc_log_int("Send attempt: ", count);
-				//memset(payload, 0, 5);
-				//itoa(count, (char *)payload, 10);
+			for (count = 0; count <= 0xFF; ++count) {
+				cdc_log_int("\nSend attempt: ", count);
 
-				broadcastPacket(payload, sizeof(payload));
-				_delay_ms(50);
+				uint32_t send_time = rtc_get_time();
+
+				sendPacket(address, payload, sizeof(payload));
+				acked = false;
+				while (rtc_get_time() - send_time < 50) {
+					if (acked = ackReceived(address))
+						break;
+				}
+				if (!acked) {
+					++failures;
+					//cdc_write_line("Got no ack, bro.");
+					cdc_write_line("Failed");
+				} else {
+					cdc_log_int("Round trip: ", rtc_get_time() - send_time);
+				}
 			}
 
 			cdc_log_int("Time to send 255 packets: ", rtc_get_time() - start_time);
-			_delay_ms(3000);
+			cdc_log_int("Failures: ", failures);
+			//_delay_ms(3000);
 		}
 
 	} else if (mode == 'R') {
@@ -73,6 +120,7 @@ int main ()
 		uint8_t senderId;
 		uint8_t length;
 		uint8_t rbuf[256];
+		bool needsAck;
 
 		uint32_t p = 0;
 		uint16_t now = rtc_get_time();
@@ -82,8 +130,15 @@ int main ()
 				//cdc_write_line("MAIN LOOP");
 			}
 			while (packetsToRead()) {
-				cdc_log_int("Packets: ", ++p);
-				getNextPacket(&senderId, &length, rbuf);
+				cdc_log_int("Packets: ", p);
+				++p;
+				getNextPacket(&senderId, &length, rbuf, &needsAck);
+				if (needsAck) {
+					sendAck(senderId);
+					cdc_write_line("Sending ack.");
+				}
+				cdc_log_int("From: ", senderId);
+				cdc_newline();
 			}
 
 		}
@@ -99,7 +154,7 @@ int main ()
     	fifo_write(&F, payload, 30);
     	fifo_write(&F, payload, 30);
 
-    	uint8_t buf[FIFO_UNIT_LEN];
+    	//uint8_t buf[FIFO_UNIT_LEN];
 
     	fifo_read(&F);
 

@@ -24,7 +24,11 @@ void setupRadio() {
 
 	radio.setHighPower();
 	radio.setPowerLevel(31);
-	radio.promiscuous(true);
+	radio.promiscuous(false);
+}
+
+void setAddress(uint8_t address) {
+	radio.setAddress(address);
 }
 
 void broadcastPacket(uint8_t *packet, uint8_t size) {
@@ -33,16 +37,31 @@ void broadcastPacket(uint8_t *packet, uint8_t size) {
 
 }
 
+void sendPacket(uint8_t address, uint8_t *packet, uint8_t size) {
+
+	radio.send(address, (uint8_t *)packet, (uint8_t)size, true);
+
+}
+
+void sendAck(uint8_t address) {
+	radio.simpleSendACK(address);
+}
+
+bool ackReceived(uint8_t address) {
+	return radio.ACKReceived(address);
+}
+
 bool packetsToRead() {
 	radio.receiveDone();
 	return !fifo_isEmpty(&radio.RXFIFO);
 }
 
-void getNextPacket(uint8_t *senderId, uint8_t *length, uint8_t *buf) {
+void getNextPacket(uint8_t *senderId, uint8_t *length, uint8_t *buf, bool *needsAck) {
 
 	uint8_t *fbuf = fifo_read(&radio.RXFIFO);
 	*senderId = fbuf[OFFSET_SENDER_ADDRESS];
 	*length = fbuf[OFFSET_LENGTH];
+	*needsAck = fbuf[OFFSET_CTL] & MASK_ACK_REQUESTED;
 	memcpy(buf, &fbuf[OFFSET_DATA], *length);
 
 }

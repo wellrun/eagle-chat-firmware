@@ -115,6 +115,8 @@ volatile uint8_t RFM69::ACK_RECEIVED; // should be polled immediately after send
 volatile int16_t RFM69::RSSI;          // most accurate RSSI during reception (closest to the reception)
 RFM69* RFM69::selfPointer;
 
+volatile bool ACK_RECEIVED_CLEARED = false;
+
 bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
 {
 	const uint8_t CONFIG[][2] =
@@ -325,7 +327,15 @@ bool RFM69::sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferS
 // should be polled immediately after sending a packet with ACK request
 bool RFM69::ACKReceived(uint8_t fromNodeID) {
 	if (receiveDone()) {
-		return (SENDERID == fromNodeID || fromNodeID == RF69_BROADCAST_ADDR) && ACK_RECEIVED;
+		bool ret = (SENDERID == fromNodeID || fromNodeID == RF69_BROADCAST_ADDR) && ACK_RECEIVED;
+		if (ret)
+			ACK_RECEIVED_CLEARED = true; // clear ack received because we're return true
+		return ret;
+	}
+	if (!ACK_RECEIVED_CLEARED) {
+		ACK_RECEIVED_CLEARED = true;
+		receiveBegin();
+		return true;
 	}
 	receiveBegin();
 	return false;
@@ -344,6 +354,16 @@ void RFM69::sendACK(const void* buffer, uint8_t bufferSize) {
 	uint32_t now = millis();
 	while (!canSend() && millis() - now < RF69_CSMA_LIMIT_MS) receiveDone();
 	sendFrame(sender, buffer, bufferSize, false, true);
+	RSSI = _RSSI; // restore payload RSSI
+}
+
+void RFM69::simpleSendACK(uint8_t address) {
+	uint8_t sender = address;
+	int16_t _RSSI = RSSI; // save payload received RSSI value
+	writeReg(REG_PACKETCONFIG2, (readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART); // avoid RX deadlocks
+	uint32_t now = millis();
+	while (!canSend() && millis() - now < RF69_CSMA_LIMIT_MS) receiveDone();
+	sendFrame(sender, "", 0, false, true);
 	RSSI = _RSSI; // restore payload RSSI
 }
 
@@ -434,7 +454,7 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 
 	unselect();
 
-	cdc_log_int("sendFrame CRC result: ", result);
+	//cdc_log_int("sendFrame CRC result: ", result);
 
 	uint32_t txStart = millis();
 	while (ioport_get_pin_level(_interruptPin) == 0 && millis() - txStart < RF69_TX_LIMIT_MS); // wait for DIO0 to turn HIGH signalling transmission finish
@@ -530,12 +550,21 @@ void RFM69::interruptHandler() {
 			return;
 		}
 
+		if (ACK_RECEIVED) { // Don't fill fifo is this was just an ACK
+			//setMode(RF69_MODE_RX);
+			ACK_RECEIVED_CLEARED = false;
+			radio_set_interrupt_pin();
+			then = millis() - now;
+			//cdc_log_int("Total time: ", then);
+			return;
+		}
+
 		fifo_write(&RXFIFO, (uint8_t *)DATA, DATALEN+4);
 
 		then = millis() - now;
-		cdc_log_int("Total time: ", then);
+		//cdc_log_int("Total time: ", then);
 
-		setMode(RF69_MODE_RX);
+		//setMode(RF69_MODE_RX);
 		radio_set_interrupt_pin();
 	}
 	RSSI = readRSSI();
@@ -566,7 +595,7 @@ bool RFM69::receiveDone() {
 	//ATOMIC_BLOCK(ATOMIC_FORCEON){
 		radio_disable_interrupt();//noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
 		if (_mode == RF69_MODE_RX && PAYLOADLEN > 0)
-		{
+		{	
 			////cdc_write_line("rcd = true");
 			setMode(RF69_MODE_STANDBY); // enables interrupts
 			return true;

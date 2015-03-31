@@ -113,6 +113,7 @@ class RFM69 {
     bool ACKReceived(uint8_t fromNodeID);
     bool ACKRequested();
     void sendACK(const void* buffer = "", uint8_t bufferSize=0);
+    void simpleSendACK(uint8_t address);
     uint32_t getFrequency();
     void setFrequency(uint32_t freqHz);
     void encrypt(const char* key);
