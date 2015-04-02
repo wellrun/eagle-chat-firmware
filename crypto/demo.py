@@ -1,13 +1,24 @@
 import serial
 import binascii as bn
 
+def get_port_name():
+	portname = raw_input("Serial port: ")
+	try:
+		snum = int(portname) - 1
+		return snum
+	except:
+		return '/dev/' + portname
+
 if __name__ == '__main__':
 
 	print "Plug board 'A' in. This will be the 'sender'"
 
-	snum = int(raw_input("Serial port: "))
+#	snum = int(raw_input("Serial port: "))
 
-	ser = serial.Serial(snum - 1);
+#	ser = serial.Serial(snum - 1);
+
+
+	ser = serial.Serial(get_port_name());
 
 	print "Asking board A to generate keys for the demo and start the encryption process"
 
@@ -49,9 +60,7 @@ if __name__ == '__main__':
 
 	print "Now plug in board 'B'. This will be the 'receiver'"
 
-	snum = int(raw_input("Serial port: "))
-
-	ser = serial.Serial(snum - 1);
+	ser = serial.Serial(get_port_name())
 
 	print "Asking board B to begin decryption process"
 
@@ -78,4 +87,3 @@ if __name__ == '__main__':
 	decrypted = response.split(':')[1].strip(" \n")
 
 	print "Decrypted message: " + decrypted
-
