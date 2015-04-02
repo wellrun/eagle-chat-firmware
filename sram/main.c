@@ -32,7 +32,13 @@
 #include "board.h"
 #include "sram.h"
 #include <avr/io.h>
+#include "user_board.h"
 
+
+/*pin 6 sck ->scl
+pin 5 si ->mosi
+pin 1 cs -> ss
+in 2 so -> miso*/
 int main (void)
 {
 	// Insert system clock initialization code here (sysclk_init()).
@@ -48,13 +54,22 @@ int main (void)
 	sysclk_init();
 
 	cdc_start();
-
+       
+	//spi_init_pins();
+	
+        spi_init_module();
+	
+	while(!cdc_opened());
 	while (1) {
-		uint8_t read = udi_cdc_getc();
+	//	write_mode();
+		write_data();
+         	read_data();
+	//      display_read_results();
+	//	uint8_t read = udi_cdc_getc();
 		//if (read != 0)
 			//cdc_write_string("Hello. This is quite a long string.\n");
-		cdc_write_hex(read);
-		cdc_write_string(" ");
+	//	cdc_write_hex(read);
+	//	cdc_write_string(" ");
 	}
 
 
