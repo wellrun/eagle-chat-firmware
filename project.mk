@@ -28,6 +28,7 @@ USER_INC_PATH := \
 	. \
     config \
     cdc \
+	stack 
 
 # C source files located from the top-level source directory
 CSRCS = \
@@ -35,6 +36,7 @@ CSRCS = \
 	xmega/drivers/nvm/nvm.c \
 	common/services/sleepmgr/xmega/sleepmgr.c \
     cdc/cdc.c \
+	stack/stack.c \
     xmega/drivers/usb/usb_device.c \
     common/services/usb/udc/udc.c \
     common/services/usb/class/cdc/device/udi_cdc.c \
