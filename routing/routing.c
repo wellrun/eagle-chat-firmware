@@ -108,6 +108,33 @@ void sendPacket(PacketHeader *h, uint8_t *payload, uint8_t payloadLen) {
 
 }
 
+void initiateRouteRequest(uint8_t dest) {
+
+    // We want to send out a route request to find a path to dest
+
+    PacketHeader h;
+    h.source = _nodeId;
+    h.dest = dest;
+    h.flags = 0;
+    h.type = PACKET_TYPE_RRQ;
+
+    RRQPacketHeader rh;
+    rh.rrqId = 0;   //?
+    rh.hopcount = 0;
+
+    memcpy(framePayload, (uint8_t *)h, PACKET_HEADER_SIZE);
+    memcpy(&framePayload[PACKET_HEADER_SIZE], (uint8_t *)rh, RRQ_PACKET_HEADER_SIZE);
+
+    // Broadcast it?
+
+    broadcastFrame(&framePayload, PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE);
+
+}
+
+void processRRQ() {
+    
+}
+
 void handleReceived() {
 
     uint8_t senderNodeId, frameLength;
@@ -141,7 +168,7 @@ void handleReceived() {
         bool entryFound = getNextHop(h->dest, &nextHopEntry); // pointers having pointers, such a shame
 
         if (entryFound) {
-            
+
             forward(nextHopEntry, framePayload, frameLength);
 
         } else {

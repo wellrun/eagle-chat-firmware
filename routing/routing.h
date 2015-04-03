@@ -10,7 +10,19 @@ typedef struct {
     uint8_t source;
     uint8_t dest;
     uint8_t flags;
+    uint8_t type;
 } __attribute__((packed)) PacketHeader;
+
+#define PACKET_TYPE_CONTENT     0
+#define PACKET_TYPE_RRQ         1
+#define PACKET_TYPE_RUP         2
+
+#define RRQ_PACKET_HEADER_SIZE  sizeof(RRQPacketHeader)
+
+typedef struct {
+    uint8_t rrqId;
+    uint8_t hopcount;
+} __attribute__((packed)) RRQPacketHeader;
 
 #define MAX_PACKET_PAYLOAD_SIZE (MAX_PAYLOAD_SIZE - PACKET_HEADER_SIZE)
 
