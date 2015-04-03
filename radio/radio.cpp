@@ -14,7 +14,7 @@ extern "C" {
 RFM69 radio;
 
 void setupRadio() {
-	
+
 	radio = RFM69();
 
 	cdc_log_int("About to intialize module ", rtc_get_time());
@@ -31,13 +31,13 @@ void setAddress(uint8_t address) {
 	radio.setAddress(address);
 }
 
-void broadcastPacket(uint8_t *packet, uint8_t size) {
+void broadcastFrame(uint8_t *packet, uint8_t size) {
 
 	radio.send(RF69_BROADCAST_ADDR, (uint8_t *)packet, (uint8_t)size, 0);
 
 }
 
-void sendPacket(uint8_t address, uint8_t *packet, uint8_t size) {
+void sendFrame(uint8_t address, uint8_t *packet, uint8_t size) {
 
 	radio.send(address, (uint8_t *)packet, (uint8_t)size, true);
 
@@ -51,12 +51,12 @@ bool ackReceived(uint8_t address) {
 	return radio.ACKReceived(address);
 }
 
-bool packetsToRead() {
+bool framesToRead() {
 	radio.receiveDone();
 	return !fifo_isEmpty(&radio.RXFIFO);
 }
 
-void getNextPacket(uint8_t *senderId, uint8_t *length, uint8_t *buf, bool *needsAck) {
+void getNextFrame(uint8_t *senderId, uint8_t *length, uint8_t *buf, bool *needsAck) {
 
 	uint8_t *fbuf = fifo_read(&radio.RXFIFO);
 	*senderId = fbuf[OFFSET_SENDER_ADDRESS];
