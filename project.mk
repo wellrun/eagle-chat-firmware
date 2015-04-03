@@ -28,7 +28,8 @@ USER_INC_PATH := \
 	. \
     config \
     cdc \
-	stack 
+	stack \
+	radio
 
 # C source files located from the top-level source directory
 CSRCS = \
@@ -43,8 +44,9 @@ CSRCS = \
     common/services/usb/class/cdc/device/udi_cdc_desc.c \
     common/services/spi/xmega_spi/spi_master.c \
 	common/services/ioport/xmega/ioport_compat.c\
-	xmega/drivers/spi/spi.c\
-	xmega/drivers/rtc/rtc.c
+	xmega/drivers/spi/spi.c \
+	xmega/drivers/rtc/rtc.c \
+	xmega/drivers/crc/crc.c
 
 
  # common/components/display/st7565r/st7565r.c \
@@ -98,6 +100,7 @@ INC_PATH = \
 	common/services/usb \
 	common/services/gpio \
 	common/services/ioport \
+	common/services/ioport/xmega \
 	xmega/drivers/pmic \
 	xmega/drivers/tc \
 	common/services/sleepmgr \
@@ -109,7 +112,9 @@ INC_PATH = \
 	common/services/spi \
 	xmega/drivers/spi \
 	xmega/drivers/rtc \
-    common/services/delay
+    common/services/delay \
+	xmega/drivers/crc
+
 
 # common/components/display/st7565r \
 # common/services/calendar \
