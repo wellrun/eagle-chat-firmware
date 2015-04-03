@@ -2,10 +2,9 @@
 #define ROUTING_H_INCLUDED
 
 #include "asf.h"
-#include "radio/radio.h"
 
-#define PACKET_HEADER_SIZE      3
-#define MAX_ACK_FAILURES        10
+#define PACKET_HEADER_SIZE      sizeof(PacketHeader)
+#define MAX_ACK_FAILURES        254
 
 typedef struct {
     uint8_t source;
@@ -21,6 +20,9 @@ typedef struct {
 } RoutingTableEntry;
 
 #define ROUTING_TABLE_ENTRIES   256
+
+//! Configures the routing module and its dependencies
+void setupRouting(uint8_t nodeId);
 
 //! Consults the routing table and attempts to send a packet
 void sendPacket(PacketHeader *h, uint8_t *payload, uint8_t payloadLen);

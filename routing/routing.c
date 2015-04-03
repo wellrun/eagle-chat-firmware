@@ -1,15 +1,31 @@
 #include "routing.h"
+#include "radio.h"
 #include <string.h>
 
 static uint8_t framePayload[MAX_PAYLOAD_SIZE];
 
 static RoutingTableEntry routingTable[ROUTING_TABLE_ENTRIES];
 
+static uint8_t _nodeId = 0;
+
 bool getNextHop(uint8_t dest, RoutingTableEntry **nextHopEntry);
 bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t payloadLen);
 
 static inline bool entryIsValid(RoutingTableEntry * entry) {
     return (entry->nextHop != 0) && (entry->failures < MAX_ACK_FAILURES);
+}
+
+void setupRouting(uint8_t nodeId) {
+
+    _nodeId = nodeId;
+
+    memset(routingTable, 0, sizeof(routingTable)); // init routing table
+
+    routingTable[1].nextHop = 1; // Dummify the routing table
+    routingTable[2].nextHop = 2;
+
+    setupRadio();
+    setAddress(nodeId);
 }
 
 /*
@@ -34,7 +50,7 @@ bool getNextHop(uint8_t dest, RoutingTableEntry **nextHopEntry) {
 
 bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t frameLen) {
 
-    uint8_t send_time;
+    uint32_t send_time;
     bool acked;
     uint8_t retries = 0;
 
@@ -42,11 +58,13 @@ bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t fra
         sendFrame(nextHopEntry->nextHop, framePayload, frameLen);
 
 
-        send_time = rtc_get_time();
         acked = false;
+
+        send_time = rtc_get_time();
         while (rtc_get_time() - send_time < 50) {
-            if ((acked = ackReceived(nextHopEntry->nextHop)))
+            if ((acked = ackReceived(nextHopEntry->nextHop))) {
                 break;
+            }
         }
 
         if (acked) {                // node is alive
@@ -76,7 +94,11 @@ void sendPacket(PacketHeader *h, uint8_t *payload, uint8_t payloadLen) {
     if (entryFound) {
 
         // Attempt to forward the packet
-        forward(nextHopEntry, framePayload, payloadLen + PACKET_HEADER_SIZE);
+        if (forward(nextHopEntry, framePayload, payloadLen + PACKET_HEADER_SIZE)) {
+            // Packet sent
+        } else {
+            // Do something with failure
+        }
 
     } else {
 
@@ -104,6 +126,13 @@ void handleReceived() {
         // Unpack the packet header from the raw frame
         PacketHeader *h = (PacketHeader *)framePayload;
 
+        if (h->dest == _nodeId) { // This packet is for us
+            // Should probably stick in a buffer as needed
+            cdc_write_line("Got packet for us");
+            cdc_log_string("Payload: ", &framePayload[PACKET_HEADER_SIZE]);
+            continue;
+        }
+
         // Realistically, here we'll want to update our own routing tables
         // with information about h->source
 
@@ -112,7 +141,7 @@ void handleReceived() {
         bool entryFound = getNextHop(h->dest, &nextHopEntry); // pointers having pointers, such a shame
 
         if (entryFound) {
-
+            
             forward(nextHopEntry, framePayload, frameLength);
 
         } else {
