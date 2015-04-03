@@ -11,7 +11,7 @@
 #include "fifo.h"
 
 
-uint32_t TRANSMITPERIOD = 150; //transmit a packet to gateway so often (in ms)
+uint32_t TRANSMITPERIOD = 150; //transmit a frame to gateway so often (in ms)
 uint8_t payload[250];
 uint8_t buff[20];
 uint8_t sendSize=0;
@@ -95,7 +95,7 @@ int main ()
 
 				uint32_t send_time = rtc_get_time();
 
-				sendPacket(address, payload, sizeof(payload));
+				sendFrame(address, payload, sizeof(payload));
 				acked = false;
 				while (rtc_get_time() - send_time < 50) {
 					if (acked = ackReceived(address))
@@ -110,7 +110,7 @@ int main ()
 				}
 			}
 
-			cdc_log_int("Time to send 255 packets: ", rtc_get_time() - start_time);
+			cdc_log_int("Time to send 255 frames: ", rtc_get_time() - start_time);
 			cdc_log_int("Failures: ", failures);
 			//_delay_ms(3000);
 		}
@@ -129,10 +129,10 @@ int main ()
 				now = rtc_get_time();
 				//cdc_write_line("MAIN LOOP");
 			}
-			while (packetsToRead()) {
-				cdc_log_int("Packets: ", p);
+			while (framesToRead()) {
+				cdc_log_int("frames: ", p);
 				++p;
-				getNextPacket(&senderId, &length, rbuf, &needsAck);
+				getNextFrame(&senderId, &length, rbuf, &needsAck);
 				if (needsAck) {
 					sendAck(senderId);
 					cdc_write_line("Sending ack.");
