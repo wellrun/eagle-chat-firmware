@@ -1,0 +1,86 @@
+EagleChat network protocol packet description
+
+Route request packet format (RRQ)
+
+src  | dest | RRQ | ID (2) | HOPCOUNT | ------ nodes --------- |
+
+
+Example ============
+
+Origin (Node 1):
+
+1    | 20   | RRQ | 0xEAEA |    0     | 0 -------------------> |
+
+Node 2:
+
+1    | 20   | RRQ | 0xEAEA |    1     | 2 |------------------> |
+
+
+Node 5:
+
+1    | 20   | RRQ | 0xEAEA |    2     | 2 | 5 |--------------> |
+
+
+Node 10:
+
+1    | 20   | RRQ | 0xEAEA |    3     | 2 | 5 | 10 |---------> |
+
+Node 20 gets:
+
+1    | 20   | RRQ | 0xEAEA |    3     | 2 | 5 | 10 |---------> |
+
+
+May see other RRQ packets with its node id as dest
+
+After some time, it picks the one with the lowest hopcount and replies with
+a RUP (route update) by sending it to the last node in the nodes list
+
+
+Route update packet format (RUP)
+
+src  | dest | RUP | ID (2) |    LEN   | ------ nodes --------- |
+
+
+Example ============
+
+Origin (Node 20):
+
+20   | 1    | RUP | 0xEAEA |    3     | 2 | 5 | 10 |---------> |
+
+Updates routing table as
+table[20] = 10
+
+
+Node 10:
+
+20   | 1    | RUP | 0xEAEA |    3     | 2 | 5 | 10 |---------> |
+
+Updates routing table as
+table[20] = 20
+table[1]  = 5
+
+
+Node 5:
+
+20   | 1    | RUP | 0xEAEA |    3     | 2 | 5 | 10 |---------> |
+
+Updates routing table as
+table[20] = 10
+table[1]  = 2
+
+
+Node 2:
+
+20   | 1    | RUP | 0xEAEA |    3     | 2 | 5 | 10 |---------> |
+
+Updates routing table as
+table[20] = 5
+table[1]  = 1
+
+
+Destination (Node 1):
+
+20   | 1    | RUP | 0xEAEA |    3     | 2 | 5 | 10 |---------> |
+
+Updates routing table as
+table[20] = 2
