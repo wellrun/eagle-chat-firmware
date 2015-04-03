@@ -74,7 +74,7 @@ void send_mode() {
 
 		start_time = rtc_get_time();
 
-		sendPacket(first_hop, payload, sizeof(payload));
+		sendFrame(first_hop, payload, sizeof(payload));
 		send_time = rtc_get_time();
 		acked = false;
 		while (rtc_get_time() - send_time < 50) {
@@ -87,8 +87,8 @@ void send_mode() {
 		} else {
 			send_time = rtc_get_time();
 			while (rtc_get_time() - send_time < 100) {
-				if (packetsToRead()) {
-					getNextPacket(&senderId, &length, rbuf, &needsAck);
+				if (framesToRead()) {
+					getNextFrame(&senderId, &length, rbuf, &needsAck);
 					if (needsAck) {
 						sendAck(senderId);
 					}
@@ -112,8 +112,8 @@ void send_mode() {
 void router_mode_2() {
 	while (1) {
 		setAddress(2);
-		if (packetsToRead()) {
-			getNextPacket(&senderId, &length, rbuf, &needsAck);
+		if (framesToRead()) {
+			getNextFrame(&senderId, &length, rbuf, &needsAck);
 			if (needsAck) {
 				sendAck(senderId);
 			}
@@ -126,7 +126,7 @@ void router_mode_2() {
 						dest = 1;
 					}
 					uint8_t next_hop = route_table_node_2[dest-1];
-					sendPacket(next_hop, rbuf, length);
+					sendFrame(next_hop, rbuf, length);
 					send_time = rtc_get_time();
 					acked = false;
 					while (rtc_get_time() - send_time < 50) {
@@ -149,8 +149,8 @@ void router_mode_2() {
 
 void router_mode_3() {
 	while (1) {
-		if (packetsToRead()) {
-			getNextPacket(&senderId, &length, rbuf, &needsAck);
+		if (framesToRead()) {
+			getNextFrame(&senderId, &length, rbuf, &needsAck);
 			if (needsAck) {
 				sendAck(senderId);
 			}
@@ -163,7 +163,7 @@ void router_mode_3() {
 						dest = 1;
 					}
 					uint8_t next_hop = route_table_node_3[dest - 1];
-					sendPacket(next_hop, rbuf, length);
+					sendFrame(next_hop, rbuf, length);
 					send_time = rtc_get_time();
 					acked = false;
 					while (rtc_get_time() - send_time < 50) {
