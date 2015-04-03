@@ -25,7 +25,7 @@ typedef struct {
 void sendPacket(PacketHeader *h, uint8_t *payload, uint8_t payloadLen);
 
 //! Processes received packets, sends ACKS, forwards packets, etc.
-void rout();
+void handleReceived();
 
 
 #endif /*ROUTING_H_INCLUDED*/
