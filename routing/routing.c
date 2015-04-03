@@ -5,42 +5,52 @@ static uint8_t framePayload[MAX_PAYLOAD_SIZE];
 
 static RoutingTableEntry routingTable[ROUTING_TABLE_ENTRIES];
 
-bool getNextHop(uint8_t dest, uint8_t *nextHop);
-bool forward(uint8_t nextHop, uint8_t *framePayload, uint8_t payloadLen);
+bool getNextHop(uint8_t dest, RoutingTableEntry **nextHopEntry);
+bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t payloadLen);
 
-bool getNextHop(uint8_t dest, uint8_t *nextHop) {
-    uint8_t i = 0;
-    bool entryFound = false;
-    RoutingTableEntry r;
-    for (i = 0; i < ROUTING_TABLE_ENTRIES; i++) {
-        r = routingTable[i];
-        if (r.dest == dest) {
-            entryFound = true;
-            break;
-        }
-    }
-    *nextHop = r.nextHop;
-    return entryFound;
+static inline bool entryIsValid(RoutingTableEntry * entry) {
+    return (entry->nextHop != 0) && (entry->failures < MAX_ACK_FAILURES);
 }
 
-bool forward(uint8_t nextHop, uint8_t *framePayload, uint8_t frameLen) {
+/*
+* Attempts to get the routing table entry for the path to dest
+* If an invalid entry is found, returns false
+* Entries are invalid if the nextHop field is 0 or ack failures equals or
+* exceeds MAX_ACK_FAILURES
+*/
+bool getNextHop(uint8_t dest, RoutingTableEntry **nextHopEntry) {
+
+    RoutingTableEntry *r = &routingTable[dest];
+
+    if (entryIsValid(r)) {
+
+        *nextHopEntry = r;
+        return true;
+
+    }
+
+    return false;
+}
+
+bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t frameLen) {
 
     uint8_t send_time;
     bool acked;
     uint8_t retries = 0;
 
     while (retries < 5) {
-        sendFrame(nextHop, &framePayload, frameLen);
+        sendFrame(nextHopEntry->nextHop, framePayload, frameLen);
 
 
         send_time = rtc_get_time();
         acked = false;
         while (rtc_get_time() - send_time < 50) {
-            if ((acked = ackReceived(nextHop)))
+            if ((acked = ackReceived(nextHopEntry->nextHop)))
                 break;
         }
 
-        if (acked) {
+        if (acked) {                // node is alive
+            nextHopEntry->failures = 0;  // reset failure count
             return true;
         }
 
@@ -60,13 +70,13 @@ void sendPacket(PacketHeader *h, uint8_t *payload, uint8_t payloadLen) {
     memcpy(&framePayload[PACKET_HEADER_SIZE], payload, payloadLen);
 
     // Try to find the next hop to the destination
-    uint8_t nextHop;
-    bool entryFound = getNextHop(h->dest, &nextHop);
+    RoutingTableEntry *nextHopEntry;
+    bool entryFound = getNextHop(h->dest, &nextHopEntry);
 
     if (entryFound) {
 
         // Attempt to forward the packet
-        forward(nextHop, &framePayload, payloadLen + PACKET_HEADER_SIZE);
+        forward(nextHopEntry, framePayload, payloadLen + PACKET_HEADER_SIZE);
 
     } else {
 
@@ -84,7 +94,7 @@ void handleReceived() {
     while (framesToRead()) {
 
         // Get the raw frame
-        getNextFrame(&senderNodeId, &frameLength, &framePayload, &needsAck);
+        getNextFrame(&senderNodeId, &frameLength, framePayload, &needsAck);
 
         // Send an ack if needed
         if (needsAck) {
@@ -98,12 +108,12 @@ void handleReceived() {
         // with information about h->source
 
         // Get the next hop to the packet's destination
-        uint8_t nextHop;
-        bool entryFound = getNextHop(h->dest, &nextHop);
+        RoutingTableEntry *nextHopEntry;
+        bool entryFound = getNextHop(h->dest, &nextHopEntry); // pointers having pointers, such a shame
 
         if (entryFound) {
 
-            forward(nextHop, framePayload, frameLength);
+            forward(nextHopEntry, framePayload, frameLength);
 
         } else {
 
