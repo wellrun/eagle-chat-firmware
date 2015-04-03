@@ -14,7 +14,7 @@ void sendPacket(PacketHeader *h, uint8_t *payload, uint8_t payloadLen) {
     uint8_t i = 0;
     bool entryFound = false;
     RoutingTableEntry r;
-    while (i < ROUTING_TABLE_ENTRIES) {
+    for (i = 0; i < ROUTING_TABLE_ENTRIES; i++) {
         r = routingTable[i];
         if (r.dest == h->dest) {
             entryFound = true;
