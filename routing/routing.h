@@ -7,10 +7,10 @@
 #define MAX_ACK_FAILURES        254
 
 typedef struct {
-    uint8_t source;
-    uint8_t dest;
-    uint8_t flags;
-    uint8_t type;
+	uint8_t source;
+	uint8_t dest;
+	uint8_t flags;
+	uint8_t type;
 } __attribute__((packed)) PacketHeader;
 
 #define PACKET_TYPE_CONTENT     0
@@ -20,22 +20,22 @@ typedef struct {
 #define RRQ_PACKET_HEADER_SIZE  (sizeof(RRQPacketHeader))
 
 typedef struct {
-    uint8_t rrqID;
-    uint8_t hopcount;
+	uint8_t rrqID;
+	uint8_t hopcount;
 } __attribute__((packed)) RRQPacketHeader;
 
 #define MAX_PACKET_PAYLOAD_SIZE (MAX_PAYLOAD_SIZE - PACKET_HEADER_SIZE)     // currently: 246
 
 typedef struct {
-    uint8_t nextHop;
-    uint8_t failures;
-    uint16_t originalRRQID;
+	uint8_t nextHop;
+	uint8_t failures;
+	uint16_t originalRRQID;
 } RoutingTableEntry;
 
 typedef struct {
-    uint8_t  dest;
-    uint32_t timestamp;
-    bool resolved;
+	uint8_t  dest;
+	uint32_t timestamp;
+	bool resolved;
 } RRQProgress;
 
 #define ROUTING_TABLE_ENTRIES   256
