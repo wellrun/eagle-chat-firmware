@@ -119,7 +119,7 @@ void initiateRouteRequest(uint8_t dest) {
     h.type = PACKET_TYPE_RRQ;
 
     RRQPacketHeader rh;
-    rh.rrqId = 0;   //?
+    rh.rrqId = 0;
     rh.hopcount = 0;
 
     memcpy(framePayload, (uint8_t *)h, PACKET_HEADER_SIZE);
@@ -129,10 +129,6 @@ void initiateRouteRequest(uint8_t dest) {
 
     broadcastFrame(&framePayload, PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE);
 
-}
-
-void processRRQ() {
-    
 }
 
 void handleReceived() {
@@ -153,27 +149,57 @@ void handleReceived() {
         // Unpack the packet header from the raw frame
         PacketHeader *h = (PacketHeader *)framePayload;
 
-        if (h->dest == _nodeId) { // This packet is for us
-            // Should probably stick in a buffer as needed
-            cdc_write_line("Got packet for us");
-            cdc_log_string("Payload: ", &framePayload[PACKET_HEADER_SIZE]);
-            continue;
-        }
+        switch (h->type) {
+            case PACKET_TYPE_CONTENT:
 
-        // Realistically, here we'll want to update our own routing tables
-        // with information about h->source
+                if (h->dest == _nodeId) { // This packet is for us
+                    // Should probably stick in a buffer as needed
+                    cdc_write_line("Got packet for us");
+                    cdc_log_string("Payload: ", &framePayload[PACKET_HEADER_SIZE]);
+                    continue;
+                }
 
-        // Get the next hop to the packet's destination
-        RoutingTableEntry *nextHopEntry;
-        bool entryFound = getNextHop(h->dest, &nextHopEntry); // pointers having pointers, such a shame
+                // Realistically, here we'll want to update our own routing tables
+                // with information about h->source
 
-        if (entryFound) {
+                // Get the next hop to the packet's destination
+                RoutingTableEntry *nextHopEntry;
+                bool entryFound = getNextHop(h->dest, &nextHopEntry); // pointers having pointers, such a shame
 
-            forward(nextHopEntry, framePayload, frameLength);
+                if (entryFound) {
+                    forward(nextHopEntry, framePayload, frameLength);
+                } else {
+                    // Do the hard part
+                }
 
-        } else {
+                break;
 
-            // Do the hard part
+            case PACKET_TYPE_RRQ:
+
+                if (h->dest == _nodeId) {
+                    // We are the destination; Start the ball rolling on a route update
+
+                    
+                }
+
+                RRQPacketHeader *rh = (RRQPacketHeader *)&framePayload[PACKET_HEADER_SIZE];
+
+                // Add the rrqId to our list of recently forwarded RRQ's
+
+                uint8_t *nodeList = &framePayload[PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE];
+                nodeList[rh->hopcount] = _nodeId;
+
+                rh->hopcount++;
+
+                broadcastFrame(&framePayload, PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE + rh->hopcount);
+
+                break;
+
+            case PACKET_TYPE_RUP:
+
+
+
+                break;
 
         }
 

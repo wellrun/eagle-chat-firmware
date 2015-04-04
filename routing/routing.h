@@ -24,7 +24,7 @@ typedef struct {
     uint8_t hopcount;
 } __attribute__((packed)) RRQPacketHeader;
 
-#define MAX_PACKET_PAYLOAD_SIZE (MAX_PAYLOAD_SIZE - PACKET_HEADER_SIZE)
+#define MAX_PACKET_PAYLOAD_SIZE (MAX_PAYLOAD_SIZE - PACKET_HEADER_SIZE)     // currently: 246
 
 typedef struct {
     uint8_t nextHop;
