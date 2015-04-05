@@ -63,7 +63,7 @@ if __name__ == '__main__':
         print('*** ERROR: No EagleChat boards found')
         sys.exit(1)
 
-    print("Found {} EalgeChat board(s) in DFU mode.".format(len(devices)))
+    print("Found {} EagleChat board(s) in DFU mode.".format(len(devices)))
 
     for dev in devices:
         EagleChat.program_device(dev, args.file)
