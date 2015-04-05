@@ -1,3 +1,4 @@
+#include "routing_config.h"
 #include "routing.h"
 #include "radio.h"
 #include <string.h>
@@ -261,26 +262,39 @@ void handleReceived() {
 			case PACKET_TYPE_RRQ:
 
 				if (h->dest == _nodeId) {
-					
-					// Update our routing tables
-					RoutingTableEntry r;
-					r.nextHop = senderNodeId;
-					r.failures = 0;
-					r.originalRRQID = rh->rrqID;
-					routingTable[h->source] = r;
-					cdc_write_string("RRQ: ");
-					debugPrintRoutingTable(h->source);
 
-					// Swap source and dest in the packet header
-					uint8_t temp = h->source;
-					h->source = h->dest;
-					h->dest = temp;
+					#if FORCE_HOPS
+					if (rh->hopcount > 0) { // Ignore RRQs directly from originator		
 
-					// Change the packet type to a RUP
-					h->type = PACKET_TYPE_RUP;
+					#endif
 
-					// Time to get that packet on the ol' dusty trail
-					forward(&r, framePayload, frameLength);
+						// Update our routing tables
+						RoutingTableEntry r;
+						r.nextHop = senderNodeId;
+						r.failures = 0;
+						r.originalRRQID = rh->rrqID;
+						routingTable[h->source] = r;
+						cdc_write_string("RRQ: ");
+						debugPrintRoutingTable(h->source);
+
+						// Swap source and dest in the packet header
+						uint8_t temp = h->source;
+						h->source = h->dest;
+						h->dest = temp;
+
+						// Change the packet type to a RUP
+						h->type = PACKET_TYPE_RUP;
+
+						// Time to get that packet on the ol' dusty trail
+						forward(&r, framePayload, frameLength);
+
+					#if FORCE_HOPS
+					} else {
+
+						cdc_log_int("Ignoring RRQ directly from: ", h->source);
+
+					}
+					#endif
 
 
 				} else {
@@ -311,13 +325,14 @@ void handleReceived() {
 				if (h->dest == _nodeId && rrqProgress.dest == h->source) {
 
 					cdc_log_int("RUP: SenderId: ", senderNodeId);
+
 					// Save the next hop in the routing table
-					//uint8_t nextHop = framePayload[PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE];
 					routingTable[rrqProgress.dest].nextHop = senderNodeId; // nextHop;
 					routingTable[rrqProgress.dest].originalRRQID = rh->rrqID;
 
 					cdc_write_line("RUP: Should have updated routing table. Result:");
 					debugPrintRoutingTable(rrqProgress.dest);
+
 
 					// Mark current RRQ as resolved
 					rrqProgress.resolved = true;
