@@ -135,11 +135,11 @@ RM              := rm
 
 ifeq ($(os),Windows)
 	RMDIR           := rmdir /S /Q
-else 
+else
 ifeq ($(os),Darwin)
 	RMDIR           := grmdir "--ignore-fail-on-non-empty" -p
 else
-	RMDIR		:= rmdir --ignore-fail-on-non-empty -p 
+	RMDIR		:= rmdir --ignore-fail-on-non-empty -p
 endif
 endif
 
@@ -358,7 +358,7 @@ ifneq ($(strip $(POSTBUILD_CMD)),)
 endif
 
 install: all
-	avrdude -p $(MCU) -c flip2 -U application:w:$(project).hex
+	../autoprog.py $(project).hex
 
 # Clean up the project.
 .PHONY: clean
