@@ -9,8 +9,8 @@
 
 typedef struct {
 	uint8_t data[FIFO_SIZE];
-	uint8_t h;
-	uint8_t t;
+	uint16_t h;
+	uint16_t t;
   uint8_t stored;
 } fifo_t;
 
