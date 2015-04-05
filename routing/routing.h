@@ -35,7 +35,9 @@ typedef struct {
 typedef struct {
 	uint8_t  dest;
 	uint32_t timestamp;
+	bool active;
 	bool resolved;
+	bool timeout;
 } RRQProgress;
 
 #define ROUTING_TABLE_ENTRIES   256
@@ -54,6 +56,10 @@ void initiateRouteRequest(uint8_t dest);
 void debugPrintRoutingTable(uint8_t r);
 void debugPrintRecentRRQ(void);
 void debugPrintRRQProgress(void);
+
+
+bool routeExistsTo(uint8_t dest);
+bool routeRequestInProgress(void);
 
 
 RRQProgress *getRrqProgress(void);

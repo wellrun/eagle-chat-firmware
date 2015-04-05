@@ -50,47 +50,25 @@ int main (void)
 	while (1) {
 		handleReceived();
 
-		RRQProgress *rrqProgress = getRrqProgress();
-
 		if (my_address == 1) {
-			if (rrqProgress->dest != 0) {
-				if (rrqProgress->resolved) {
-					routeRequestResolved = true;
-					rrqProgress->dest = 0;
-				} else {
-					uint32_t since = rtc_get_time() - rrqProgress->timestamp;
-					if (since >= 1000) {
-						routeRequestResolved = true;
-						rrqProgress->dest = 0;
-					}
-				}
-			}
 
 			if (rtc_get_time() - then > 1000) {
-				if (!previouslyFailed || routeRequestResolved) {
 
-					PacketHeader h;
-					h.source = my_address;
-					h.dest = my_address == 1 ? 2 : 1;
-					h.flags = 0;
-					h.type = 0;
-					uint8_t message[] = "'Sup guys?";
+				PacketHeader h;
+				h.source = my_address;
+				h.dest = my_address == 1 ? 2 : 1;
+				h.flags = 0;
+				h.type = 0;
+				uint8_t message[] = "'Sup guys?";
 
-					debugPrintRoutingTable(h.dest);
-					debugPrintRRQProgress();
-
-					bool success = sendPacket(&h, message, sizeof(message));
-					cdc_log_int("sendPacket returned: ", success);
-
-					if (!success) {
-						initiateRouteRequest(h.dest);
-						debugPrintRRQProgress();
-						previouslyFailed = true;
+				if (!routeRequestInProgress()) {
+					if (routeExistsTo(h.dest)) {
+						sendPacket(&h, message, sizeof(message));
 					} else {
-						previouslyFailed = false;
+						initiateRouteRequest(h.dest);
 					}
 				}
-
+				
 				then = rtc_get_time();
 			}
 		}

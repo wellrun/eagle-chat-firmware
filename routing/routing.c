@@ -21,7 +21,7 @@ static uint8_t recentRRQ[RECENT_RRQ_NUM];
 static uint8_t recentRRQ_p;
 
 
-bool getNextHop(uint8_t dest, RoutingTableEntry **nextHopEntry);
+RoutingTableEntry * getNextHop(uint8_t dest);
 bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t payloadLen);
 
 static void logRecentRRQ(uint8_t n);
@@ -90,18 +90,13 @@ void setupRouting(uint8_t nodeId) {
 * Entries are invalid if the nextHop field is 0 or ack failures equals or
 * exceeds MAX_ACK_FAILURES
 */
-bool getNextHop(uint8_t dest, RoutingTableEntry **nextHopEntry) {
+RoutingTableEntry * getNextHop(uint8_t dest) {
 
 	RoutingTableEntry *r = &routingTable[dest];
 
-	if (entryIsValid(r)) {
+	if (entryIsValid(r)) return r;
 
-		*nextHopEntry = r;
-		return true;
-
-	}
-
-	return false;
+	return 0x00;
 }
 
 bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t frameLen) {
@@ -144,10 +139,9 @@ bool sendPacket(PacketHeader *h, uint8_t *payload, uint8_t payloadLen) {
 	memcpy(&framePayload[PACKET_HEADER_SIZE], payload, payloadLen);
 
 	// Try to find the next hop to the destination
-	RoutingTableEntry *nextHopEntry;
-	bool entryFound = getNextHop(h->dest, &nextHopEntry);
+	RoutingTableEntry *nextHopEntry = getNextHop(h->dest);
 
-	if (entryFound) {
+	if (nextHopEntry != NULL) {
 
 		// Attempt to forward the packet
 		return forward(nextHopEntry, framePayload, payloadLen + PACKET_HEADER_SIZE);
@@ -186,6 +180,7 @@ void initiateRouteRequest(uint8_t dest) {
 	rrqProgress.dest = dest;
 	rrqProgress.resolved = false;
 	rrqProgress.timestamp = rtc_get_time();
+	rrqProgress.active = true;
 
 	PacketHeader h;
 	h.source = _nodeId;
@@ -208,6 +203,26 @@ void initiateRouteRequest(uint8_t dest) {
 
 	broadcastFrame(framePayload, PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE);
 
+}
+
+bool routeExistsTo(uint8_t dest) {
+
+	// First, if a pending RRQ resolved, 'destroy' it
+
+	if (rrqProgress.active) {
+		uint32_t since = rtc_get_time() - rrqProgress.timestamp;
+		if (rrqProgress.resolved || (since >= 1000)) {
+			// If it's active and resolved, OR taking too long, deactivate it
+			rrqProgress.active = false;
+		}
+	}
+
+	return (getNextHop(dest) != NULL);
+
+}
+
+bool routeRequestInProgress() {
+	return rrqProgress.active;
 }
 
 void handleReceived() {
@@ -248,10 +263,9 @@ void handleReceived() {
 				// with information about h->source
 
 				// Get the next hop to the packet's destination
-				RoutingTableEntry *nextHopEntry;
-				bool entryFound = getNextHop(h->dest, &nextHopEntry); // pointers having pointers, such a shame
+				RoutingTableEntry *nextHopEntry = getNextHop(h->dest);
 
-				if (entryFound) {
+				if (nextHopEntry != NULL) {
 					forward(nextHopEntry, framePayload, frameLength);
 				} else {
 					// Do a route error
