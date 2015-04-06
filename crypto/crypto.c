@@ -8,7 +8,13 @@ void cr_generate_keypair(uint8_t *pk, uint8_t *sk, uint8_t *random) {
 	crypto_scalarmult_base(pk, sk);
 }
 
-int cr_encrypt(uint8_t *encrypted, uint8_t *message, uint32_t mlen, uint8_t *sPrivate, uint8_t *rPublic, uint8_t *nonce) {
+int cr_get_session_ssk(uint8_t *ssk, uint8_t *private, uint8_t *public) {
+
+	return crypto_box_beforenm(ssk, public, private);
+
+}
+
+int cr_encrypt(uint8_t *encrypted, uint8_t *message, uint32_t mlen, uint8_t *session_ssk, uint8_t *nonce) {
 
 	uint8_t M = mlen;							// Original message length
 	uint8_t P = crypto_box_ZEROBYTES;			// Padding length
@@ -23,7 +29,7 @@ int cr_encrypt(uint8_t *encrypted, uint8_t *message, uint32_t mlen, uint8_t *sPr
 	uint8_t holder[T];
 
 	// Perform the encryption
-	uint8_t ret = crypto_box(holder, padded, T, nonce, rPublic, sPrivate);
+	uint8_t ret = crypto_box_afternm(holder, padded, T, nonce, session_ssk);
 
 	// holder = [ boxpadding | encrypted message ]
 
@@ -36,7 +42,7 @@ int cr_encrypt(uint8_t *encrypted, uint8_t *message, uint32_t mlen, uint8_t *sPr
 	return ret;
 }
 
-int cr_decrypt(uint8_t *message, uint8_t *encrypted, uint32_t elen, uint8_t *sPublic, uint8_t *rPrivate, uint8_t *nonce) {
+int cr_decrypt(uint8_t *message, uint8_t *encrypted, uint32_t elen, uint8_t *session_ssk, uint8_t *nonce) {
 
 	uint8_t P = crypto_box_BOXZEROBYTES;			// Padding length
 	uint8_t M = elen;								// Encrypted message length
@@ -51,7 +57,7 @@ int cr_decrypt(uint8_t *message, uint8_t *encrypted, uint32_t elen, uint8_t *sPu
 	uint8_t holder[T];
 
 	// Perform the decryption
-	uint8_t r = crypto_box_open(holder, padded, T, nonce, sPublic, rPrivate);
+	uint8_t r = crypto_box_open_afternm(holder, padded, T, nonce, session_ssk);
 
 
 	// holder = [padding | original message]

@@ -20,6 +20,8 @@ uint8_t bPrivate[crypto_box_SECRETKEYBYTES];
 uint8_t message[MAX_MESSAGE_LENGTH];
 uint8_t encryptedMessage[ENCRYPTED_LENGTH(MAX_MESSAGE_LENGTH)];
 
+uint8_t ssk[crypto_box_BEFORENMBYTES];
+
 uint8_t nonce[crypto_box_NONCEBYTES];
 
 void encrypt() {
@@ -51,7 +53,9 @@ void encrypt() {
 	cdc_log_string("Message: ", message);
 	cdc_log_hex_string("Nonce  : ", nonce, crypto_box_NONCEBYTES);
 
-	cr_encrypt(encrypted, message, actualLength, aPrivate, bPublic, nonce);
+	cr_get_session_ssk(ssk, aPrivate, bPublic);
+
+	cr_encrypt(encrypted, message, actualLength, ssk, nonce);
 
 	cdc_log_hex_string("Encrypted: ", encrypted, ENCRYPTED_LENGTH(actualLength));
 
@@ -72,7 +76,9 @@ void decrypt() {
 
 	uint8_t decrypted[DECRYPTED_LENGTH(actualLength)];
 
-	cr_decrypt(decrypted, encryptedMessage, actualLength, aPublic, bPrivate, nonce);
+	cr_get_session_ssk(ssk, bPrivate, aPublic);
+
+	cr_decrypt(decrypted, encryptedMessage, actualLength, ssk, nonce);
 
 	cdc_log_string("Decrypted: ", decrypted);
 
