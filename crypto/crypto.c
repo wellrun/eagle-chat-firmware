@@ -67,7 +67,6 @@ int cr_decrypt(uint8_t *message, uint8_t *encrypted, uint32_t elen, uint8_t *ses
 
 	// Extract the original message part from holder
 	memcpy(message, &holder[P], M);
-	message[M] = 0;
 
 	return r;
 

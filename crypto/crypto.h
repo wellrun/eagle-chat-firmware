@@ -5,11 +5,11 @@
 
 // The length required to hold the encrypted message corresponding to
 // a plaintext string with length x
-#define ENCRYPTED_LENGTH(x) 	(x + crypto_box_ZEROBYTES - crypto_box_BOXZEROBYTES)
+#define ENCRYPTED_LENGTH(x) 	(x + crypto_box_ZEROBYTES - crypto_box_BOXZEROBYTES)	// 	x + 16
 
 // The length required to hold the plaintext string corresponding to
 // an encrypted message with length x
-#define DECRYPTED_LENGTH(x) 	(x - crypto_box_ZEROBYTES + 1)
+#define DECRYPTED_LENGTH(x) 	(x - crypto_box_ZEROBYTES)
 
 //! Creates a public and private key, given suitably random bits
 /*!
