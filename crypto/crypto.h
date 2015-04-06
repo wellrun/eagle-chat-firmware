@@ -17,16 +17,18 @@
   \param sk 	The destination of the private key with length crypto_box_SECRETKEYBYTES
   \param random	A suitably random string of length crypto_box_SECRETKEYBYTES
 */
-void cr_generate_keypair(uint8_t *pk, uint8_t *sk, uint8_t *random);
+void cr_generate_keypair(uint8_t *public, uint8_t *private, uint8_t *random);
 
 //! Computes a shared secret key that allows two partners to maintain an open line of communication.
 //! Before encryption, the sender should call this function with its own private key and the intended destination's public key
-//! before decryption, the receiver should call this function with its own private key and the supposed sender's public key
+//! 	and if desired, store it and associate it with this particular destination.
+//! Before decryption, the receiver should call this function with its own private key and the supposed sender's public key
+//! 	and if desired, store it and associate it with this particular sender
 //! These same two partners may use this pre-computed SSK for any subsequent communication between them.
 /*!
   \param ssk 		Destination of the shared secret key associated with communication between this pair of length crypto_box_BEFORENMBYTES
-  \param private	Client's private key
-  \param public		The public key of the other partner in this communication session
+  \param private	Client's private key of length crypto_box_SECRETKEYBYTES
+  \param public		The public key of the other partner in this communication session of length crypto_box_PUBLICKEYBYTES
 */
 int cr_get_session_ssk(uint8_t *ssk, uint8_t *private, uint8_t *public);
 

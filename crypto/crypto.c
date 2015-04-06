@@ -3,9 +3,9 @@
 #include "avrnacl.h"
 #include <string.h>
 
-void cr_generate_keypair(uint8_t *pk, uint8_t *sk, uint8_t *random) {
-	memcpy(sk, random, crypto_box_SECRETKEYBYTES);
-	crypto_scalarmult_base(pk, sk);
+void cr_generate_keypair(uint8_t *public, uint8_t *private, uint8_t *random) {
+	memcpy(private, random, crypto_box_SECRETKEYBYTES);
+	crypto_scalarmult_base(public, private);
 }
 
 int cr_get_session_ssk(uint8_t *ssk, uint8_t *private, uint8_t *public) {
