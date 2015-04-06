@@ -4,28 +4,35 @@
 #include "asf.h"
 #include "radio.h"
 
-#define PACKET_HEADER_SIZE      (sizeof(PacketHeader))
-#define MAX_ACK_FAILURES        10
+#define PACKET_HEADER_SIZE      	(sizeof(PacketHeader))
+#define MAX_ACK_FAILURES        	10
 
 typedef struct {
 	uint8_t source;
 	uint8_t dest;
-	uint8_t flags;
 	uint8_t type;
 } __attribute__((packed)) PacketHeader;
 
-#define PACKET_TYPE_CONTENT     0
-#define PACKET_TYPE_RRQ         1
-#define PACKET_TYPE_RUP         2
+#define PACKET_TYPE_CONTENT     	0
+#define PACKET_TYPE_RRQ         	1
+#define PACKET_TYPE_RUP         	2
 
-#define RRQ_PACKET_HEADER_SIZE  (sizeof(RRQPacketHeader))
+#define RRQ_PACKET_HEADER_SIZE  	(sizeof(RRQPacketHeader))
 
 typedef struct {
 	uint8_t rrqID;
 	uint8_t hopcount;
 } __attribute__((packed)) RRQPacketHeader;
 
-#define MAX_PACKET_PAYLOAD_SIZE (MAX_PAYLOAD_SIZE - PACKET_HEADER_SIZE)     // currently: 246
+#define CONTENT_PACKET_HEADER_SIZE	(sizeof(ContentPacketHeader))
+
+typedef struct {
+	uint16_t contentId;
+	uint8_t encrypted;
+} __attribute__((packed)) ContentPacketHeader;
+
+#define MAX_PACKET_PAYLOAD_SIZE 	(MAX_PAYLOAD_SIZE - PACKET_HEADER_SIZE)     // currently: 246
+#define MAX_CONTENT_PAYLOAD_SIZE	(MAX_PAYLOAD_SIZE - PACKET_HEADER_SIZE - CONTENT_PACKET_HEADER_SIZE)
 
 typedef struct {
 	uint8_t nextHop;
@@ -47,6 +54,8 @@ typedef struct {
 void setupRouting(uint8_t nodeId);
 
 //! Consults the routing table and attempts to send a packet
+//! It is assumed that every packet going out WILL have a PacketHeader, so one is taken in the argument
+//! The client is responsible for packing any other header needed into the payload themselves
 bool sendPacket(PacketHeader *h, uint8_t *payload, uint8_t payloadLen);
 
 //! Processes received packets, sends ACKS, forwards packets, etc.

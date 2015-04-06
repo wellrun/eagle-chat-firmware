@@ -241,7 +241,6 @@ void initiateRouteRequest(uint8_t dest) {
 	PacketHeader h;
 	h.source = _nodeId;
 	h.dest = dest;
-	h.flags = 0;
 	h.type = PACKET_TYPE_RRQ;
 
 	RRQPacketHeader rh;

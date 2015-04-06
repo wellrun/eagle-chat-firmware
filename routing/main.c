@@ -12,7 +12,6 @@ void stuff_fifo(uint8_t my_address)
 
 	h.source = my_address;
 	h.dest = my_address == 1 ? 2 : 1;
-	h.flags = 0;
 	h.type = 0;
 	uint8_t message[] = "'Sup guys?";
 

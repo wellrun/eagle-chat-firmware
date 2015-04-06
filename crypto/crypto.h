@@ -11,6 +11,8 @@
 // an encrypted message with length x
 #define DECRYPTED_LENGTH(x) 	(x - crypto_box_ZEROBYTES)
 
+#define CRYPTO_OVERHEAD_TOTAL	((crypto_box_ZEROBYTES - crypto_box_BOXZEROBYTES) + crypto_box_NONCEBYTES) // (16) + 24 = 40
+
 //! Creates a public and private key, given suitably random bits
 /*!
   \param pk		The destination of the public key with length crypto_box_PUBLICKEYBYTES
