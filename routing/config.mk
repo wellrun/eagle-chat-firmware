@@ -16,5 +16,4 @@ USER_INC_PATH += \
 ifdef FORCE_HOPS
 CPPFLAGS += \
 	-D FORCE_HOPS=$(FORCE_HOPS)
-$(warning Force hops=$(FORCE_HOPS))
 endif
