@@ -1,5 +1,6 @@
 #include "routing_config.h"
 #include "routing.h"
+#include "packet_fifo.h"
 #include "radio.h"
 #include <string.h>
 
@@ -10,6 +11,8 @@ static RoutingTableEntry routingTable[ROUTING_TABLE_ENTRIES];
 static uint8_t _nodeId = 0;
 
 static RRQProgress rrqProgress;
+
+static packet_fifo_t sendFifo;
 
 RRQProgress * getRrqProgress() {
 	return &rrqProgress;
@@ -25,15 +28,21 @@ RoutingTableEntry * getNextHop(uint8_t dest);
 bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t payloadLen);
 
 static void logRecentRRQ(uint8_t n);
-static void trashRecentRRQs(void);
+// static void trashRecentRRQs();
+
 bool didRecentlyForwardRRQ(uint8_t id);
 
 static inline bool entryIsValid(RoutingTableEntry * entry) {
 	return (entry->nextHop != 0) && (entry->failures < MAX_ACK_FAILURES);
 }
 
+static inline void invalidateEntry(RoutingTableEntry * entry) {
+	entry->nextHop = 0;
+	entry->failures = 0;
+}
+
 void debugPrintRoutingTable(uint8_t entry) {
-	
+
 	RoutingTableEntry *r = &routingTable[entry];
 
 	if (entryIsValid(r)) {
@@ -74,8 +83,7 @@ void setupRouting(uint8_t nodeId) {
 	memset(framePayload, 0, sizeof(framePayload));
 	memset(routingTable, 0, sizeof(routingTable)); // init routing table
 
-	// routingTable[1].nextHop = 1; // Dummify the routing table
-	// routingTable[2].nextHop = 2;
+	packet_fifo_init(&sendFifo);
 
 	setupRadio();
 	setAddress(nodeId);
@@ -94,9 +102,13 @@ RoutingTableEntry * getNextHop(uint8_t dest) {
 
 	RoutingTableEntry *r = &routingTable[dest];
 
-	if (entryIsValid(r)) return r;
+	if (entryIsValid(r)) {
+		return r;
+	}
 
-	return 0x00;
+	invalidateEntry(r);
+
+	return NULL;
 }
 
 bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t frameLen) {
@@ -122,7 +134,7 @@ bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t fra
 			nextHopEntry->failures = 0;  // reset failure count
 			return true;
 		}
-
+		nextHopEntry->failures++;
 		retries ++;
 	}
 
@@ -154,16 +166,60 @@ bool sendPacket(PacketHeader *h, uint8_t *payload, uint8_t payloadLen) {
 
 }
 
+bool queuePacket(PacketHeader h, uint8_t *payload, uint8_t payloadLen) {
+
+	if (!packet_fifo_isFull(&sendFifo)) {
+
+		packet_fifo_write(&sendFifo, h, payload, payloadLen);
+
+		return true;
+
+	} else {
+
+		return false;
+
+	}
+}
+
+void processSendQueue(void) {
+
+	if (!packet_fifo_isEmpty(&sendFifo)) {
+
+		// Grab the PacketHeader
+		PacketHeader h = packet_fifo_peekHeader(&sendFifo);
+
+		if (routeExistsTo(h.dest)) {
+
+			uint8_t *payload;
+			uint8_t payloadLen;
+
+			// Safe to consume packet
+			payloadLen = packet_fifo_read(&sendFifo, &h, &payload);
+
+			// Send the packet
+			sendPacket(&h, payload, payloadLen);
+
+		} else if (!routeRequestInProgress()) {
+
+			initiateRouteRequest(h.dest);
+
+		}
+
+	}
+}
+
 void logRecentRRQ(uint8_t n) {
 	recentRRQ[recentRRQ_p] = n;
 	recentRRQ_p++;
 	if (recentRRQ_p == RECENT_RRQ_NUM) recentRRQ_p = 0;
 }
 
+/*
 void trashRecentRRQs() {
 	memset(recentRRQ, 0, RECENT_RRQ_NUM);
 	recentRRQ_p = 0;
 }
+*/
 
 bool didRecentlyForwardRRQ(uint8_t id) {
 	uint8_t i = 0;
@@ -217,7 +273,7 @@ bool routeExistsTo(uint8_t dest) {
 		}
 	}
 
-	return (getNextHop(dest) != NULL);
+	return (getNextHop(dest) != NULL) && (rrqProgress.dest != dest || !rrqProgress.active);
 
 }
 
@@ -278,7 +334,7 @@ void handleReceived() {
 				if (h->dest == _nodeId) {
 
 					#if FORCE_HOPS
-					if (rh->hopcount > 0) { // Ignore RRQs directly from originator		
+					if (rh->hopcount > 0) { // Ignore RRQs directly from originator
 
 					#endif
 
@@ -327,7 +383,7 @@ void handleReceived() {
 						logRecentRRQ(rh->rrqID);
 
 					}
-				
+
 				}
 
 

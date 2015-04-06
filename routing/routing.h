@@ -2,9 +2,10 @@
 #define ROUTING_H_INCLUDED
 
 #include "asf.h"
+#include "radio.h"
 
 #define PACKET_HEADER_SIZE      (sizeof(PacketHeader))
-#define MAX_ACK_FAILURES        254
+#define MAX_ACK_FAILURES        10
 
 typedef struct {
 	uint8_t source;
@@ -60,6 +61,9 @@ void debugPrintRRQProgress(void);
 
 bool routeExistsTo(uint8_t dest);
 bool routeRequestInProgress(void);
+
+bool queuePacket(PacketHeader h, uint8_t *payload, uint8_t payloadLen);
+void processSendQueue(void);
 
 
 RRQProgress *getRrqProgress(void);

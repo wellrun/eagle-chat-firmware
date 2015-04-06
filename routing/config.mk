@@ -7,6 +7,7 @@ CSRCS += \
 	radio/radio.cpp \
     radio/RFM69.cpp \
     radio/fifo.c \
+	packet_fifo.c
 
 INC_PATH += \
 
@@ -17,5 +18,3 @@ CPPFLAGS += \
 	-D FORCE_HOPS=$(FORCE_HOPS)
 $(warning Force hops=$(FORCE_HOPS))
 endif
-
-
