@@ -13,9 +13,12 @@ typedef struct {
 	uint8_t type;
 } __attribute__((packed)) PacketHeader;
 
+
 #define PACKET_TYPE_CONTENT     	0
 #define PACKET_TYPE_RRQ         	1
 #define PACKET_TYPE_RUP         	2
+#define PACKET_TYPE_FAIL			3
+
 
 #define RRQ_PACKET_HEADER_SIZE  	(sizeof(RRQPacketHeader))
 

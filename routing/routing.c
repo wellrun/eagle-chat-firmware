@@ -324,6 +324,22 @@ void handleReceived() {
 					forward(nextHopEntry, framePayload, frameLength);
 				} else {
 					// Do a route error
+
+					h->type = PACKET_TYPE_FAIL;
+
+					// Reverse the trajectory
+					uint8_t temp = h->dest;
+					h->dest = h->source;
+					h->source = temp;
+
+					// This should exist, right?
+					nextHopEntry = getNextHop(h->dest);
+
+					if (nextHopEntry != NULL) {
+						// Try to send the error back to the source
+						// If this doesn't work, we can't help you
+						forward(nextHopEntry, framePayload, frameLength);
+					}
 				}
 
 				break;
@@ -451,6 +467,13 @@ void handleReceived() {
 
 				break;
 
+			case PACKET_TYPE_FAIL: // An error happened in the routing chain
+				routingTable[h->source].nextHop = 0; // invalidate route
+
+				// TODO: Queue failure message for host
+				// Include packet id once that's a thing
+
+				break;
 		}
 
 	}
