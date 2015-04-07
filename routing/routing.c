@@ -338,7 +338,7 @@ void handleReceived() {
 					if (nextHopEntry != NULL) {
 						// Try to send the error back to the source
 						// If this doesn't work, we can't help you
-						forward(nextHopEntry, framePayload, frameLength);
+						forward(nextHopEntry, h, PACKET_HEADER_SIZE);
 					}
 				}
 
