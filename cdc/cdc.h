@@ -119,6 +119,8 @@ void cdc_log_signed(const void *message, int32_t value);
 void cdc_log_hex(const void *message, uint8_t value);
 void cdc_log_hex_string(const void *message, const void *value, uint8_t len);
 
+void cdc_write_buffer(const void *buf, uint16_t len);
+
 
 /**
  * Prints a newline character

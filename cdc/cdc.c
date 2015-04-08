@@ -158,6 +158,12 @@ void cdc_log_hex_string(const void *message, const void *value, uint8_t len) {
 	cdc_newline();
 }
 
+void cdc_write_buffer(const void *buf, uint16_t len) {
+	if (!is_opened)
+		return;
+	udi_cdc_write_buf(buf, len);
+}
+
 uint32_t cdc_read_string(void *buffer, uint32_t maxlen) {
 	uint32_t i = 0;
 	uint8_t * buf = (uint8_t *) buffer;
