@@ -54,6 +54,8 @@ uint8_t packet_fifo_read(packet_fifo_t *f, PacketHeader *h, uint8_t **payload);
 
 PacketHeader packet_fifo_peekHeader(packet_fifo_t *f);
 
+uint8_t packet_fifo_peek(packet_fifo_t *f, PacketHeader *h, uint8_t **payload);
+
 //! Returns the byte at offset in the current tail
 /*!
   \param f 		The packet_fifo structure

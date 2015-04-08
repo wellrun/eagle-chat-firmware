@@ -32,11 +32,7 @@ void packet_fifo_write(packet_fifo_t *f, PacketHeader h, uint8_t *payload, uint8
 
 uint8_t packet_fifo_read(packet_fifo_t *f, PacketHeader *h, uint8_t **payload) {
 
-    uint8_t payloadLen = f->data[f->t];
-
-    *h = *((PacketHeader *)&f->data[f->t + 1]); // Unpack PacketHeader
-
-    *payload = &f->data[f->t + 1 + sizeof(PacketHeader)];
+    uint8_t payloadLen = packet_fifo_peek(f, h, payload);
 
 	packet_fifo_skip(f);
 
@@ -45,6 +41,17 @@ uint8_t packet_fifo_read(packet_fifo_t *f, PacketHeader *h, uint8_t **payload) {
 
 PacketHeader packet_fifo_peekHeader(packet_fifo_t *f) {
     return *((PacketHeader *)&f->data[f->t + 1]);
+}
+
+uint8_t packet_fifo_peek(packet_fifo_t *f, PacketHeader *h, uint8_t **payload) {
+
+    uint8_t payloadLen = f->data[f->t];
+
+    *h = *((PacketHeader *)&f->data[f->t + 1]); // Unpack PacketHeader
+
+    *payload = &f->data[f->t + 1 + sizeof(PacketHeader)];
+
+	return payloadLen;
 }
 
 /*

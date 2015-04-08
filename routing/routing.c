@@ -14,6 +14,8 @@ static RRQProgress rrqProgress;
 
 static packet_fifo_t sendFifo;
 
+static packet_fifo_t receiveFifo;
+
 RRQProgress * getRrqProgress() {
 	return &rrqProgress;
 }
@@ -280,6 +282,18 @@ bool routeRequestInProgress() {
 	return rrqProgress.active;
 }
 
+bool packetsToRead() {
+	return !packet_fifo_isEmpty(&receiveFifo);
+}
+
+uint8_t packetReceivedPeek(PacketHeader *h, uint8_t **payload) {
+	return packet_fifo_peek(&receiveFifo, h, payload);
+}
+
+void packetReceivedSkip() {
+	packet_fifo_skip(&receiveFifo);
+}
+
 void handleReceived() {
 
 	uint8_t senderNodeId, frameLength;
@@ -302,15 +316,18 @@ void handleReceived() {
 		// (This will only be valid data in the case that the packet is an RRQ or a RUP)
 		RRQPacketHeader *rh = (RRQPacketHeader *)&framePayload[PACKET_HEADER_SIZE];
 
-		cdc_log_int("Packet type: ", h->type);
+		//cdc_log_int("Packet type: ", h->type);
 
 		switch (h->type) {
 			case PACKET_TYPE_CONTENT:
 
 				if (h->dest == _nodeId) { // This packet is for us
-					// Should probably stick in a buffer as needed
-					cdc_write_line("Got packet for us");
-					cdc_log_string("Payload: ", &framePayload[PACKET_HEADER_SIZE]);
+
+					// Store in receiveFifo, accessible from other modules
+					packet_fifo_write(	&receiveFifo,
+										*h,
+										&framePayload[PACKET_HEADER_SIZE],
+										frameLength - PACKET_HEADER_SIZE);
 					continue;
 				}
 
@@ -359,7 +376,7 @@ void handleReceived() {
 						r.failures = 0;
 						r.originalRRQID = rh->rrqID;
 						routingTable[h->source] = r;
-						cdc_write_string("RRQ: ");
+						//cdc_write_string("RRQ: ");
 						debugPrintRoutingTable(h->source);
 
 						// Swap source and dest in the packet header
@@ -376,7 +393,7 @@ void handleReceived() {
 					#if FORCE_HOPS
 					} else {
 
-						cdc_log_int("Ignoring RRQ directly from: ", h->source);
+						//cdc_log_int("Ignoring RRQ directly from: ", h->source);
 
 					}
 					#endif
@@ -409,14 +426,14 @@ void handleReceived() {
 				// We are the originator of the route request
 				if (h->dest == _nodeId && rrqProgress.dest == h->source) {
 
-					cdc_log_int("RUP: SenderId: ", senderNodeId);
+					//cdc_log_int("RUP: SenderId: ", senderNodeId);
 
 					// Save the next hop in the routing table
 					routingTable[rrqProgress.dest].nextHop = senderNodeId; // nextHop;
 					routingTable[rrqProgress.dest].originalRRQID = rh->rrqID;
 
-					cdc_write_line("RUP: Should have updated routing table. Result:");
-					debugPrintRoutingTable(rrqProgress.dest);
+					//cdc_write_line("RUP: Should have updated routing table. Result:");
+					//debugPrintRoutingTable(rrqProgress.dest);
 
 
 					// Mark current RRQ as resolved

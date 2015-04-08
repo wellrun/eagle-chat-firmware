@@ -77,6 +77,13 @@ bool routeRequestInProgress(void);
 bool queuePacket(PacketHeader h, uint8_t *payload, uint8_t payloadLen);
 void processSendQueue(void);
 
+bool packetsToRead(void);
+
+uint8_t packetReceivedPeek(PacketHeader *h, uint8_t **payload);
+
+void packetReceivedSkip(void);
+
+
 
 RRQProgress *getRrqProgress(void);
 

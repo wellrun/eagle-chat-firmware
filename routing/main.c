@@ -62,6 +62,16 @@ int main(void)
 
 		processSendQueue();
 
+		if (packetsToRead()) {
+			PacketHeader header;
+			uint8_t *payload;
+			uint8_t length = packetReceivedPeek(&header, &payload);
+			cdc_log_int("Packet type: ", header.type);
+			cdc_log_string("Received: ", payload);
+			packetReceivedSkip();
+			cdc_newline();
+		}
+
 		if (my_address == 1) {
 
 			if (rtc_get_time() - then > 1000) {
