@@ -1,6 +1,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#include <stdlib.h>
+
 #include "host_msg_fifo.h"
 
 void hostMsg_fifo_init(hostMsg_fifo_t *f) {
@@ -41,4 +43,18 @@ void hostMsg_fifo_skip(hostMsg_fifo_t *f) {
     f->t += HOST_MSG_FIFO_UNIT_LEN;
 	if (f->t == HOST_MSG_FIFO_SIZE) f->t = 0;
 	f->stored--;
+}
+
+void hostMsg_addString(hostMsg_t *msg, uint8_t *buf) {
+	while (msg->len < HOST_MSG_BUF_SIZE - 1 && *buf != 0) {
+		msg->data[msg->len] = *buf;
+		++buf;
+		++(msg->len);
+	}
+}
+
+void hostMsg_addInt(hostMsg_t *msg, uint32_t num, uint8_t base) {
+	uint8_t temp[33];
+	ultoa(num, temp, base);
+	hostMsg_addString(msg, temp);
 }
