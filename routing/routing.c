@@ -338,7 +338,7 @@ void handleReceived() {
 					if (nextHopEntry != NULL) {
 						// Try to send the error back to the source
 						// If this doesn't work, we can't help you
-						forward(nextHopEntry, h, PACKET_HEADER_SIZE);
+						forward(nextHopEntry, (uint8_t *)h, PACKET_HEADER_SIZE);
 					}
 				}
 
