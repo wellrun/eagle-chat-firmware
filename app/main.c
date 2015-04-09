@@ -14,6 +14,7 @@
 
 #include <util/atomic.h>
 
+#include "protocol.h"
 
 volatile bool quit = false;
 uint8_t my_address = 0;
@@ -40,7 +41,7 @@ void processSendMessage(uint8_t *data) {
 	// try to grab the address portion
 	uint8_t addr = 0;
 	char * token;
-	token = strtok(data, ":");
+	token = strtok(data, PROTOCOL_DELIM);
 	if (token != NULL)
 		addr = (uint8_t) atoi(token);
 	if (addr == 0) {
@@ -49,7 +50,7 @@ void processSendMessage(uint8_t *data) {
 	}
 
 	// grab the message portion
-	token = strtok(NULL, ":");
+	token = strtok(NULL, PROTOCOL_DELIM);
 	if (token == NULL) {
 		cdc_write_line("INVALID: NO CONTENT");
 		return; // invalid host message, no message content
@@ -200,7 +201,9 @@ int main()
 			PacketHeader header;
 			uint8_t *payload;
 			uint8_t length = packetReceivedPeek(&header, &payload);
+			payload[length] = 0;
 			cdc_log_int("From: ", header.source);
+			//cdc_log_int("Length: ", length);
 			cdc_log_string("Content: ", payload);
 			packetReceivedSkip();
 			cdc_newline();
