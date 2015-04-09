@@ -92,7 +92,7 @@ inline void radio_clear_interrupt_pin() {
 }
 
 inline void radio_enable_interrupt() {
-	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_MED_gc;
+	RF_DIO_PORT.INTCTRL =  (RF_DIO_PORT.INTCTRL & ~PORT_INT0LVL_gm) | PORT_INT0LVL_HI_gc;
 	//RF_DIO_PORT.INT0MASK = 1;
 	//sei();
 }
@@ -404,7 +404,7 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 	select();
 		SPITransfer(REG_FIFO | 0x80);
 		SPITransfer(length); // 3 bytes for the following frame header; 2 bytes for manual CRC at the end
-		crc_io_checksum_byte_add(length);		
+		crc_io_checksum_byte_add(length);
 		SPITransfer(toAddress);
 		crc_io_checksum_byte_add(toAddress);
 		SPITransfer(_address);
@@ -529,7 +529,7 @@ void RFM69::interruptHandler() {
 			while (!radio_fifoNotEmpty());
 			DATA[i+4] = SPITransfer(0); //  i+4 because 0,1,2,3 in DATA are prefix bytes + DATALEN
 			crc_io_checksum_byte_add(DATA[i+4]);
-			++i;			
+			++i;
 		}
 
 		uint8_t crc_bytes[2];
@@ -541,7 +541,7 @@ void RFM69::interruptHandler() {
 		unselect();
 
 		setMode(RF69_MODE_STANDBY); // Packet is finished receiving, safe to go to standby
-		
+
 		uint16_t our_crc = (uint16_t) crc_io_checksum_byte_stop();
 		uint16_t their_crc = *((uint16_t *)crc_bytes);
 
@@ -597,7 +597,7 @@ bool RFM69::receiveDone() {
 	//ATOMIC_BLOCK(ATOMIC_FORCEON){
 		radio_disable_interrupt();//noInterrupts(); // re-enabled in unselect() via setMode() or via receiveBegin()
 		if (_mode == RF69_MODE_RX && PAYLOADLEN > 0)
-		{	
+		{
 			////cdc_write_line("rcd = true");
 			setMode(RF69_MODE_STANDBY); // enables interrupts
 			return true;

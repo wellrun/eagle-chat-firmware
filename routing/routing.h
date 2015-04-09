@@ -6,6 +6,7 @@
 
 #define PACKET_HEADER_SIZE      	(sizeof(PacketHeader))
 #define MAX_ACK_FAILURES        	10
+#define ROUTING_ACK_WAIT			25 // ms
 
 typedef struct {
 	uint8_t source;

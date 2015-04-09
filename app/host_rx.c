@@ -100,10 +100,6 @@ void host_rx_skip() {
 }
 
 bool host_rx_isEmpty() {
-    if (gotToLine30) {
-        gotToLine30 = false;
-        //cdc_write_line("gotToLine30");
-    }
     return hostMsg_fifo_isEmpty(&rx_fifo);
 }
 

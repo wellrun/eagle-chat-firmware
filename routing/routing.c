@@ -126,7 +126,7 @@ bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t fra
 		acked = false;
 
 		send_time = rtc_get_time();
-		while (rtc_get_time() - send_time < 50) {
+		while (rtc_get_time() - send_time < ROUTING_ACK_WAIT) {
 			if ((acked = ackReceived(nextHopEntry->nextHop))) {
 				break;
 			}

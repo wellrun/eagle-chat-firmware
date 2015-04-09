@@ -12,50 +12,32 @@
 #include "routing/routing.h"
 #include "stack/stack.h"
 
+#include <util/atomic.h>
+
 
 volatile bool quit = false;
 uint8_t my_address = 0;
 
-/*
-void app_step(void);
 
-void app_step(void)
-{
-	static uint32_t start = 0;
-	static uint16_t count = 0;
+void do_routing(void);
+static volatile bool busy = false;
+void do_routing(void) {
 
-	if (start == 0)
-		start = rtc_get_time();
-	uint32_t now = rtc_get_time();
-	//cdc_log_int("Overflow. Time diff: ", now - start);
-
-	if (count % 20 == 0) {
-		if (!host_tx_isFull()) {
-			hostMsg_t msg;
-			msg.len = 0;
-			uint8_t log_string[] = "Overflow. Time diff: ";
-
-			hostMsg_addString(&msg, log_string);
-			ltoa(now - start, log_string, 10); // reuse buffer
-			hostMsg_addString(&msg, log_string);
-			hostMsg_addString(&msg, ". Hope you could read that. Uninitialized memory sucks.\n");
-			hostMsg_addString(&msg, "Free stack bytes: ");
-			ltoa(stack_count(), log_string, 10);
-			hostMsg_addString(&msg, log_string);
-			hostMsg_addString(&msg, "\n\n");
-			host_tx_queueMessage(&msg);
-		}
+	if (busy) {
+		cdc_write_line("i");
+		return;
 	}
-
-	start = now;
-
-	count++;
+	busy = true;
+	handleReceived();
+	processSendQueue();
+	busy = false;
 }
-*/
+
 
 void processIncomingProtocol(void);
 void processIncomingProtocol() {
 	static uint16_t msg_count = 0;
+
 	// This is where we would parse host messages and take actions accordingly
 	// Right now we just echo the messages
 	if (!host_rx_isEmpty()) {
@@ -87,10 +69,13 @@ void processIncomingProtocol() {
 		h.type = 0;
 		//uint8_t message[] = "'Sup guys?";
 
-		cdc_write_line("Got host message.");
-
-		if (queuePacket(h, msg->data, msg->len)) {
-			cdc_write_line("Put packet in fifo.");
+		//cdc_write_line("Got host message.");
+		bool success;
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+			success = queuePacket(h, msg->data, msg->len);
+		}
+		if (success) {
+			//cdc_write_line("Put packet in fifo.");
 			host_rx_skip();
 		}
 		//*/
@@ -118,6 +103,10 @@ void init(void) {
 int main(void);
 int main()
 {
+	pmic_init();
+
+	pmic_set_scheduling(PMIC_SCH_ROUND_ROBIN);
+
 	cpu_irq_enable();
 
 	irq_initialize_vectors();
@@ -132,18 +121,16 @@ int main()
 	rtc_set_time(0);
 	cdc_log_int("Starting app ", rtc_get_time());
 
-	/*
-	system_timer_init();
-	system_timer_set_callback(app_step);
-	system_timer_start();
-	*/
-
 	init();
 
 	host_rx_init(); // Setup host rx module
 	host_tx_init();
 
 	setupRouting(my_address);
+
+	system_timer_init();
+	system_timer_set_callback(do_routing);
+	system_timer_start();
 
 	/*
 	while(1) {
@@ -169,21 +156,19 @@ int main()
 		host_tx_processQueue();
 	}
 	*/
+
 	while(1) {
-
-		handleReceived();
-
-		processSendQueue();
-
+		//cdc_write_line("processQueue");
 		host_tx_processQueue();
+		//cdc_write_line("processIncomingProtocol");
 		processIncomingProtocol();
 
 		if (packetsToRead()) {
 			PacketHeader header;
 			uint8_t *payload;
 			uint8_t length = packetReceivedPeek(&header, &payload);
-			cdc_log_int("Packet type: ", header.type);
-			cdc_log_string("Received: ", payload);
+			cdc_log_int("From: ", header.source);
+			cdc_log_string("Content: ", payload);
 			packetReceivedSkip();
 			cdc_newline();
 		}
