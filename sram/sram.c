@@ -5,11 +5,6 @@
 #include <string.h>
 
 
-uint8_t buf[32];//allocates array for 32 character message.Each character will be a byte
-
-uint8_t address_var[2]; //array of 2 8 bit values to be used to send 16 bits to chip for addressing read/write purposes 
-
-
 struct spi_device spi_device_conf = 
 {
           .id = SRAM_CS_pin
@@ -43,7 +38,7 @@ void spi_init_module(void)
 
 
 
-void write_data(void)
+void write_data(uint8_t data, uint16_t address)
 {
 	
 	uint8_t instruction_w =  1;/*WRSR instruction to allow setting of 
@@ -76,8 +71,13 @@ void write_data(void)
 
 
 	uint8_t writecommand = 2;
-        address_var[0] = 0;
-        address_var[1] = 1;
+        uint8_t LSB = (uint8_t) address;//stores LSB of address in variable
+	uint8_t MSB = uint8_t (address>>8);//stores MSB of address in variable
+	uint8_t address_var[2]; //array of 2 8 bit values to be used to send 16 bits to
+                                //chip for addressing read/write purposes 
+
+	address_var[0] = MSB;
+        address_var[1] = LSB;
 	
 	spi_select_device(&SPIC, &spi_device_conf);/*Begin sequential Write Sequence*/
 	                                          /*Per page 10 of datasheet*/
@@ -92,27 +92,20 @@ void write_data(void)
 	spi_write_packet(&SPIC, address_var, 2);/*Sends the 2 byte address to 
 	                                         SRAM for writing*/
         
-        
-	cdc_write_string("Enter message: ");
-	cdc_read_string(buf, sizeof(buf));
+ 
 
-	spi_write_packet(&SPIC, buf, sizeof(buf)); //writes message to SRAM. Each char 
+	spi_write_packet(&SPIC, data, sizeof(data)); //writes message to SRAM. Each char 
                                                     //is a byte
 	
 	spi_deselect_device(&SPIC, &spi_device_conf);/*End Byte Write Sequence*/
 						     /*Per page 7 of datasheet*/
                                                      /*Bring CS High to end writing*/
 
-
-        memset (buf,'x', sizeof(buf));/*zeroing buf to ensure value read is from SRAM   
-                                        but using x so that reading doesn't stop
-                                        preemptively.Need to pass 32 so all blocks of
-                                        array get zeroed*/
 }
 
 
 
-void read_data(void)
+uint8_t* read_data(uint16_t address)
 {
         uint8_t instruction_r =  5;/*RDSR instruction to allow setting of 
                                          operation mode*/
@@ -143,8 +136,10 @@ void read_data(void)
 	
 
 	uint8_t readcommand = 3;
-	address_var[0] = 0;
-        address_var[1] = 1;
+	uint8_t LSB = (uint8_t) address;//stores LSB of address in variable
+	uint8_t MSB = uint8_t (address>>8);//stores MSB of address in variable
+	uint8_t address_var[2]; //array of 2 8 bit values to be used to send 16 bits to
+                                //chip for addressing read/write purposes
 	
 	spi_select_device(&SPIC, &spi_device_conf);/*Begin Sequential Read Sequence*/
 	                                          /*Per page 7 of datasheet*/
@@ -153,19 +148,19 @@ void read_data(void)
 
 	spi_write_packet(&SPIC, address_var, 2);/*Sends the 2 byte address to SRAM 
                                                  for reading*/
-		
-        spi_read_packet(&SPIC, buf, sizeof(buf));/*reads 32 bytes of data which is
-                                                   equivalent to 32 characters*/
+	
+	uint8_t size_array = sizeof(address_var);//get size of data at address
+        uint8_t buf[size_array];                 //allocate array with data size
                                 
+        
+			
+        spi_read_packet(&SPIC, buf, sizeof(buf));//write read data to allocated array
 
         spi_deselect_device(&SPIC, &spi_device_conf);/*End Sequential Read Sequence*/
 						     /*Per page 9 of datasheet*/
                                                      /*Bring CS High to end writing*/
-           
-        cdc_write_string("Message was: ");
-        cdc_write_string(buf);//displays value read from SRAM 
-        cdc_newline();
 
+        return buf;
 }
 
 
