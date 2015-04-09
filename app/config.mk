@@ -18,3 +18,9 @@ INC_PATH += \
     common/services/ioport/xmega \
 
 USER_INC_PTH += \
+
+
+ifdef FORCE_HOPS
+CPPFLAGS += \
+	-D FORCE_HOPS=$(FORCE_HOPS)
+endif
