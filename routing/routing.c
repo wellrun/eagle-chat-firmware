@@ -377,7 +377,7 @@ void handleReceived() {
 						r.originalRRQID = rh->rrqID;
 						routingTable[h->source] = r;
 						//cdc_write_string("RRQ: ");
-						debugPrintRoutingTable(h->source);
+						//debugPrintRoutingTable(h->source);
 
 						// Swap source and dest in the packet header
 						uint8_t temp = h->source;

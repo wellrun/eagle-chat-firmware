@@ -24,13 +24,51 @@ static volatile bool busy = false;
 void do_routing(void) {
 
 	if (busy) {
-		cdc_write_line("i");
 		return;
 	}
 	busy = true;
 	handleReceived();
 	processSendQueue();
 	busy = false;
+}
+
+void processSendMessage(uint8_t *data);
+
+void processSendMessage(uint8_t *data) {
+	// expects :(address):(message string)
+
+	// try to grab the address portion
+	uint8_t addr = 0;
+	char * token;
+	token = strtok(data, ":");
+	if (token != NULL)
+		addr = (uint8_t) atoi(token);
+	if (addr == 0) {
+		cdc_write_line("INVALID: NO ADDRESS");
+		return; // invalid host message, invalid address
+	}
+
+	// grab the message portion
+	token = strtok(NULL, ":");
+	if (token == NULL) {
+		cdc_write_line("INVALID: NO CONTENT");
+		return; // invalid host message, no message content
+	}
+
+	//cdc_log_int("sending to: ", addr);
+	//cdc_log_string("content: ", token);
+
+	// build a packet and queue it up
+	PacketHeader h;
+
+	h.source = my_address;
+	h.dest = addr;
+	h.type = PACKET_TYPE_CONTENT;
+
+	bool success;
+	//ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+		queuePacket(h, token, strlen(token));
+	//}
 }
 
 
@@ -45,6 +83,15 @@ void processIncomingProtocol() {
 		msg_count++;
 
 		hostMsg_t * msg = host_rx_peek();
+
+		if ((*msg).len > 0) { // check for a valid length message
+			uint8_t type = (*msg).data[0];
+			switch(type) {
+				case 's':
+					processSendMessage((*msg).data + 1); // strip the first char
+					break;
+			}
+		}
 
 		/*
 		hostMsg_t out;
@@ -62,22 +109,8 @@ void processIncomingProtocol() {
 		*/
 
 		///*
-		PacketHeader h;
 
-		h.source = my_address;
-		h.dest = my_address == 1 ? 2 : 1;
-		h.type = 0;
-		//uint8_t message[] = "'Sup guys?";
-
-		//cdc_write_line("Got host message.");
-		bool success;
-		ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-			success = queuePacket(h, msg->data, msg->len);
-		}
-		if (success) {
-			//cdc_write_line("Put packet in fifo.");
-			host_rx_skip();
-		}
+		host_rx_skip();
 		//*/
 	}
 }
