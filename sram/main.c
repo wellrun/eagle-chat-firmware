@@ -35,10 +35,6 @@
 #include "user_board.h"
 
 
-/*pin 6 sck ->scl
-pin 5 si ->mosi
-pin 1 cs -> ss
-in 2 so -> miso*/
 int main (void)
 {
 	// Insert system clock initialization code here (sysclk_init()).
