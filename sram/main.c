@@ -57,7 +57,7 @@ int main (void)
 	
 	while(!cdc_opened());
 	while (1) {
-	//	write_mode();
+		write_mode(0);
 		write_data(111,4532);
              	uint8_t z =read_data(4532);
 		cdc_write_hex(z);
