@@ -58,8 +58,10 @@ int main (void)
 	while(!cdc_opened());
 	while (1) {
 	//	write_mode();
-		write_data();
-         	read_data();
+		write_data(111,4532);
+             	z =read_data(4532);
+		cdc_write_hex(z);
+
 	//      display_read_results();
 	//	uint8_t read = udi_cdc_getc();
 		//if (read != 0)

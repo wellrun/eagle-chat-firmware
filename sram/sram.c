@@ -94,7 +94,7 @@ void write_data(uint8_t data, uint16_t address)
         
  
 
-	spi_write_packet(&SPIC, data, sizeof(data)); //writes message to SRAM. Each char 
+	spi_write_packet(&SPIC, data, 1); //writes message to SRAM. Each char 
                                                     //is a byte
 	
 	spi_deselect_device(&SPIC, &spi_device_conf);/*End Byte Write Sequence*/
@@ -105,7 +105,7 @@ void write_data(uint8_t data, uint16_t address)
 
 
 
-uint8_t* read_data(uint16_t address)
+uint8_t read_data(uint16_t address)
 {
         uint8_t instruction_r =  5;/*RDSR instruction to allow setting of 
                                          operation mode*/
@@ -140,6 +140,8 @@ uint8_t* read_data(uint16_t address)
 	uint8_t MSB = uint8_t (address>>8);//stores MSB of address in variable
 	uint8_t address_var[2]; //array of 2 8 bit values to be used to send 16 bits to
                                 //chip for addressing read/write purposes
+        address_var[0] = MSB;
+        address_var[1] = LSB;
 	
 	spi_select_device(&SPIC, &spi_device_conf);/*Begin Sequential Read Sequence*/
 	                                          /*Per page 7 of datasheet*/
@@ -147,14 +149,10 @@ uint8_t* read_data(uint16_t address)
 	spi_write_packet(&SPIC, &readcommand, 1);//Sends command to read 
 
 	spi_write_packet(&SPIC, address_var, 2);/*Sends the 2 byte address to SRAM 
-                                                 for reading*/
-	
-	uint8_t size_array = sizeof(address_var);//get size of data at address
-        uint8_t buf[size_array];                 //allocate array with data size
-                                
-        
+                                                 for reading*/                  
+        uint8_t buf;//variable declared of 8 bits
 			
-        spi_read_packet(&SPIC, buf, sizeof(buf));//write read data to allocated array
+        spi_read_packet(&SPIC, buf, 1);//write read data to allocated variable
 
         spi_deselect_device(&SPIC, &spi_device_conf);/*End Sequential Read Sequence*/
 						     /*Per page 9 of datasheet*/
@@ -164,5 +162,6 @@ uint8_t* read_data(uint16_t address)
 }
 
 
+//make it so data at written address can be utilized or sent t oa variable for latr use
 
 
