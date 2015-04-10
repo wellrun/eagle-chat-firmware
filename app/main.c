@@ -19,6 +19,10 @@
 volatile bool quit = false;
 uint8_t my_address = 0;
 
+// The destination's public key. JUST FOR THIS DEMO
+uint8_t dest_pubKey[32];
+
+uint8_t shared_secret[32]; // also 32 bytes?
 
 void do_routing(void);
 static volatile bool busy = false;
@@ -34,7 +38,6 @@ void do_routing(void) {
 }
 
 void processSendMessage(uint8_t *data);
-
 void processSendMessage(uint8_t *data) {
 	// expects :(address):(message string)
 
@@ -66,12 +69,40 @@ void processSendMessage(uint8_t *data) {
 	h.dest = addr;
 	h.type = PACKET_TYPE_CONTENT;
 
-	bool success;
-	//ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-		queuePacket(h, token, strlen(token));
-	//}
+	queuePacket(h, token, strlen(token));
 }
 
+
+// Updates a node's public key
+void processPublicKey(uint8_t *data);
+void processPublicKey(uint8_t *data) {
+	uint8_t addr = 0;
+	char * token;
+	token = strtok(data, PROTOCOL_DELIM);
+	if (token != NULL)
+		addr = (uint8_t) atoi(token);
+	if (addr == 0) {
+		cdc_write_line("INVALID: NO ADDRESS");
+		return; // invalid host message, invalid address
+	}
+
+	// grab the message portion
+	token = strtok(NULL, PROTOCOL_DELIM);
+	if (token == NULL) {
+		cdc_write_line("INVALID: NO CONTENT");
+		return; // invalid host message, no message content
+	}
+
+	memcpy(dest_pubKey, token, 32);
+
+	// should probably compute shared secret here
+
+	/*cdc_newline();
+	cdc_write_buffer(dest_pubKey, 32);
+	cdc_newline();*/
+
+
+}
 
 void processIncomingProtocol(void);
 void processIncomingProtocol() {
@@ -88,8 +119,11 @@ void processIncomingProtocol() {
 		if ((*msg).len > 0) { // check for a valid length message
 			uint8_t type = (*msg).data[0];
 			switch(type) {
-				case 's':
+				case PROTOCOL_TOKEN_SEND:
 					processSendMessage((*msg).data + 1); // strip the first char
+					break;
+				case PROTOCOL_TOKEN_KEY: // Host wants to send us a node's dest_pubKey
+					processPublicKey((*msg).data + 1); // strip the first char
 					break;
 			}
 		}
