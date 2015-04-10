@@ -1,6 +1,6 @@
 #ifndef SRAM_H_INCLUDED
 #define SRAM_H_INCLUDED
-
+#include "stdint.h"
 void sram_init(void);
 //void spi_init_pins(void);
 void spi_init_module(void);

@@ -1,4 +1,5 @@
 #include "sram.h"
+#include "stdint.h"
 //#include <user_board.h>
 #include "asf.h"
 #include "cdc.h"
@@ -72,7 +73,7 @@ void write_data(uint8_t data, uint16_t address)
 
 	uint8_t writecommand = 2;
         uint8_t LSB = (uint8_t) address;//stores LSB of address in variable
-	uint8_t MSB = uint8_t (address>>8);//stores MSB of address in variable
+	uint8_t MSB = (uint8_t) (address>>8);//stores MSB of address in variable
 	uint8_t address_var[2]; //array of 2 8 bit values to be used to send 16 bits to
                                 //chip for addressing read/write purposes 
 
@@ -94,7 +95,7 @@ void write_data(uint8_t data, uint16_t address)
         
  
 
-	spi_write_packet(&SPIC, data, 1); //writes message to SRAM. Each char 
+	spi_write_packet(&SPIC, &data, 1); //writes message to SRAM. Each char 
                                                     //is a byte
 	
 	spi_deselect_device(&SPIC, &spi_device_conf);/*End Byte Write Sequence*/
@@ -137,7 +138,7 @@ uint8_t read_data(uint16_t address)
 
 	uint8_t readcommand = 3;
 	uint8_t LSB = (uint8_t) address;//stores LSB of address in variable
-	uint8_t MSB = uint8_t (address>>8);//stores MSB of address in variable
+	uint8_t MSB = (uint8_t) (address>>8);//stores MSB of address in variable
 	uint8_t address_var[2]; //array of 2 8 bit values to be used to send 16 bits to
                                 //chip for addressing read/write purposes
         address_var[0] = MSB;
@@ -152,7 +153,7 @@ uint8_t read_data(uint16_t address)
                                                  for reading*/                  
         uint8_t buf;//variable declared of 8 bits
 			
-        spi_read_packet(&SPIC, buf, 1);//write read data to allocated variable
+        spi_read_packet(&SPIC, &buf, 1);//write read data to allocated variable
 
         spi_deselect_device(&SPIC, &spi_device_conf);/*End Sequential Read Sequence*/
 						     /*Per page 9 of datasheet*/
