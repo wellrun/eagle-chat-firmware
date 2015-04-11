@@ -62,7 +62,9 @@ uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len) {
 
 	// Get a nonce from the SHA chip
 	uint8_t nonce[crypto_box_NONCEBYTES];
-	getRandom32(nonce);
+	cdc_write_line("getting nonce");
+	cdc_log_int("Device Revision: ", sha204_getDeviceRevision());
+	sha204_getRandom32(nonce);
 
 	ssk_load_table();
 
@@ -110,6 +112,11 @@ void processSendMessage(uint8_t *data) {
 	}
 
 	uint8_t result = sendMessage(addr, token, strlen(token));
+	if (result == SEND_SUCCESS) {
+		cdc_write_line("Sent message successfully");
+	} else if (result == SEND_FAILURE_NOKEY) {
+		cdc_write_line("No public key entry for that node");
+	}
 
 }
 
@@ -150,6 +157,8 @@ void processPublicKey(uint8_t *data) {
 	ssk_store_key(addr, token);
 
 	ssk_store_table();
+
+	cdc_write_line("Stored public key successfully");
 
 	// We now store the appropriate shared secret to communicate with this partner.
 
@@ -275,6 +284,27 @@ int main()
 		host_tx_processQueue();
 	}
 	*/
+
+	cdc_write_line("Press a to generate random number");
+		
+	uint8_t test[32];
+
+	sha204_init();
+	cdc_write_line("Here????");
+
+	while (true) {
+
+		// IF YOU COMMENT OUT 299, 300 WILL PRINT
+		// IF YOU LEAVE IT IN, THEN NOTHING EVER PRINTS
+		while (udi_cdc_getc() == 0);
+		cdc_write_line("Here????");
+
+		cdc_log_int("Device Revision: ", sha204_getDeviceRevision());
+		sha204_getRandom32(&test);
+
+		cdc_log_hex_string("Random: ", test, 32);
+
+	}
 
 	while(1) {
 		//cdc_write_line("processQueue");
