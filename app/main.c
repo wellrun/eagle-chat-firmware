@@ -5,6 +5,7 @@
 #include <avr/io.h>
 
 #include "asf.h"
+#include "sha204/board.h"
 #include "cdc.h"
 #include "system_timer.h"
 #include "host_rx.h"
@@ -15,7 +16,6 @@
 #include <util/atomic.h>
 
 #include "crypto/crypto.h"
-#include "crypto/randombytes.h"
 #include "keys/keys.h"
 #include "sha204/sha204.h"
 
@@ -63,9 +63,11 @@ uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len) {
 
 	// Get a nonce from the SHA chip
 	uint8_t nonce[crypto_box_NONCEBYTES];
-	randombytes(nonce, 32); //Fake
+	cdc_write_line("getting nonce");
+	cdc_log_int("Device Revision: ", sha204_getDeviceRevision());
+	sha204_getRandom32(nonce);
 
-	cdc_log_int("Load table: ", ssk_load_table());
+	ssk_load_table();
 
 	uint8_t slot;
 	uint8_t key[CRYPTO_KEY_SIZE];
@@ -114,25 +116,25 @@ void processSendMessage(uint8_t *data) {
 
 	uint8_t result = sendMessage(addr, token, strlen(token));
 	if (result == SEND_SUCCESS) {
-		cdc_write_line("Sent message");
+		cdc_write_line("Sent message successfully");
 	} else if (result == SEND_FAILURE_NOKEY) {
-		cdc_write_line("Didn't have a public key for that node");
+		cdc_write_line("No public key entry for that node");
 	}
 
 }
 
 
-// Given a node's public key, 
+// Given a node's public key,
 void processPublicKey(uint8_t *data);
 void processPublicKey(uint8_t *data) {
 	// expects (address):(public key)
-	
+
 	uint8_t addr = 0;
 	char * token;
 	uint8_t ssk[CRYPTO_KEY_SIZE];
 
 	token = strtok(data, PROTOCOL_DELIM);
-	
+
 	if (token != NULL)
 		addr = (uint8_t) atoi(token);
 	if (addr == 0) {
@@ -155,9 +157,9 @@ void processPublicKey(uint8_t *data) {
 	load_private_key();
 
 	cr_get_session_ssk(ssk, get_private_key(), token);
-	cdc_log_int("Storing key: ", ssk_store_key(addr, ssk));
+	ssk_store_key(addr, token);
 
-	cdc_log_int("Storing table: ", ssk_store_table());
+	ssk_store_table();
 
 	cdc_write_line("Stored public key successfully");
 
@@ -241,6 +243,8 @@ int main()
 	irq_initialize_vectors();
 
 	sysclk_init();
+
+	sha204_board_init();
 
 	rtc_init();
 
