@@ -32,15 +32,37 @@ typedef struct {
 	uint8_t password[16];
 } key_setup_status_t;
 
-uint8_t keys_load_status(void);
+// Status storage
 
-const key_setup_status_t * keys_get_status(void);
+//! Loads the setup status from EEPROM
+uint8_t load_setup_status(void);
 
-uint8_t keys_store_status(void);
+//! Returns the pointer to the setup status
+const key_setup_status_t * get_setup_status(void);
 
-void keys_set_flag(uint8_t mask);
+//! Commits the setup status to the EEPROM
+uint8_t store_setup_status(void);
 
-void keys_unset_flag(uint8_t mask);
+
+// Flags storage
+
+//! Sets a particular flag
+void set_status_flag(uint8_t mask);
+
+//! Clears a particular flag
+void unset_status_flag(uint8_t mask);
+
+
+// Keys storage:
+
+uint8_t load_private_key(void);
+uint8_t * get_private_key(void);
+uint8_t store_private_key(uint8_t key[PAGE_SIZE]);
+
+uint8_t load_public_key(void);
+uint8_t * get_public_key(void);
+uint8_t store_public_key(uint8_t key[PAGE_SIZE]);
+
 
 typedef struct {
 	uint8_t network_id;
@@ -52,22 +74,28 @@ typedef struct {
 } key_table_t;
 
 
-/*  Read the key lookup table from EEPROM and store it
-    Returns STATUS_OK if all went well
- */
-uint8_t keys_load_table(void);
+// Shared secret storage
 
-uint8_t keys_store_table(void);
+//! Read the ssk storage table from EEPROM into the device
+uint8_t ssk_load_table(void);
 
-uint8_t keys_reset_table(void);
+//! Reset the table
+uint8_t ssk_reset_table(void);
 
-const key_table_t * keys_get_table(void);
+//! Retrieve reference to the table while it's in device memory
+const key_table_t * ssk_get_table(void);
 
-/* Returns true if there is a table entry for the network id */
-bool keys_has_key(uint8_t network_id, uint8_t * slot);
+//! Returns true if there is a table entry for the network id
+bool ssk_has_key(uint8_t node_id, uint8_t * slot);
 
-uint8_t keys_store_key(uint8_t network_id, uint8_t key[PAGE_SIZE]);
+//! Stores the ssk for a certain node
+uint8_t ssk_store_key(uint8_t node_id, uint8_t key[PAGE_SIZE]);
 
-uint8_t keys_read_key(uint8_t slot, uint8_t dest[PAGE_SIZE]);
+//! Retreives an ssk for a certain node
+uint8_t ssk_read_key(uint8_t slot, uint8_t dest[PAGE_SIZE]);
+
+//! Commit the ssk storage table back to the EEPROM
+uint8_t ssk_store_table(void);
+
 
 #endif
