@@ -3,7 +3,6 @@ TARGET = main.elf
 
 CSRCS += \
     main.c \
-	xmega/drivers/tc/tc.c \
 	system_timer.c \
 	host_rx.c \
 	host_tx.c \
@@ -16,13 +15,14 @@ CSRCS += \
 	crypto/crypto.c \
 	crypto/randombytes.c \
 	keys/keys.c \
-	sha204/sha204.c \
 	common/drivers/nvm/xmega/xmega_nvm.c \
+	sha204/sha204.c \
 	common/components/crypto/sha204/sha204_i2c.c \
     common/components/crypto/sha204/sha204_comm.c \
     common/components/crypto/sha204/sha204_command_marshaling.c \
     common/components/crypto/sha204/xmega_sha204/sha204_timer.c \
     xmega/drivers/twi/twim.c \
+    xmega/drivers/tc/tc.c \
 
 INC_PATH += \
     common/services/ioport/xmega \
