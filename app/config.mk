@@ -3,6 +3,7 @@ TARGET = main.elf
 
 CSRCS += \
     main.c \
+	sha204/board.c \
 	xmega/drivers/tc/tc.c \
 	system_timer.c \
 	host_rx.c \

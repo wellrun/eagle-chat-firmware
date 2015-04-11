@@ -1,7 +1,7 @@
 #include "board.h"
 #include "asf.h"
 
-void board_init(void) {
+void sha204_board_init(void) {
 	ioport_init();
 
 	sha204p_init();

@@ -5,6 +5,7 @@
 #include <avr/io.h>
 
 #include "asf.h"
+#include "sha204/board.h"
 #include "cdc.h"
 #include "system_timer.h"
 #include "host_rx.h"
@@ -121,17 +122,17 @@ void processSendMessage(uint8_t *data) {
 }
 
 
-// Given a node's public key, 
+// Given a node's public key,
 void processPublicKey(uint8_t *data);
 void processPublicKey(uint8_t *data) {
 	// expects (address):(public key)
-	
+
 	uint8_t addr = 0;
 	char * token;
 	uint8_t ssk[CRYPTO_KEY_SIZE];
 
 	token = strtok(data, PROTOCOL_DELIM);
-	
+
 	if (token != NULL)
 		addr = (uint8_t) atoi(token);
 	if (addr == 0) {
@@ -241,6 +242,8 @@ int main()
 
 	sysclk_init();
 
+	sha204_board_init();
+
 	rtc_init();
 
 	cdc_start();
@@ -250,6 +253,27 @@ int main()
 	cdc_log_int("Starting app ", rtc_get_time());
 
 	init();
+
+	cdc_write_line("Press a to generate random number");
+
+	uint8_t test[32];
+
+	sha204_init();
+	cdc_write_line("Here????");
+
+	while (true) {
+
+		// IF YOU COMMENT OUT 299, 300 WILL PRINT
+		// IF YOU LEAVE IT IN, THEN NOTHING EVER PRINTS
+		while (udi_cdc_getc() == 0);
+		cdc_write_line("Here????");
+
+		//cdc_log_int("Device Revision: ", sha204_getDeviceRevision());
+		sha204_getRandom32(&test);
+
+		cdc_log_hex_string("Random: ", test, 32);
+
+	}
 
 	host_rx_init(); // Setup host rx module
 	host_tx_init();
@@ -284,27 +308,6 @@ int main()
 		host_tx_processQueue();
 	}
 	*/
-
-	cdc_write_line("Press a to generate random number");
-		
-	uint8_t test[32];
-
-	sha204_init();
-	cdc_write_line("Here????");
-
-	while (true) {
-
-		// IF YOU COMMENT OUT 299, 300 WILL PRINT
-		// IF YOU LEAVE IT IN, THEN NOTHING EVER PRINTS
-		while (udi_cdc_getc() == 0);
-		cdc_write_line("Here????");
-
-		cdc_log_int("Device Revision: ", sha204_getDeviceRevision());
-		sha204_getRandom32(&test);
-
-		cdc_log_hex_string("Random: ", test, 32);
-
-	}
 
 	while(1) {
 		//cdc_write_line("processQueue");

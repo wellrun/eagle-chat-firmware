@@ -31,6 +31,7 @@
 #include "asf.h"
 #include <avr/io.h>
 #include "cdc.h"
+#include "board.h"
 #include <string.h>
 
 #include "sha204.h"
@@ -46,7 +47,7 @@ int main (void)
 
 	sysclk_init();
 
-	board_init();
+	sha204_board_init();
 
 	cdc_start();
 
@@ -73,9 +74,9 @@ int main (void)
 		}
 
 	} else if (result == 'b') {
-		
+
 		cdc_write_line("Press a to generate random number");
-		
+
 		uint8_t rand[32];
 
 		while (true) {
@@ -89,6 +90,8 @@ int main (void)
 
 		}
 	}
+
+	while(1);
 
 
 }
