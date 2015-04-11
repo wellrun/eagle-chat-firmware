@@ -1,11 +1,23 @@
 #include "sha204.h"
 #include <string.h>
+#include "asf.h"
 
 #include "cdc.h"
 
 uint8_t lockZone(uint8_t zone);
 
 void sha204_init(void) {
+
+	ioport_init();
+
+	sha204p_init();
+
+	ioport_set_pin_dir(ATSHA_SCK, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_dir(ATSHA_SDA, IOPORT_DIR_OUTPUT);
+
+	ioport_set_pin_mode(ATSHA_SCK, IOPORT_MODE_WIREDANDPULL);
+	ioport_set_pin_mode(ATSHA_SDA, IOPORT_MODE_WIREDANDPULL);
+
 	sha204p_set_device_id(SHA204_I2C_ADDRESS);
 }
 

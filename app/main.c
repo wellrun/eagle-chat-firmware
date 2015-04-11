@@ -5,7 +5,6 @@
 #include <avr/io.h>
 
 #include "asf.h"
-#include "sha204/board.h"
 #include "cdc.h"
 #include "system_timer.h"
 #include "host_rx.h"
@@ -63,8 +62,6 @@ uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len) {
 
 	// Get a nonce from the SHA chip
 	uint8_t nonce[crypto_box_NONCEBYTES];
-	cdc_write_line("getting nonce");
-	cdc_log_int("Device Revision: ", sha204_getDeviceRevision());
 	sha204_getRandom32(nonce);
 
 	ssk_load_table();
@@ -234,21 +231,22 @@ void init(void) {
 int main(void);
 int main()
 {
-	pmic_init();
 
+	// System initialization
+
+	pmic_init();
 	pmic_set_scheduling(PMIC_SCH_ROUND_ROBIN);
 
 	cpu_irq_enable();
-
 	irq_initialize_vectors();
 
 	sysclk_init();
 
-	sha204_board_init();
-
 	rtc_init();
 
 	cdc_start();
+
+	sha204_init();
 
 	while (!cdc_opened());
 	rtc_set_time(0);

@@ -3,7 +3,6 @@ TARGET = main.elf
 
 CSRCS += \
     main.c \
-    board.c \
     common/components/crypto/sha204/sha204_i2c.c \
     common/components/crypto/sha204/sha204_comm.c \
     common/components/crypto/sha204/sha204_command_marshaling.c \

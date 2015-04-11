@@ -31,7 +31,6 @@
 #include "asf.h"
 #include <avr/io.h>
 #include "cdc.h"
-#include "board.h"
 #include <string.h>
 
 #include "sha204.h"
@@ -47,9 +46,9 @@ int main (void)
 
 	sysclk_init();
 
-	sha204_board_init();
-
 	cdc_start();
+
+	sha204_init();
 
 	cdc_write_line("Waiting 1s");
 	sha204h_delay_ms(1000);
@@ -58,8 +57,6 @@ int main (void)
 	while(!cdc_opened());
 	cdc_write_line("\nPress 'a' to perform lock procedure on connected board. Press 'b' to run demo");
 	result = udi_cdc_getc();
-
-	sha204_init();
 
 	if (result == 'a') {
 
@@ -84,7 +81,7 @@ int main (void)
 			while(udi_cdc_getc() != 'a');
 
 			cdc_log_int("Device Revision: ", sha204_getDeviceRevision());
-			sha204_getRandom32(&rand);
+			sha204_getRandom32(rand);
 
 			cdc_log_hex_string("Random: ", rand, 32);
 
