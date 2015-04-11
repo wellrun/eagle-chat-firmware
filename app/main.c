@@ -15,6 +15,7 @@
 #include <util/atomic.h>
 
 #include "crypto/crypto.h"
+#include "crypto/randombytes.h"
 #include "keys/keys.h"
 #include "sha204/sha204.h"
 
@@ -62,9 +63,9 @@ uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len) {
 
 	// Get a nonce from the SHA chip
 	uint8_t nonce[crypto_box_NONCEBYTES];
-	getRandom32(nonce);
+	randombytes(nonce, 32); //Fake
 
-	ssk_load_table();
+	cdc_log_int("Load table: ", ssk_load_table());
 
 	uint8_t slot;
 	uint8_t key[CRYPTO_KEY_SIZE];
@@ -84,6 +85,8 @@ uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len) {
 	memcpy(&payload[crypto_box_NONCEBYTES], encrypted, ENCRYPTED_LENGTH(len));
 
 	queuePacket(h, payload, len + CRYPTO_OVERHEAD_TOTAL);
+
+	return SEND_SUCCESS;
 
 }
 
@@ -110,6 +113,11 @@ void processSendMessage(uint8_t *data) {
 	}
 
 	uint8_t result = sendMessage(addr, token, strlen(token));
+	if (result == SEND_SUCCESS) {
+		cdc_write_line("Sent message");
+	} else if (result == SEND_FAILURE_NOKEY) {
+		cdc_write_line("Didn't have a public key for that node");
+	}
 
 }
 
@@ -147,9 +155,11 @@ void processPublicKey(uint8_t *data) {
 	load_private_key();
 
 	cr_get_session_ssk(ssk, get_private_key(), token);
-	ssk_store_key(addr, token);
+	cdc_log_int("Storing key: ", ssk_store_key(addr, ssk));
 
-	ssk_store_table();
+	cdc_log_int("Storing table: ", ssk_store_table());
+
+	cdc_write_line("Stored public key successfully");
 
 	// We now store the appropriate shared secret to communicate with this partner.
 
@@ -250,6 +260,9 @@ int main()
 	system_timer_init();
 	system_timer_set_callback(do_routing);
 	system_timer_start();
+
+	// This is part of the initialization process, but we fake it here for now.
+	ssk_reset_table();
 
 	/*
 	while(1) {
