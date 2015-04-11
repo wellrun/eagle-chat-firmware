@@ -14,6 +14,10 @@
 
 #include <util/atomic.h>
 
+#include "crypto/crypto.h"
+#include "keys/keys.h"
+#include "sha204/sha204.h"
+
 #include "protocol.h"
 
 volatile bool quit = false;
@@ -37,9 +41,55 @@ void do_routing(void) {
 	busy = false;
 }
 
+
+#define SEND_SUCCESS		0
+#define SEND_FAILURE_NOKEY	1
+
+uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len);
+uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len) {
+
+	// build a packet and queue it up
+	PacketHeader h;
+
+	h.source = my_address;
+	h.dest = addr;
+	h.type = PACKET_TYPE_CONTENT;
+
+	uint8_t encrypted[ENCRYPTED_LENGTH(len)];
+
+	// Make a larger payload to hold nonce and encrypted message
+	uint8_t payload[MAX_PAYLOAD_SIZE];
+
+	// Get a nonce from the SHA chip
+	uint8_t nonce[crypto_box_NONCEBYTES];
+	getRandom32(nonce);
+
+	ssk_load_table();
+
+	uint8_t slot;
+	uint8_t key[CRYPTO_KEY_SIZE];
+	if (ssk_has_key(addr, &slot)) {
+
+		ssk_read_key(slot, key);
+
+		cr_encrypt(encrypted, message, len, key, nonce);
+
+	} else {
+
+		return SEND_FAILURE_NOKEY;
+
+	}
+
+	memcpy(payload, nonce, crypto_box_NONCEBYTES);
+	memcpy(&payload[crypto_box_NONCEBYTES], encrypted, ENCRYPTED_LENGTH(len));
+
+	queuePacket(h, payload, len + CRYPTO_OVERHEAD_TOTAL);
+
+}
+
 void processSendMessage(uint8_t *data);
 void processSendMessage(uint8_t *data) {
-	// expects :(address):(message string)
+	// expects (address):(message string)
 
 	// try to grab the address portion
 	uint8_t addr = 0;
@@ -59,26 +109,22 @@ void processSendMessage(uint8_t *data) {
 		return; // invalid host message, no message content
 	}
 
-	//cdc_log_int("sending to: ", addr);
-	//cdc_log_string("content: ", token);
+	uint8_t result = sendMessage(addr, token, strlen(token));
 
-	// build a packet and queue it up
-	PacketHeader h;
-
-	h.source = my_address;
-	h.dest = addr;
-	h.type = PACKET_TYPE_CONTENT;
-
-	queuePacket(h, token, strlen(token));
 }
 
 
-// Updates a node's public key
+// Given a node's public key, 
 void processPublicKey(uint8_t *data);
 void processPublicKey(uint8_t *data) {
+	// expects (address):(public key)
+	
 	uint8_t addr = 0;
 	char * token;
+	uint8_t ssk[CRYPTO_KEY_SIZE];
+
 	token = strtok(data, PROTOCOL_DELIM);
+	
 	if (token != NULL)
 		addr = (uint8_t) atoi(token);
 	if (addr == 0) {
@@ -93,14 +139,19 @@ void processPublicKey(uint8_t *data) {
 		return; // invalid host message, no message content
 	}
 
-	memcpy(dest_pubKey, token, 32);
+	// token now holds the public key
 
-	// should probably compute shared secret here
+	// Store calculated shared secret in the EEPROM
 
-	/*cdc_newline();
-	cdc_write_buffer(dest_pubKey, 32);
-	cdc_newline();*/
+	ssk_load_table();
+	load_private_key();
 
+	cr_get_session_ssk(ssk, get_private_key(), token);
+	ssk_store_key(addr, token);
+
+	ssk_store_table();
+
+	// We now store the appropriate shared secret to communicate with this partner.
 
 }
 
@@ -151,11 +202,11 @@ void processIncomingProtocol() {
 }
 
 void init(void) {
-	uint8_t bullshitbuf[4];
+	uint8_t inputbuf[4];
 	while (1) {
 		cdc_write_string("My address (1-3): ");
-		cdc_read_string(bullshitbuf, 3);
-		my_address = (uint8_t)atoi((const char *)bullshitbuf);
+		cdc_read_string(inputbuf, 3);
+		my_address = (uint8_t)atoi((const char *)inputbuf);
 		cdc_newline();
 
 		if (my_address >= 1 && my_address <= 3) {
