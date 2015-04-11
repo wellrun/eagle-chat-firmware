@@ -65,7 +65,7 @@ uint8_t store_public_key(uint8_t key[PAGE_SIZE]);
 
 
 typedef struct {
-	uint8_t network_id;
+	uint8_t node_id;
 	uint8_t key_page;
 } key_table_entry_t;
 

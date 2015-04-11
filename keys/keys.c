@@ -97,10 +97,10 @@ const key_table_t * ssk_get_table(void)
 }
 
 /* Returns true if there is a table entry for the network id and stores it in slot */
-bool ssk_has_key(uint8_t network_id, uint8_t * slot)
+bool ssk_has_key(uint8_t node_id, uint8_t * slot)
 {
 	for (uint8_t i = 0; i < MAX_KEY_SLOTS; ++i) {
-		if (key_table.table[i].network_id == network_id) {
+		if (key_table.table[i].node_id == node_id) {
 			*slot = key_table.table[i].key_page;
 			return true;
 		}
@@ -108,11 +108,11 @@ bool ssk_has_key(uint8_t network_id, uint8_t * slot)
 	return false;
 }
 
-uint8_t ssk_store_key(uint8_t network_id, uint8_t key[PAGE_SIZE])
+uint8_t ssk_store_key(uint8_t node_id, uint8_t key[PAGE_SIZE])
 {
 	uint8_t slot;
 
-	if (ssk_has_key(network_id, &slot)) {
+	if (ssk_has_key(node_id, &slot)) {
 		if (slot >= MAX_KEY_SLOTS)
 			return ERR_INVALID_ARG;
 		return nvm_write(INT_EEPROM, (slot + PAGE_KEY_START) * PAGE_SIZE, key, PAGE_SIZE);
@@ -122,7 +122,7 @@ uint8_t ssk_store_key(uint8_t network_id, uint8_t key[PAGE_SIZE])
 			if (STATUS_OK != nvm_write(INT_EEPROM, (slot + PAGE_KEY_START) * PAGE_SIZE, key, PAGE_SIZE))
 				return ERR_INVALID_ARG;
 			/* Now store the table entry */
-			key_table.table[slot].network_id = network_id;
+			key_table.table[slot].node_id = node_id;
 			key_table.table[slot].key_page = slot;
 			return ssk_store_table();
 		} else
@@ -147,7 +147,7 @@ uint8_t ssk_store_table(void)
 static bool ssk_find_free_slot(uint8_t * slot)
 {
 	for (uint8_t i = 0; i < MAX_KEY_SLOTS; ++i) {
-		if (key_table.table[i].network_id == 0) {
+		if (key_table.table[i].node_id == 0) {
 			*slot = i;
 			return true;
 		}
