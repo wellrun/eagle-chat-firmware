@@ -3,6 +3,8 @@
 
 #include "asf.h"
 
+#define CRYPTO_KEY_SIZE			32
+
 // The length required to hold the encrypted message corresponding to
 // a plaintext string with length x
 #define ENCRYPTED_LENGTH(x) 	(x + crypto_box_ZEROBYTES - crypto_box_BOXZEROBYTES)	// 	x + 16
