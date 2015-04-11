@@ -54,17 +54,20 @@ int main (void)
 	sha204h_delay_ms(1000);
 
 	uint8_t result;
-	while(udi_cdc_getc() == 0);
+	while(!cdc_opened());
 	cdc_write_line("\nPress 'a' to perform lock procedure on connected board. Press 'b' to run demo");
 	result = udi_cdc_getc();
 
+	sha204_init();
 
 	if (result == 'a') {
 
-		uint8_t r = fullLock();
+		uint8_t r = sha204_fullLock();
 
 		cdc_log_int("Lock returned: ", r);
 
+		// IF YOU COMMENT OUT LINES 71-73, LINE 67 *DOES* *NOT* *PRINT* - I DON'T EVEN.
+		// IF YOU LEAVE THEM, THEN EVERYTHING PRINTS.
 		for (int i = 0; i < 50; i ++) {
 			cdc_write_string("Done! ");
 		}
@@ -79,14 +82,10 @@ int main (void)
 
 			while(udi_cdc_getc() != 'a');
 
-			cdc_log_int("Wakeup: ", sha204p_wakeup());
-
-			cdc_log_int("Device Revision: ", getDeviceRevision());
-			getRandom32(&rand);
+			cdc_log_int("Device Revision: ", sha204_getDeviceRevision());
+			sha204_getRandom32(&rand);
 
 			cdc_log_hex_string("Random: ", rand, 32);
-
-			sha204p_sleep();
 
 		}
 	}
