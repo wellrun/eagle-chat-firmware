@@ -47,15 +47,15 @@ void write_mode(uint8_t mode)
 
        if (mode== 1) //Sequential Mode
          {
-            uint8_t mode_w = 64;
+            mode_w = 64;
          }
        else if(mode==2)//Page Mode
          {
-            uint8_t mode_w =128;
+            mode_w =128;
          }
        else //Byte Mode
          {
-            uint8_t mode_w = 0;
+            mode_w = 0;
          }
       
 
@@ -71,7 +71,7 @@ void write_mode(uint8_t mode)
 	spi_write_packet(&SPIC, &instruction_w, 1);/*Sends WRSR instruction*/
 	
 	spi_write_packet(&SPIC, &mode_w, 1); /*Sends command to put SRAM in 
-					      sequential write 
+					      chosen write 
                                               mode.Tells it to send 1 byte as  
                                               last argument and also & so that 
                                               it to address of value in status*/
@@ -84,7 +84,8 @@ void write_mode(uint8_t mode)
 	
 
 }
-void write_data(uint8_t data, uint16_t address)
+
+void write_data(uint8_t data[], uint16_t address)
 {
 	
 
@@ -115,7 +116,8 @@ void write_data(uint8_t data, uint16_t address)
         
  
 
-	spi_write_packet(&SPIC, &data, 1); //writes message to SRAM. Each char 
+	spi_write_packet(&SPIC, data, sizeof(data)); //writes message to SRAM. 
+                                                     //Each char 
                                                     //is a byte
 	
 	spi_deselect_device(&SPIC, &spi_device_conf);/*End Byte Write Sequence*/
@@ -127,7 +129,7 @@ void write_data(uint8_t data, uint16_t address)
 
 
 
-uint8_t read_data(uint16_t address)
+void read_data(uint16_t address, uint8_t read_num_bytes, uint8_t user_array[])
 {
 	
 
@@ -148,10 +150,9 @@ uint8_t read_data(uint16_t address)
 
 	spi_write_packet(&SPIC, address_var, 2);/*Sends the 2 byte address to  
                                                  SRAM for reading*/
-
-        uint8_t buf;//variable declared of 8 bits
 			
-        spi_read_packet(&SPIC, &buf, 1);//write read data to allocated variable
+        spi_read_packet(&SPIC, user_array, read_num_bytes);//write read data to 
+                                                      //allocated variable
 
         spi_deselect_device(&SPIC, &spi_device_conf);/*End Sequential Read 
                                                       Sequence*/
@@ -159,7 +160,7 @@ uint8_t read_data(uint16_t address)
                                                      /*Bring CS High to end 
                                                        writing*/
 
-        return buf;
+      
 }
 
 

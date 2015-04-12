@@ -38,7 +38,8 @@
 int main (void)
 {
 	// Insert system clock initialization code here (sysclk_init()).
-
+	uint8_t arrayt[5] = {"12345"};
+	uint8_t fillthis[5];
 	board_init();
 
 	sram_init();
@@ -58,9 +59,9 @@ int main (void)
 	while(!cdc_opened());
 	while (1) {
 		write_mode(0);
-		write_data(111,4532);
-             	uint8_t z =read_data(4532);
-		cdc_write_hex(z);
+		write_data(arrayt,3);
+             	read_data(3, 5, fillthis);
+		cdc_write_string(fillthis);
 
 	//      display_read_results();
 	//	uint8_t read = udi_cdc_getc();
