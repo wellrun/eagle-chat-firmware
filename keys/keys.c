@@ -109,6 +109,16 @@ void unset_status_flag(uint8_t mask)
 	store_setup_status();
 }
 
+void set_password(uint8_t password[16]) {
+	memcpy(status.password, password, 16);
+	set_status_flag(FLAGS_PASSWORD);
+}
+
+void set_node_id(uint8_t node_id) {
+	status.node_id = node_id;
+	set_status_flag(FLAGS_NODE_ID);
+}
+
 uint8_t ssk_set_key(uint8_t node_id, uint8_t key[PAGE_SIZE])
 {
 	uint8_t slot;

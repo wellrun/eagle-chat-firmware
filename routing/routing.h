@@ -58,6 +58,9 @@ typedef struct {
 //! Configures the routing module and its dependencies
 void setupRouting(uint8_t nodeId);
 
+//! Sets the nodeId used for routing
+void setRoutingId(uint8_t nodeId);
+
 //! Consults the routing table and attempts to send a packet
 //! It is assumed that every packet going out WILL have a PacketHeader, so one is taken in the argument
 //! The client is responsible for packing any other header needed into the payload themselves

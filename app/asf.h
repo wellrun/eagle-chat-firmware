@@ -1,3 +1,4 @@
+#include <stdint.h>
 
 // From module: CPU specific features
 #include <ccp.h>

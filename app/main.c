@@ -181,7 +181,34 @@ void processPublicKeyUpdate(uint8_t *data) {
 void returnStatus();
 void returnStatus() {
 
+	const setup_status_t *status = get_setup_status();
 
+	hostMsg_t out;
+	out.len = 0;
+
+	uint8_t response[] = {PROTOCOL_RESPONSE_PREFIX, PROTOCOL_DELIM_CHAR};
+
+	hostMsg_addBuffer(&out, response, sizeof(response));
+	hostMsg_addHex(&out, status->flags);
+	hostMsg_terminate(&out);
+
+	host_tx_queueMessage(&out);
+}
+
+returnNodeId();
+returnNodeId() {
+	const setup_status_t *status = get_setup_status();
+
+	hostMsg_t out;
+	out.len = 0;
+
+	protocolAddReplyPrefix(&out);
+
+	hostMsg_addHex(&out, status->node_id);
+
+	hostMsg_terminate(&out);
+
+	host_tx_queueMessage(&out);
 }
 
 void returnPublicKey();
@@ -190,7 +217,8 @@ void returnPublicKey() {
 	hostMsg_t out;
 	out.len = 0;
 
-	hostMsg_addBuffer(&out, get_public_key(), CRYPTO_KEY_SIZE);
+	protocolAddReplyPrefix(&out);
+	hostMsg_addHexBuffer(&out, get_public_key(), CRYPTO_KEY_SIZE);
 	hostMsg_terminate(&out);
 
 	host_tx_queueMessage(&out);
@@ -212,6 +240,7 @@ void processGet(uint8_t *data) {
 			returnPublicKey();
 			break;
 		case PROTOCOL_TOKEN_GET_ID: // send host our id
+			returnNodeId();
 			break;
 		case PROTOCOL_TOKEN_GET_STATUS: // send host our status
 			returnStatus();
@@ -227,11 +256,25 @@ void processSetID(uint8_t *data) {
 	// try to grab the address portion
 	uint8_t node_id = 0;
 	char * token;
+
 	token = strtok(data, PROTOCOL_DELIM);
-	if (token != NULL)
-		node_id = (uint8_t) atoi(token);
-	if (node_id == 0) {
-		cdc_write_line("INVALID: NODE_ID cannot be 0");
+
+	if (token != NULL) {
+
+		node_id = hostMsg_hexToByte(token[0], token[1]); // decode our address
+
+		if (node_id != 0xFF) {
+		
+			set_node_id(node_id); // store new id
+			setRoutingId(node_id); // start routing as new id
+
+			protocolReplyOk(); // notify success
+
+		} else {
+
+			protocolReplyFail("Node Id must be < 255"); // notify failure
+
+		}
 	}
 
 	// Depends on keys API
@@ -249,22 +292,22 @@ void processSendMessage(uint8_t *data) {
 	if (token != NULL)
 		addr = (uint8_t) atoi(token);
 	if (addr == 0) {
-		cdc_write_line("INVALID: NO ADDRESS");
+		protocolReplyFail("INVALID: NO ADDRESS");
 		return; // invalid host message, invalid address
 	}
 
 	// grab the message portion
 	token = strtok(NULL, PROTOCOL_DELIM);
 	if (token == NULL) {
-		cdc_write_line("INVALID: NO CONTENT");
+		protocolReplyFail("INVALID: NO CONTENT");
 		return; // invalid host message, no message content
 	}
 
 	uint8_t result = sendEncryptedTo(addr, token, strlen(token));
 	if (result == SUCCESS) {
-		cdc_write_line("Sent message successfully");
+		protocolReplyOk();
 	} else if (result == FAILURE_NOKEY) {
-		cdc_write_line("No public key entry for that node");
+		protocolReplyFail("No public key entry for that node");
 	}
 
 }
@@ -313,11 +356,15 @@ void processPublicKey(uint8_t *data) {
 		return; // invalid host message, no message content
 	}
 
+	uint8_t decoded_key[CRYPTO_KEY_SIZE];
+
+	hostMsg_hexBufferToBytes(token, CRYPTO_KEY_SIZE*2, decoded_key); // Should have the decoded key now
+
 	// token now holds the public key
 
 	// We now store the appropriate shared secret to communicate with this partner.
 
-	saveSSKFor(addr, token);
+	saveSSKFor(addr, decoded_key);
 
 }
 
@@ -362,6 +409,7 @@ void processIncomingProtocol() {
 	}
 }
 
+/*
 void init(void) {
 	uint8_t inputbuf[4];
 	while (1) {
@@ -378,7 +426,7 @@ void init(void) {
 		cdc_write_line("Invalid address.");
 	}
 }
-
+*/
 
 int main(void);
 int main()
@@ -404,7 +452,7 @@ int main()
 	rtc_set_time(0);
 	cdc_log_int("Starting app ", rtc_get_time());
 
-	init();
+	//init();
 
 	host_rx_init(); // Setup host rx module
 	host_tx_init();

@@ -19,7 +19,7 @@
 #define FLAGS_CONFIGURED    0b10000000
 #define FLAGS_PRIVATE_KEY   0b01000000
 #define FLAGS_PUBLIC_KEY    0b00100000
-#define FLAGS_NETWORK_ID    0b00010000
+#define FLAGS_NODE_ID		0b00010000
 #define FLAGS_PASSWORD      0b00001000
 
 #define KEYS_BIT_SET(val, mask)     !(val & mask) // provides inverted view of set bits
@@ -27,9 +27,9 @@
 #define KEYS_CLEAR_BIT(val, mask)   (val | mask)
 
 typedef struct {
-	uint8_t flags;
 	uint8_t node_id;
 	uint8_t password[16];
+	uint8_t flags;
 } setup_status_t;
 
 typedef struct {
@@ -66,6 +66,7 @@ uint8_t set_public_key(uint8_t key[PAGE_SIZE]);
 void set_status_flag(uint8_t mask);
 void unset_status_flag(uint8_t mask);
 void set_password(uint8_t password[16]);
+void set_node_id(uint8_t node_id);
 
 uint8_t ssk_set_key(uint8_t node_id, uint8_t key[PAGE_SIZE]);
 uint8_t ssk_reset_table(void);

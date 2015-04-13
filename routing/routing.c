@@ -80,18 +80,21 @@ void debugPrintRRQProgress() {
 
 void setupRouting(uint8_t nodeId) {
 
-	_nodeId = nodeId;
-
 	memset(framePayload, 0, sizeof(framePayload));
 	memset(routingTable, 0, sizeof(routingTable)); // init routing table
 
 	packet_fifo_init(&sendFifo);
 
 	setupRadio();
-	setAddress(nodeId);
+	setRoutingId(nodeId);
 
 	memset(recentRRQ, 0, RECENT_RRQ_NUM);
 	recentRRQ_p = 0;
+}
+
+void setRoutingId(uint8_t nodeId) {
+	_nodeId = nodeId;
+	setAddress(nodeId);
 }
 
 /*

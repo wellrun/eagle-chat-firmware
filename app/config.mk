@@ -7,6 +7,7 @@ CSRCS += \
 	system_timer.c \
 	host_rx.c \
 	host_tx.c \
+	protocol.c \
 	host_msg_fifo.c \
 	radio/RFM69.cpp \
 	radio/radio.cpp \

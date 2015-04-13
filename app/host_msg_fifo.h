@@ -1,6 +1,7 @@
 #ifndef HOST_MSG_FIFO__
 #define HOST_MSG_FIFO__
 
+#include <asf.h>
 #include <stdbool.h>
 
 #define HOST_MSG_BUF_SIZE        200
@@ -76,6 +77,16 @@ void hostMsg_addBuffer(hostMsg_t *msg, uint8_t *buf, uint8_t len);
 
 void hostMsg_addInt(hostMsg_t *msg, uint32_t num, uint8_t base);
 
+void hostMsg_addHex(hostMsg_t *msg, uint8_t byte);
+
+void hostMsg_addHexBuffer(hostMsg_t *msg, uint8_t *buf, uint8_t len);
+
+uint8_t hostMsg_hexToByte(uint8_t high, uint8_t low);
+
+void hostMsg_hexBufferToBytes(uint8_t *hexbuf, uint8_t len, uint8_t *bytesbuf);
+
 void hostMsg_terminate(hostMsg_t *msg);
+
+uint8_t scaleByteFromHex(uint8_t byte);
 
 #endif // HOST_MSG_FIFO__
