@@ -208,12 +208,12 @@ void processGet(uint8_t *data) {
 	attr = token[0];
 
 	switch (attr) {
-		case 'p': // send host our public key
+		case PROTOCOL_TOKEN_GET_KEY: // send host our public key
 			returnPublicKey();
 			break;
-		case 'i': // send host our id
+		case PROTOCOL_TOKEN_GET_ID: // send host our id
 			break;
-		case 's': // send host our status
+		case PROTOCOL_TOKEN_GET_STATUS: // send host our status
 			returnStatus();
 			break;
 	}
