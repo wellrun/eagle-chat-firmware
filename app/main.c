@@ -183,6 +183,47 @@ void processPublicKeyUpdate(uint8_t *data) {
 
 }
 
+
+void processGet(uint8_t *data);
+void processGet(uint8_t *data) {
+	// expects (data)
+
+	char * token;
+	token = strtok(data, PROTOCOL_DELIM);
+
+	uint8_t attr = 0;	
+	attr = token[0];
+
+	switch (attr) {
+		case 'p':
+			break;
+		case 'i':
+			break;
+		case 's':
+			break;
+	}
+
+}
+
+void processSetID(uint8_t *data);
+void processSetID(uint8_t *data) {
+	// expects (node_id)
+
+	// try to grab the address portion
+	uint8_t node_id = 0;
+	char * token;
+	token = strtok(data, PROTOCOL_DELIM);
+	if (token != NULL)
+		node_id = (uint8_t) atoi(token);
+	if (node_id == 0) {
+		cdc_write_line("INVALID: NODE_ID cannot be 0");
+	}
+
+	load_setup_status();
+	
+
+}
+
 void processSendMessage(uint8_t *data);
 void processSendMessage(uint8_t *data) {
 	// expects (address):(message string)
@@ -290,7 +331,7 @@ void processIncomingProtocol() {
 				case PROTOCOL_TOKEN_SEND:
 					processSendMessage((*msg).data + 1); // strip the first char
 					break;
-				case PROTOCOL_TOKEN_KEY: // Host wants to send us a node's dest_pubKey
+				case PROTOCOL_TOKEN_SET_KEY: // Host wants to send us a node's dest_pubKey
 					processPublicKey((*msg).data + 1); // strip the first char
 					break;
 				case PROTOCOL_TOKEN_PUBKEY_UPDATE:
@@ -298,6 +339,11 @@ void processIncomingProtocol() {
 					break;
 				case PROTOCOL_TOKEN_GENKEYS:
 					processGenKeys();
+					break;
+				case PROTOCOL_TOKEN_SET_ID:
+					processSetID((*msg).data + 1);
+					break;
+				case PROTOCOL_TOKEN_GET:
 					break;
 			}
 		}

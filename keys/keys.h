@@ -28,9 +28,9 @@
 
 typedef struct {
 	uint8_t flags;
-	uint8_t network_id;
+	uint8_t node_id;
 	uint8_t password[16];
-} key_setup_status_t;
+} setup_status_t;
 
 // Status storage
 
@@ -38,7 +38,7 @@ typedef struct {
 uint8_t load_setup_status(void);
 
 //! Returns the pointer to the setup status
-const key_setup_status_t * get_setup_status(void);
+const setup_status_t * get_setup_status(void);
 
 //! Commits the setup status to the EEPROM
 uint8_t store_setup_status(void);
@@ -51,7 +51,6 @@ void set_status_flag(uint8_t mask);
 
 //! Clears a particular flag
 void unset_status_flag(uint8_t mask);
-
 
 // Keys storage:
 

@@ -11,7 +11,7 @@
 
 static key_table_t key_table;
 
-static key_setup_status_t status;
+static setup_status_t status;
 
 static uint8_t private_key[PAGE_SIZE];
 static uint8_t public_key[PAGE_SIZE];
@@ -46,21 +46,21 @@ uint8_t store_public_key(uint8_t key[PAGE_SIZE]) {
 
 uint8_t load_setup_status(void)
 {
-	memset((void*)&status, 0, sizeof(key_setup_status_t));  // zero out table (look at me being secure)
+	memset((void*)&status, 0, sizeof(setup_status_t));  // zero out table (look at me being secure)
 	if (nvm_init(INT_EEPROM) != STATUS_OK)
 		return ERR_INVALID_ARG;
 
-	return nvm_read(INT_EEPROM, STATUS_BYTES_START, (uint8_t*)&status, sizeof(key_setup_status_t));
+	return nvm_read(INT_EEPROM, STATUS_BYTES_START, (uint8_t*)&status, sizeof(setup_status_t));
 }
 
-const key_setup_status_t * get_setup_status(void)
+const setup_status_t * get_setup_status(void)
 {
-	return (const key_setup_status_t*)&status;
+	return (const setup_status_t*)&status;
 }
 
 uint8_t store_setup_status(void)
 {
-	return nvm_write(INT_EEPROM, STATUS_BYTES_START, (uint8_t*)&status, sizeof(key_setup_status_t));
+	return nvm_write(INT_EEPROM, STATUS_BYTES_START, (uint8_t*)&status, sizeof(setup_status_t));
 }
 
 // Flag storage
