@@ -178,6 +178,25 @@ void processPublicKeyUpdate(uint8_t *data) {
 }
 
 
+void returnStatus();
+void returnStatus() {
+
+
+}
+
+void returnPublicKey();
+void returnPublicKey() {
+
+	hostMsg_t out;
+	out.len = 0;
+
+	hostMsg_addBuffer(&out, get_public_key(), CRYPTO_KEY_SIZE);
+	hostMsg_terminate(&out);
+
+	host_tx_queueMessage(&out);
+}
+
+
 void processGet(uint8_t *data);
 void processGet(uint8_t *data) {
 	// expects (data)
@@ -189,11 +208,13 @@ void processGet(uint8_t *data) {
 	attr = token[0];
 
 	switch (attr) {
-		case 'p':
+		case 'p': // send host our public key
+			returnPublicKey();
 			break;
-		case 'i':
+		case 'i': // send host our id
 			break;
-		case 's':
+		case 's': // send host our status
+			returnStatus();
 			break;
 	}
 
@@ -331,6 +352,7 @@ void processIncomingProtocol() {
 					processSetID((*msg).data + 1);
 					break;
 				case PROTOCOL_TOKEN_GET:
+					processGet(msg->data+1);
 					break;
 			}
 		}

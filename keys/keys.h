@@ -65,6 +65,7 @@ uint8_t set_private_key(uint8_t key[PAGE_SIZE]);
 uint8_t set_public_key(uint8_t key[PAGE_SIZE]);
 void set_status_flag(uint8_t mask);
 void unset_status_flag(uint8_t mask);
+void set_password(uint8_t password[16]);
 
 uint8_t ssk_set_key(uint8_t node_id, uint8_t key[PAGE_SIZE]);
 uint8_t ssk_reset_table(void);

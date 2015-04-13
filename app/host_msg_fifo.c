@@ -47,9 +47,19 @@ void hostMsg_fifo_skip(hostMsg_fifo_t *f) {
 
 void hostMsg_addString(hostMsg_t *msg, uint8_t *buf) {
 	while (msg->len < HOST_MSG_BUF_SIZE - 1 && *buf != 0) {
-		msg->data[msg->len] = *buf;
+		hostMsg_addByte(msg, *buf);
 		++buf;
-		++(msg->len);
+	}
+}
+
+void hostMsg_addByte(hostMsg_t *msg, uint8_t byte) {
+	msg->data[msg->len] = byte;
+	++(msg->len);
+}
+
+void hostMsg_addBuffer(hostMsg_t *msg, uint8_t *buf, uint8_t len) {
+	for (uint8_t i = 0; i < len; ++i) {
+		hostMsg_addByte(msg, buf[i]);
 	}
 }
 
@@ -57,4 +67,8 @@ void hostMsg_addInt(hostMsg_t *msg, uint32_t num, uint8_t base) {
 	uint8_t temp[33];
 	ultoa(num, temp, base);
 	hostMsg_addString(msg, temp);
+}
+
+void hostMsg_terminate(hostMsg_t *msg) {
+	hostMsg_addByte(msg, '\r');
 }

@@ -70,6 +70,12 @@ void hostMsg_fifo_skip(hostMsg_fifo_t *f);
 //! Copies the string buf into the msg, updating len
 void hostMsg_addString(hostMsg_t *msg, uint8_t *buf);
 
+void hostMsg_addByte(hostMsg_t *msg, uint8_t byte);
+
+void hostMsg_addBuffer(hostMsg_t *msg, uint8_t *buf, uint8_t len);
+
 void hostMsg_addInt(hostMsg_t *msg, uint32_t num, uint8_t base);
+
+void hostMsg_terminate(hostMsg_t *msg);
 
 #endif // HOST_MSG_FIFO__
