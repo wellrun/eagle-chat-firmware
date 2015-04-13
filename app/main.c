@@ -42,8 +42,8 @@ void do_routing(void) {
 }
 
 
-#define SEND_SUCCESS		0
-#define SEND_FAILURE_NOKEY	1
+#define SUCCESS			0
+#define FAILURE_NOKEY	1
 
 uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t addr, uint8_t *payload, uint8_t len);
 uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t addr, uint8_t *payload, uint8_t len) {
@@ -61,16 +61,27 @@ uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t
 
 		ssk_read_key(slot, ssk);
 
+		cdc_log_hex_string("Decrypt Nonce: ", nonce, crypto_box_NONCEBYTES);
+		cdc_log_hex_string("Decrypt SSK: ", ssk, CRYPTO_KEY_SIZE);
+
 		cr_decrypt(decrypted, emessage, elen, ssk, nonce);
 
 	} else {
 
-		return SEND_FAILURE_NOKEY;
+		return FAILURE_NOKEY;
 
 	}
 
+	*decryptedLength = DECRYPTED_LENGTH(elen);
+	cdc_log_int("Encrypted length: ", elen);
+	cdc_log_int("ZEROBYTES: ", crypto_box_ZEROBYTES);
+	cdc_log_int("Decrypted length: ", DECRYPTED_LENGTH(elen));
+
+	return SUCCESS;
+
 }
 
+uint8_t sendPublicKeyUpdate(uint8_t addr);
 uint8_t sendPublicKeyUpdate(uint8_t addr) {
 
 	PacketHeader h;
@@ -116,16 +127,19 @@ uint8_t sendEncryptedTo(uint8_t addr, uint8_t *message, uint8_t len) {
 
 	} else {
 
-		return SEND_FAILURE_NOKEY;
+		return FAILURE_NOKEY;
 
 	}
+
+	cdc_log_hex_string("Encrypt Nonce: ", nonce, crypto_box_NONCEBYTES);
+	cdc_log_hex_string("Encrypt SSK: ", ssk, CRYPTO_KEY_SIZE);
 
 	memcpy(payload, nonce, crypto_box_NONCEBYTES);
 	memcpy(&payload[crypto_box_NONCEBYTES], encrypted, ENCRYPTED_LENGTH(len));
 
 	queuePacket(h, payload, len + CRYPTO_OVERHEAD_TOTAL);
 
-	return SEND_SUCCESS;
+	return SUCCESS;
 
 }
 
@@ -165,7 +179,7 @@ void processPublicKeyUpdate(uint8_t *data) {
 
 	sendPublicKeyUpdate(addr);
 
-	cdc_log_int("Sent public key udate to: ", addr);
+	cdc_log_int("Sent public key update to: ", addr);
 
 }
 
@@ -192,14 +206,39 @@ void processSendMessage(uint8_t *data) {
 	}
 
 	uint8_t result = sendEncryptedTo(addr, token, strlen(token));
-	if (result == SEND_SUCCESS) {
+	if (result == SUCCESS) {
 		cdc_write_line("Sent message successfully");
-	} else if (result == SEND_FAILURE_NOKEY) {
+	} else if (result == FAILURE_NOKEY) {
 		cdc_write_line("No public key entry for that node");
 	}
 
 }
 
+
+void saveSSKFor(uint8_t addr, uint8_t *public);
+void saveSSKFor(uint8_t addr, uint8_t *public) {
+
+	ssk_load_table();
+	load_private_key();
+	load_public_key();
+
+	uint8_t ssk[CRYPTO_KEY_SIZE];
+
+	cdc_log_hex_string("My private: ", get_private_key(), CRYPTO_KEY_SIZE);
+	cdc_log_hex_string("My public: ", get_public_key(), CRYPTO_KEY_SIZE);
+	cdc_log_hex_string("His public: ", public, CRYPTO_KEY_SIZE);
+
+	cr_get_session_ssk(ssk, get_private_key(), public);
+	
+	cdc_log_hex_string("SSK: ", ssk, CRYPTO_KEY_SIZE);
+
+	ssk_store_key(addr, ssk);
+
+	ssk_store_table();
+
+	cdc_log_int("Calculated and stored ssk for: ", addr);
+
+}
 
 // Given a node's public key,
 void processPublicKey(uint8_t *data);
@@ -208,7 +247,6 @@ void processPublicKey(uint8_t *data) {
 
 	uint8_t addr = 0;
 	char * token;
-	uint8_t ssk[CRYPTO_KEY_SIZE];
 
 	token = strtok(data, PROTOCOL_DELIM);
 
@@ -228,19 +266,9 @@ void processPublicKey(uint8_t *data) {
 
 	// token now holds the public key
 
-	// Store calculated shared secret in the EEPROM
-
-	ssk_load_table();
-	load_private_key();
-
-	cr_get_session_ssk(ssk, get_private_key(), token);
-	ssk_store_key(addr, token);
-
-	ssk_store_table();
-
-	cdc_write_line("Stored public key successfully");
-
 	// We now store the appropriate shared secret to communicate with this partner.
+
+	saveSSKFor(addr, token);
 
 }
 
@@ -352,30 +380,6 @@ int main()
 	// This is part of the initialization process, but we fake it here for now.
 	ssk_reset_table();
 
-	/*
-	while(1) {
-		if (!host_rx_isEmpty()) {
-
-			msg_count++;
-
-			hostMsg_t * msg = host_rx_peek();
-
-			hostMsg_t out;
-			out.len = 0;
-
-			hostMsg_addString(&out, "msg count: ");
-			hostMsg_addInt(&out, msg_count, 10);
-			hostMsg_addString(&out, "\ndata ===\n");
-			hostMsg_addString(&out, msg->data);
-			hostMsg_addString(&out, "\n\n");
-
-			host_rx_skip();
-
-			host_tx_queueMessage(&out);
-		}
-		host_tx_processQueue();
-	}
-	*/
 
 	while(1) {
 		host_tx_processQueue();
@@ -392,15 +396,21 @@ int main()
 
 			if (header.type == PACKET_TYPE_CONTENT) {
 
-				decryptMessageFrom(decrypted, &decryptedLength, header.source, payload, length);
-				decrypted[decryptedLength] = 0;
+				uint8_t result = decryptMessageFrom(decrypted, &decryptedLength, header.source, payload, length);
+				cdc_log_int("Decrypted length: ", decryptedLength);
 
-				cdc_log_string("Message: ", decrypted);
+				if (result == SUCCESS) {
+					decrypted[decryptedLength] = 0;
+					cdc_log_string("Message: ", decrypted);
+				} else if (result == FAILURE_NOKEY) {
+					cdc_write_line("Couldn't decrypt because no public key for sender");
+				}
 
 			} else if (header.type == PACKET_TYPE_PUBKEY) {
 
 				ssk_load_table();
-				ssk_store_key(header.source, payload);
+
+				saveSSKFor(header.source, payload);
 
 				cdc_log_int("successfully stored public key for: ", header.source);
 
