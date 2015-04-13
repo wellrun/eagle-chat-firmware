@@ -19,6 +19,7 @@ typedef struct {
 #define PACKET_TYPE_RRQ         	1
 #define PACKET_TYPE_RUP         	2
 #define PACKET_TYPE_FAIL			3
+#define PACKET_TYPE_PUBKEY			4
 
 
 #define RRQ_PACKET_HEADER_SIZE  	(sizeof(RRQPacketHeader))

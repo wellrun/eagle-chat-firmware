@@ -5,5 +5,6 @@
 
 #define PROTOCOL_TOKEN_SEND		's'
 #define PROTOCOL_TOKEN_KEY		'p'
+#define PROTOCOL_TOKEN_PUBKEY	'u'
 
 #endif // PROTOCOL_H__

@@ -45,8 +45,48 @@ void do_routing(void) {
 #define SEND_SUCCESS		0
 #define SEND_FAILURE_NOKEY	1
 
-uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len);
-uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len) {
+uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t addr, uint8_t *payload, uint8_t len);
+uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t addr, uint8_t *payload, uint8_t len) {
+
+	uint8_t *nonce = &payload[0];
+	uint8_t *emessage = &payload[crypto_box_NONCEBYTES];
+
+	uint8_t elen = len - crypto_box_NONCEBYTES;
+
+	ssk_load_table();
+
+	uint8_t slot;
+	uint8_t ssk[CRYPTO_KEY_SIZE];
+	if (ssk_has_key(addr, &slot)) {
+
+		ssk_read_key(slot, ssk);
+
+		cr_decrypt(decrypted, emessage, elen, ssk, nonce);
+
+	} else {
+
+		return SEND_FAILURE_NOKEY;
+
+	}
+
+}
+
+uint8_t sendPublicKeyUpdate(uint8_t addr) {
+
+	PacketHeader h;
+
+	h.source = my_address;
+	h.dest = addr;
+	h.type = PACKET_TYPE_PUBKEY;
+
+	load_public_key();
+
+	queuePacket(h, get_public_key(), CRYPTO_KEY_SIZE);
+
+}
+
+uint8_t sendEncryptedTo(uint8_t addr, uint8_t *message, uint8_t len);
+uint8_t sendEncryptedTo(uint8_t addr, uint8_t *message, uint8_t len) {
 
 	// build a packet and queue it up
 	PacketHeader h;
@@ -67,12 +107,12 @@ uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len) {
 	ssk_load_table();
 
 	uint8_t slot;
-	uint8_t key[CRYPTO_KEY_SIZE];
+	uint8_t ssk[CRYPTO_KEY_SIZE];
 	if (ssk_has_key(addr, &slot)) {
 
-		ssk_read_key(slot, key);
+		ssk_read_key(slot, ssk);
 
-		cr_encrypt(encrypted, message, len, key, nonce);
+		cr_encrypt(encrypted, message, len, ssk, nonce);
 
 	} else {
 
@@ -86,6 +126,25 @@ uint8_t sendMessage(uint8_t addr, uint8_t *message, uint8_t len) {
 	queuePacket(h, payload, len + CRYPTO_OVERHEAD_TOTAL);
 
 	return SEND_SUCCESS;
+
+}
+
+void processPublicKeyUpdate(uint8_t *data);
+void processPublicKeyUpdate(uint8_t *data) {
+	// expects (address):(message string)
+
+	// try to grab the address portion
+	uint8_t addr = 0;
+	char * token;
+	token = strtok(data, PROTOCOL_DELIM);
+	if (token != NULL)
+		addr = (uint8_t) atoi(token);
+	if (addr == 0) {
+		cdc_write_line("INVALID: NO ADDRESS");
+		return; // invalid host message, invalid address
+	}
+
+	sendPublicKeyUpdate(addr);
 
 }
 
@@ -111,7 +170,7 @@ void processSendMessage(uint8_t *data) {
 		return; // invalid host message, no message content
 	}
 
-	uint8_t result = sendMessage(addr, token, strlen(token));
+	uint8_t result = sendEncryptedTo(addr, token, strlen(token));
 	if (result == SEND_SUCCESS) {
 		cdc_write_line("Sent message successfully");
 	} else if (result == SEND_FAILURE_NOKEY) {
@@ -184,6 +243,9 @@ void processIncomingProtocol() {
 					break;
 				case PROTOCOL_TOKEN_KEY: // Host wants to send us a node's dest_pubKey
 					processPublicKey((*msg).data + 1); // strip the first char
+					break;
+				case PROTOCOL_TOKEN_PUBKEY:
+					processPublicKey((*msg).data + 1);
 					break;
 			}
 		}
@@ -292,19 +354,32 @@ int main()
 	*/
 
 	while(1) {
-		//cdc_write_line("processQueue");
 		host_tx_processQueue();
-		//cdc_write_line("processIncomingProtocol");
 		processIncomingProtocol();
+
+		uint8_t decrypted[MAX_PAYLOAD_SIZE];
+		uint8_t decryptedLength;
 
 		if (packetsToRead()) {
 			PacketHeader header;
 			uint8_t *payload;
 			uint8_t length = packetReceivedPeek(&header, &payload);
-			payload[length] = 0;
 			cdc_log_int("From: ", header.source);
-			//cdc_log_int("Length: ", length);
-			cdc_log_string("Content: ", payload);
+
+			if (header.type == PACKET_TYPE_CONTENT) {
+
+				decryptMessageFrom(decrypted, &decryptedLength, header.source, payload, length);
+				decrypted[decryptedLength] = 0;
+
+				cdc_log_string("Message: ", decrypted);
+
+			} else if (header.type == PACKET_TYPE_PUBKEY) {
+
+				ssk_load_table();
+				ssk_store_key(header.source, payload);
+
+			}
+
 			packetReceivedSkip();
 			cdc_newline();
 		}
