@@ -11,7 +11,7 @@
 
 // The length required to hold the plaintext string corresponding to
 // an encrypted message with length x
-#define DECRYPTED_LENGTH(x) 	(x - crypto_box_ZEROBYTES)
+#define DECRYPTED_LENGTH(x) 	(x + crypto_box_BOXZEROBYTES - crypto_box_ZEROBYTES)  //  x - 16
 
 #define CRYPTO_OVERHEAD_TOTAL	((crypto_box_ZEROBYTES - crypto_box_BOXZEROBYTES) + crypto_box_NONCEBYTES) // (16) + 24 = 40
 
