@@ -85,7 +85,7 @@ void write_mode(uint8_t mode)
 
 }
 
-void write_data(uint8_t data[], uint16_t address)
+void write_data(uint16_t address,uint8_t write_num_bytes,uint8_t data[])
 {
 	
 
@@ -99,9 +99,8 @@ void write_data(uint8_t data[], uint16_t address)
 	address_var[0] = MSB;
         address_var[1] = LSB;
 	
-	spi_select_device(&SPIC, &spi_device_conf);/*Begin sequential Write 
+	spi_select_device(&SPIC, &spi_device_conf);/*Begin Write 
                                                     Sequence*/
-	                                          /*Per page 10 of datasheet*/
                                                   /*bringing CS Low since using 
                                                   select_device function brings
                                                   device low and you must bring 
@@ -116,12 +115,11 @@ void write_data(uint8_t data[], uint16_t address)
         
  
 
-	spi_write_packet(&SPIC, data, sizeof(data)); //writes message to SRAM. 
+	spi_write_packet(&SPIC, data, write_num_bytes); //writes data to SRAM. 
                                                      //Each char 
                                                     //is a byte
 	
-	spi_deselect_device(&SPIC, &spi_device_conf);/*End Byte Write Sequence*/
-						     /*Per page 7 of datasheet*/
+	spi_deselect_device(&SPIC, &spi_device_conf);/*End Write Sequence*/
                                                      /*Bring CS High to end 
                                                       writing*/
 
@@ -142,9 +140,9 @@ void read_data(uint16_t address, uint8_t read_num_bytes, uint8_t user_array[])
         address_var[0] = MSB;
         address_var[1] = LSB;
 	
-	spi_select_device(&SPIC, &spi_device_conf);/*Begin Sequential Read 
+	spi_select_device(&SPIC, &spi_device_conf);/*Begin Read 
                                                    Sequence*/
-	                                          /*Per page 7 of datasheet*/
+	                                         
 
 	spi_write_packet(&SPIC, &readcommand, 1);//Sends command to read 
 
@@ -154,9 +152,8 @@ void read_data(uint16_t address, uint8_t read_num_bytes, uint8_t user_array[])
         spi_read_packet(&SPIC, user_array, read_num_bytes);//write read data to 
                                                       //allocated variable
 
-        spi_deselect_device(&SPIC, &spi_device_conf);/*End Sequential Read 
-                                                      Sequence*/
-						     /*Per page 9 of datasheet*/
+        spi_deselect_device(&SPIC, &spi_device_conf);/*End Read 
+                                                      Sequence 
                                                      /*Bring CS High to end 
                                                        writing*/
 
