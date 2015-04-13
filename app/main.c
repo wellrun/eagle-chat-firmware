@@ -267,7 +267,7 @@ void processSetID(uint8_t *data) {
 		
 			set_node_id(node_id); // store new id
 			setRoutingId(node_id); // start routing as new id
-
+			my_address = node_id;
 			protocolReplyOk(); // notify success
 
 		} else {
@@ -284,6 +284,12 @@ void processSetID(uint8_t *data) {
 void processSendMessage(uint8_t *data);
 void processSendMessage(uint8_t *data) {
 	// expects (address):(message string)
+
+	// can't send if our address is 0
+	if (my_address == 0) {
+		protocolReplyFail("ID NOT CONFIGURED");
+		return;
+	}
 
 	// try to grab the address portion
 	uint8_t addr = 0;
