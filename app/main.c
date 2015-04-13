@@ -144,6 +144,8 @@ void processGenKeys() {
 	store_public_key(public);
 	store_private_key(private);
 
+	cdc_write_line("Successfully generated keys");
+
 }
 
 void processPublicKeyUpdate(uint8_t *data);
@@ -162,6 +164,8 @@ void processPublicKeyUpdate(uint8_t *data) {
 	}
 
 	sendPublicKeyUpdate(addr);
+
+	cdc_log_int("Sent public key udate to: ", addr);
 
 }
 
@@ -262,7 +266,7 @@ void processIncomingProtocol() {
 					processPublicKey((*msg).data + 1); // strip the first char
 					break;
 				case PROTOCOL_TOKEN_PUBKEY_UPDATE:
-					processPublicKey((*msg).data + 1);
+					processPublicKeyUpdate((*msg).data + 1);
 					break;
 				case PROTOCOL_TOKEN_GENKEYS:
 					processGenKeys();
@@ -397,6 +401,8 @@ int main()
 
 				ssk_load_table();
 				ssk_store_key(header.source, payload);
+
+				cdc_log_int("successfully stored public key for: ", header.source);
 
 			}
 
