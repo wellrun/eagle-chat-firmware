@@ -357,7 +357,11 @@ ifneq ($(strip $(POSTBUILD_CMD)),)
 	$(Q)$(POSTBUILD_CMD)
 endif
 
+
 install: all
+	avrdude -p $(MCU) -c flip2 -U application:w:$(project).hex
+
+autoprog: all
 	../autoprog.py $(project).hex
 
 # Clean up the project.
