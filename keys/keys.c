@@ -124,7 +124,8 @@ void set_password(uint8_t password[16]) {
 
 void set_node_id(uint8_t node_id) {
 	status.node_id = node_id;
-	set_status_flag(FLAGS_NODE_ID);
+	if (node_id != 0)
+		set_status_flag(FLAGS_NODE_ID);
 }
 
 uint8_t ssk_set_key(uint8_t node_id, uint8_t key[PAGE_SIZE])
