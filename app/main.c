@@ -88,7 +88,7 @@ uint8_t sendPublicKeyUpdate(uint8_t addr) {
 	h.dest = addr;
 	h.type = PACKET_TYPE_PUBKEY;
 
-	queuePacket(h, get_public_key(), CRYPTO_KEY_SIZE);
+	return queuePacket(h, get_public_key(), CRYPTO_KEY_SIZE);
 
 }
 
@@ -152,7 +152,7 @@ void processGenKeys() {
 	set_public_key(public);
 	set_private_key(private);
 
-	cdc_write_line("Successfully generated keys");
+	protocolReplyOk();
 
 }
 
@@ -428,6 +428,28 @@ void init(void) {
 }
 */
 
+// Returns the configured node id
+uint8_t checkSetup();
+uint8_t checkSetup() {
+	// Read EEPROM
+	load_private_key();
+	load_public_key();
+	load_setup_status();
+	ssk_load_table();
+
+	// This is part of the initialization process, but we fake it here for now.
+	ssk_reset_table();
+
+	const setup_status_t *status = get_setup_status();
+	if (status->node_id == FLAGS_UNSET) {
+		set_node_id(0);
+		return 0;
+	} else {
+		return status->node_id;
+	}
+
+}
+
 int main(void);
 int main()
 {
@@ -448,14 +470,10 @@ int main()
 
 	sha204_init();
 
-	while (!cdc_opened());
-	rtc_set_time(0);
-	cdc_log_int("Starting app ", rtc_get_time());
-
-	//init();
-
 	host_rx_init(); // Setup host rx module
 	host_tx_init();
+
+	my_address = checkSetup();
 
 	setupRouting(my_address);
 
@@ -463,15 +481,9 @@ int main()
 	system_timer_set_callback(do_routing);
 	system_timer_start();
 
-	// Read EEPROM
-	load_private_key();
-	load_public_key();
-	load_setup_status();
-	ssk_load_table();
-
-	// This is part of the initialization process, but we fake it here for now.
-	ssk_reset_table();
-
+	while (!cdc_opened());
+	rtc_set_time(0);
+	cdc_log_int("Starting app ", rtc_get_time());
 
 	while(1) {
 		host_tx_processQueue();
