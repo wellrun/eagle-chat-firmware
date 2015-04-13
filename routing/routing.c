@@ -319,48 +319,6 @@ void handleReceived() {
 		//cdc_log_int("Packet type: ", h->type);
 
 		switch (h->type) {
-			case PACKET_TYPE_CONTENT:
-
-				if (h->dest == _nodeId) { // This packet is for us
-
-					// Store in receiveFifo, accessible from other modules
-					packet_fifo_write(	&receiveFifo,
-										*h,
-										&framePayload[PACKET_HEADER_SIZE],
-										frameLength - PACKET_HEADER_SIZE);
-					continue;
-				}
-
-				// Realistically, here we'll want to update our own routing tables
-				// with information about h->source
-
-				// Get the next hop to the packet's destination
-				RoutingTableEntry *nextHopEntry = getNextHop(h->dest);
-
-				if (nextHopEntry != NULL) {
-					forward(nextHopEntry, framePayload, frameLength);
-				} else {
-					// Do a route error
-
-					h->type = PACKET_TYPE_FAIL;
-
-					// Reverse the trajectory
-					uint8_t temp = h->dest;
-					h->dest = h->source;
-					h->source = temp;
-
-					// This should exist, right?
-					nextHopEntry = getNextHop(h->dest);
-
-					if (nextHopEntry != NULL) {
-						// Try to send the error back to the source
-						// If this doesn't work, we can't help you
-						forward(nextHopEntry, (uint8_t *)h, PACKET_HEADER_SIZE);
-					}
-				}
-
-				break;
-
 			case PACKET_TYPE_RRQ:
 
 				if (h->dest == _nodeId) {
@@ -489,6 +447,48 @@ void handleReceived() {
 
 				// TODO: Queue failure message for host
 				// Include packet id once that's a thing
+
+				break;
+
+			default:
+
+				if (h->dest == _nodeId) { // This packet is for us
+
+					// Store in receiveFifo, accessible from other modules
+					packet_fifo_write(	&receiveFifo,
+										*h,
+										&framePayload[PACKET_HEADER_SIZE],
+										frameLength - PACKET_HEADER_SIZE);
+					continue;
+				}
+
+				// Realistically, here we'll want to update our own routing tables
+				// with information about h->source
+
+				// Get the next hop to the packet's destination
+				RoutingTableEntry *nextHopEntry = getNextHop(h->dest);
+
+				if (nextHopEntry != NULL) {
+					forward(nextHopEntry, framePayload, frameLength);
+				} else {
+					// Do a route error
+
+					h->type = PACKET_TYPE_FAIL;
+
+					// Reverse the trajectory
+					uint8_t temp = h->dest;
+					h->dest = h->source;
+					h->source = temp;
+
+					// This should exist, right?
+					nextHopEntry = getNextHop(h->dest);
+
+					if (nextHopEntry != NULL) {
+						// Try to send the error back to the source
+						// If this doesn't work, we can't help you
+						forward(nextHopEntry, (uint8_t *)h, PACKET_HEADER_SIZE);
+					}
+				}
 
 				break;
 		}
