@@ -101,7 +101,7 @@ uint8_t sendEncryptedTo(uint8_t addr, uint8_t *message, uint8_t len) {
 	uint8_t payload[MAX_PAYLOAD_SIZE];
 
 	// Get a nonce from the SHA chip
-	uint8_t nonce[crypto_box_NONCEBYTES];
+	uint8_t nonce[32];
 	sha204_getRandom32(nonce);
 
 	ssk_load_table();
@@ -126,6 +126,23 @@ uint8_t sendEncryptedTo(uint8_t addr, uint8_t *message, uint8_t len) {
 	queuePacket(h, payload, len + CRYPTO_OVERHEAD_TOTAL);
 
 	return SEND_SUCCESS;
+
+}
+
+void processGenKeys(void);
+void processGenKeys() {
+	// expects nothing
+
+	uint8_t random[32];
+	sha204_getRandom32(random);
+
+	uint8_t public[CRYPTO_KEY_SIZE];
+	uint8_t private[CRYPTO_KEY_SIZE];
+
+	cr_generate_keypair(public, private, random);
+
+	store_public_key(public);
+	store_private_key(private);
 
 }
 
@@ -244,8 +261,11 @@ void processIncomingProtocol() {
 				case PROTOCOL_TOKEN_KEY: // Host wants to send us a node's dest_pubKey
 					processPublicKey((*msg).data + 1); // strip the first char
 					break;
-				case PROTOCOL_TOKEN_PUBKEY:
+				case PROTOCOL_TOKEN_PUBKEY_UPDATE:
 					processPublicKey((*msg).data + 1);
+					break;
+				case PROTOCOL_TOKEN_GENKEYS:
+					processGenKeys();
 					break;
 			}
 		}

@@ -3,8 +3,10 @@
 
 #define PROTOCOL_DELIM	":" // The separator character for protocol message sections
 
-#define PROTOCOL_TOKEN_SEND		's'
-#define PROTOCOL_TOKEN_KEY		'p'
-#define PROTOCOL_TOKEN_PUBKEY	'u'
+// So semantic
+#define PROTOCOL_TOKEN_SEND				's'
+#define PROTOCOL_TOKEN_KEY				'p'
+#define PROTOCOL_TOKEN_GENKEYS			'k'
+#define PROTOCOL_TOKEN_PUBKEY_UPDATE	'u'
 
 #endif // PROTOCOL_H__
