@@ -53,8 +53,6 @@ uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t
 
 	uint8_t elen = len - crypto_box_NONCEBYTES;
 
-	ssk_load_table();
-
 	uint8_t slot;
 	uint8_t ssk[CRYPTO_KEY_SIZE];
 	if (ssk_has_key(addr, &slot)) {
@@ -90,8 +88,6 @@ uint8_t sendPublicKeyUpdate(uint8_t addr) {
 	h.dest = addr;
 	h.type = PACKET_TYPE_PUBKEY;
 
-	load_public_key();
-
 	queuePacket(h, get_public_key(), CRYPTO_KEY_SIZE);
 
 }
@@ -114,8 +110,6 @@ uint8_t sendEncryptedTo(uint8_t addr, uint8_t *message, uint8_t len) {
 	// Get a nonce from the SHA chip
 	uint8_t nonce[32];
 	sha204_getRandom32(nonce);
-
-	ssk_load_table();
 
 	uint8_t slot;
 	uint8_t ssk[CRYPTO_KEY_SIZE];
@@ -155,8 +149,8 @@ void processGenKeys() {
 
 	cr_generate_keypair(public, private, random);
 
-	store_public_key(public);
-	store_private_key(private);
+	set_public_key(public);
+	set_private_key(private);
 
 	cdc_write_line("Successfully generated keys");
 
@@ -219,8 +213,7 @@ void processSetID(uint8_t *data) {
 		cdc_write_line("INVALID: NODE_ID cannot be 0");
 	}
 
-	load_setup_status();
-	
+	// Depends on keys API
 
 }
 
@@ -259,10 +252,6 @@ void processSendMessage(uint8_t *data) {
 void saveSSKFor(uint8_t addr, uint8_t *public);
 void saveSSKFor(uint8_t addr, uint8_t *public) {
 
-	ssk_load_table();
-	load_private_key();
-	load_public_key();
-
 	uint8_t ssk[CRYPTO_KEY_SIZE];
 
 	cdc_log_hex_string("My private: ", get_private_key(), CRYPTO_KEY_SIZE);
@@ -273,9 +262,7 @@ void saveSSKFor(uint8_t addr, uint8_t *public) {
 	
 	cdc_log_hex_string("SSK: ", ssk, CRYPTO_KEY_SIZE);
 
-	ssk_store_key(addr, ssk);
-
-	ssk_store_table();
+	ssk_set_key(addr, ssk);
 
 	cdc_log_int("Calculated and stored ssk for: ", addr);
 
@@ -348,25 +335,8 @@ void processIncomingProtocol() {
 			}
 		}
 
-		/*
-		hostMsg_t out;
-		out.len = 0;
-
-		hostMsg_addString(&out, "msg count: ");
-		hostMsg_addInt(&out, msg_count, 10);
-		hostMsg_addString(&out, "\ndata ===\n");
-		hostMsg_addString(&out, msg->data);
-		hostMsg_addString(&out, "\n\n");
-
 		host_rx_skip();
-
-		host_tx_queueMessage(&out);
-		*/
-
-		///*
-
-		host_rx_skip();
-		//*/
+		
 	}
 }
 
@@ -422,6 +392,12 @@ int main()
 	system_timer_init();
 	system_timer_set_callback(do_routing);
 	system_timer_start();
+
+	// Read EEPROM
+	load_private_key();
+	load_public_key();
+	load_setup_status();
+	ssk_load_table();
 
 	// This is part of the initialization process, but we fake it here for now.
 	ssk_reset_table();
