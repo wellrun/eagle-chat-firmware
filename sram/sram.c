@@ -58,7 +58,10 @@ void write_mode(uint8_t mode)
             mode_w = 0;
          }
       
-
+	cdc_write_hex(mode);
+	cdc_newline();
+	cdc_write_hex(mode_w);
+	cdc_newline();
 
 	spi_select_device(&SPIC, &spi_device_conf);/*WRSR Sequence Begin*/
 	                                          /*Per page 12 of datasheet*/
