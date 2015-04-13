@@ -189,7 +189,7 @@ void returnStatus() {
 	uint8_t response[] = {PROTOCOL_RESPONSE_PREFIX, PROTOCOL_DELIM_CHAR};
 
 	hostMsg_addBuffer(&out, response, sizeof(response));
-	hostMsg_addHex(&out, status->flags);
+	hostMsg_addHex(&out, ~(status->flags));
 	hostMsg_terminate(&out);
 
 	host_tx_queueMessage(&out);

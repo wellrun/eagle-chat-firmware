@@ -89,12 +89,20 @@ uint8_t ssk_read_key(uint8_t slot, uint8_t dest[PAGE_SIZE])
 
 uint8_t set_private_key(uint8_t key[PAGE_SIZE]) {
 	memcpy(private_key, key, PAGE_SIZE);
-	return nvm_write(INT_EEPROM, PRIVATE_KEY_BYTES_START, key, PAGE_SIZE);
+	if (nvm_write(INT_EEPROM, PRIVATE_KEY_BYTES_START, key, PAGE_SIZE) == STATUS_OK) {
+		set_status_flag(FLAGS_PRIVATE_KEY);
+		return STATUS_OK;
+	}
+	return ERR_INVALID_ARG;
 }
 
 uint8_t set_public_key(uint8_t key[PAGE_SIZE]) {
 	memcpy(public_key, key, PAGE_SIZE);
-	return nvm_write(INT_EEPROM, PUBLIC_KEY_BYTES_START, key, PAGE_SIZE);
+	if(nvm_write(INT_EEPROM, PUBLIC_KEY_BYTES_START, key, PAGE_SIZE) == STATUS_OK) {
+		set_status_flag(FLAGS_PUBLIC_KEY);
+		return STATUS_OK;
+	}
+	return ERR_INVALID_ARG;
 }
 
 void set_status_flag(uint8_t mask)
