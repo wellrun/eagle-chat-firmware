@@ -32,37 +32,6 @@ typedef struct {
 	uint8_t password[16];
 } setup_status_t;
 
-// Status storage
-
-//! Loads the setup status from EEPROM
-uint8_t load_setup_status(void);
-
-//! Returns the pointer to the setup status
-const setup_status_t * get_setup_status(void);
-
-//! Commits the setup status to the EEPROM
-uint8_t store_setup_status(void);
-
-
-// Flags storage
-
-//! Sets a particular flag
-void set_status_flag(uint8_t mask);
-
-//! Clears a particular flag
-void unset_status_flag(uint8_t mask);
-
-// Keys storage:
-
-uint8_t load_private_key(void);
-uint8_t * get_private_key(void);
-uint8_t store_private_key(uint8_t key[PAGE_SIZE]);
-
-uint8_t load_public_key(void);
-uint8_t * get_public_key(void);
-uint8_t store_public_key(uint8_t key[PAGE_SIZE]);
-
-
 typedef struct {
 	uint8_t node_id;
 	uint8_t key_page;
@@ -73,28 +42,35 @@ typedef struct {
 } key_table_t;
 
 
-// Shared secret storage
+//! Load functions - read the EEPROM and set the in-memory data structures
+uint8_t load_private_key(void);
+uint8_t load_public_key(void);
+uint8_t load_setup_status(void);
 
-//! Read the ssk storage table from EEPROM into the device
 uint8_t ssk_load_table(void);
 
-//! Reset the table
-uint8_t ssk_reset_table(void);
 
-//! Retrieve reference to the table while it's in device memory
+//! Get functions - return pointers to the data structures in-memory, or retrieve information from them
+uint8_t * get_private_key(void);
+uint8_t * get_public_key(void);
+const setup_status_t * get_setup_status(void);
+
 const key_table_t * ssk_get_table(void);
-
-//! Returns true if there is a table entry for the network id
 bool ssk_has_key(uint8_t node_id, uint8_t * slot);
-
-//! Stores the ssk for a certain node
-uint8_t ssk_store_key(uint8_t node_id, uint8_t key[PAGE_SIZE]);
-
-//! Retreives an ssk for a certain node
 uint8_t ssk_read_key(uint8_t slot, uint8_t dest[PAGE_SIZE]);
 
-//! Commit the ssk storage table back to the EEPROM
-uint8_t ssk_store_table(void);
+
+//! Set functions - Set information on the data structures in-memory (which is automatically backed by the EEPROM)
+uint8_t set_private_key(uint8_t key[PAGE_SIZE]);
+uint8_t set_public_key(uint8_t key[PAGE_SIZE]);
+void set_status_flag(uint8_t mask);
+void unset_status_flag(uint8_t mask);
+
+uint8_t ssk_set_key(uint8_t node_id, uint8_t key[PAGE_SIZE]);
+uint8_t ssk_reset_table(void);
+
+
+
 
 
 #endif
