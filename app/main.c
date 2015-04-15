@@ -287,8 +287,6 @@ void processSetID(uint8_t *data) {
 		}
 	}
 
-	protocolReplyOk();
-
 }
 
 void processSendMessage(uint8_t *data);
