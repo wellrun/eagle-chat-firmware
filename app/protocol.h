@@ -14,6 +14,9 @@
 #define PROTOCOL_TOKEN_PUBKEY_UPDATE	'u' 	// ex. u:[0-9]{1,3}(address)
 #define PROTOCOL_TOKEN_SET_ID			'i' 	// ex. i:[2 bytes hex]
 #define PROTOCOL_TOKEN_SET_PASSWORD		'h'		// ex. h:[32 bytes hex]
+#define PROTOCOL_TOKEN_AUTH				'a'		// ex. a:[60 bytes hex]
+
+#define PROTOCOL_STRING_BURN			"BURN"	
 
 // Get requests
 // Format: g:(var_token)

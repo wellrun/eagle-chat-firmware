@@ -20,13 +20,16 @@
 
 #include "protocol.h"
 
+
+#define AUTH		(authenticated)
+#define CONFIG		(device_configured())
+#define FULLREADY	(AUTH && CONFIG)
+
 volatile bool quit = false;
 uint8_t my_address = 0;
 
-// The destination's public key. JUST FOR THIS DEMO
-uint8_t dest_pubKey[32];
 
-uint8_t shared_secret[32]; // also 32 bytes?
+bool authenticated;
 
 void do_routing(void);
 static volatile bool busy = false;
@@ -195,8 +198,8 @@ void returnStatus() {
 	host_tx_queueMessage(&out);
 }
 
-returnNodeId();
-returnNodeId() {
+void returnNodeId();
+void returnNodeId() {
 	const setup_status_t *status = get_setup_status();
 
 	hostMsg_t out;
@@ -237,9 +240,11 @@ void processGet(uint8_t *data) {
 
 	switch (attr) {
 		case PROTOCOL_TOKEN_GET_KEY: // send host our public key
+			if (!FULLREADY) break;
 			returnPublicKey();
 			break;
 		case PROTOCOL_TOKEN_GET_ID: // send host our id
+			if (!FULLREADY) break;
 			returnNodeId();
 			break;
 		case PROTOCOL_TOKEN_GET_STATUS: // send host our status
@@ -374,6 +379,12 @@ void processPublicKey(uint8_t *data) {
 
 }
 
+bool processAuth(uint8_t *pdata);
+bool processAuth(uint8_t *pdata) {
+	setup_status_t *s = get_setup_status();
+	authenticated = (memcmp(pdata, s->password, 30) == 0);
+}
+
 void processIncomingProtocol(void);
 void processIncomingProtocol() {
 	static uint16_t msg_count = 0;
@@ -387,25 +398,43 @@ void processIncomingProtocol() {
 		hostMsg_t * msg = host_rx_peek();
 
 		if ((*msg).len > 0) { // check for a valid length message
-			uint8_t type = (*msg).data[0];
+
+			// Check for burn
+			if (strcmp(msg->data, PROTOCOL_STRING_BURN) == 0) {
+				burn_memory();
+				//RST.CTRL = RST_SWRST_BM;
+				return;
+			}
+
+			uint8_t type = msg->data[0];
+
+
+
 			switch(type) {
 				case PROTOCOL_TOKEN_SEND:
-					processSendMessage((*msg).data + 1); // strip the first char
+					if (!FULLREADY) break;
+					processSendMessage(msg->data + 1); // strip the first char
 					break;
 				case PROTOCOL_TOKEN_SET_KEY: // Host wants to send us a node's dest_pubKey
-					processPublicKey((*msg).data + 1); // strip the first char
+					if (!FULLREADY) break;
+					processPublicKey(msg->data + 1); // strip the first char
 					break;
 				case PROTOCOL_TOKEN_PUBKEY_UPDATE:
-					processPublicKeyUpdate((*msg).data + 1);
+					if (!FULLREADY) break;
+					processPublicKeyUpdate(msg->data + 1);
 					break;
 				case PROTOCOL_TOKEN_GENKEYS:
 					processGenKeys();
 					break;
 				case PROTOCOL_TOKEN_SET_ID:
-					processSetID((*msg).data + 1);
+					processSetID(msg->data + 1);
 					break;
 				case PROTOCOL_TOKEN_GET:
 					processGet(msg->data+1);
+					break;
+				case PROTOCOL_TOKEN_AUTH:
+					if (!CONFIG) break;
+					processAuth(msg->data + 1);
 					break;
 			}
 		}
@@ -490,6 +519,8 @@ int main()
 	while (!cdc_opened());
 	rtc_set_time(0);
 	cdc_log_int("Starting app ", rtc_get_time());
+
+	authenticated = false;
 
 	while(1) {
 		host_tx_processQueue();
