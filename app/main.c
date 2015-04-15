@@ -24,9 +24,9 @@
 #define AUTH			(authenticated)
 #define CONFIG			(device_configured())
 #define FULLREADY		(AUTH && CONFIG)
-#define EXIT_IF_NOAUTH		if (!AUTH) { protocolReplyFail("Not authenticated"); return; }
-#define EXIT_IF_NOCONFIG	if (!CONFIG) { protocolReplyFail("Not configured"); return; }
-#define EXIT_IF_NOTREADY	if (!FULLREADY) { protocolReplyFail("Not authenticated or not configured"); return; }
+#define BREAK_IF_NOAUTH		if (!AUTH) { protocolReplyFail("Not authenticated"); break; }
+#define BREAK_IF_NOCONFIG	if (!CONFIG) { protocolReplyFail("Not configured"); break; }
+#define BREAK_IF_NOTREADY	if (!FULLREADY) { protocolReplyFail("Not authenticated or not configured"); break; }
 
 volatile bool quit = false;
 uint8_t my_address = 0;
@@ -181,6 +181,8 @@ void processPublicKeyUpdate(uint8_t *data) {
 
 	cdc_log_int("Sent public key update to: ", addr);
 
+	protocolReplyOk();
+
 }
 
 
@@ -243,11 +245,11 @@ void processGet(uint8_t *data) {
 
 	switch (attr) {
 		case PROTOCOL_TOKEN_GET_KEY: // send host our public key
-			EXIT_IF_NOTREADY;
+			BREAK_IF_NOTREADY;
 			returnPublicKey();
 			break;
 		case PROTOCOL_TOKEN_GET_ID: // send host our id
-			EXIT_IF_NOTREADY;
+			BREAK_IF_NOTREADY;
 			returnNodeId();
 			break;
 		case PROTOCOL_TOKEN_GET_STATUS: // send host our status
@@ -285,7 +287,7 @@ void processSetID(uint8_t *data) {
 		}
 	}
 
-	// Depends on keys API
+	protocolReplyOk();
 
 }
 
@@ -380,17 +382,21 @@ void processPublicKey(uint8_t *data) {
 
 	saveSSKFor(addr, decoded_key);
 
+	protocolReplyOk();
+
 }
 
 void processSetPassword(uint8_t *pdata);
 void processSetPassword(uint8_t *pdata) {
 	set_password(pdata);
+	protocolReplyOk();
 }
 
 bool processAuth(uint8_t *pdata);
 bool processAuth(uint8_t *pdata) {
 	setup_status_t *s = get_setup_status();
 	authenticated = (memcmp(pdata, s->password, 30) == 0);
+	protocolReplyOk();
 }
 
 void processIncomingProtocol(void);
@@ -420,15 +426,15 @@ void processIncomingProtocol() {
 
 			switch(type) {
 				case PROTOCOL_TOKEN_SEND:
-					EXIT_IF_NOTREADY;
+					BREAK_IF_NOTREADY;
 					processSendMessage(msg->data + 2); // strip 'x:'
 					break;
 				case PROTOCOL_TOKEN_SET_KEY: // Host wants to send us a node's dest_pubKey
-					EXIT_IF_NOTREADY;
+					BREAK_IF_NOTREADY;
 					processPublicKey(msg->data + 2);
 					break;
 				case PROTOCOL_TOKEN_PUBKEY_UPDATE:
-					EXIT_IF_NOTREADY;
+					BREAK_IF_NOTREADY;
 					processPublicKeyUpdate(msg->data + 2);
 					break;
 				case PROTOCOL_TOKEN_GENKEYS:
@@ -444,7 +450,7 @@ void processIncomingProtocol() {
 					processGet(msg->data+2);
 					break;
 				case PROTOCOL_TOKEN_AUTH:
-					EXIT_IF_NOCONFIG;
+					BREAK_IF_NOCONFIG;
 					processAuth(msg->data + 2);
 					break;
 			}
