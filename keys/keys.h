@@ -60,6 +60,7 @@ bool ssk_has_key(uint8_t node_id, uint8_t * slot);
 uint8_t ssk_read_key(uint8_t slot, uint8_t dest[PAGE_SIZE]);
 
 bool device_configured();
+bool all_components_configured();
 
 
 //! Set functions - Set information on the data structures in-memory (which is automatically backed by the EEPROM)
@@ -69,6 +70,7 @@ void set_status_flag(uint8_t mask);
 void unset_status_flag(uint8_t mask);
 void set_password(uint8_t password[30]);
 void set_node_id(uint8_t node_id);
+void set_configured();
 
 uint8_t ssk_set_key(uint8_t node_id, uint8_t key[PAGE_SIZE]);
 uint8_t ssk_reset_table(void);

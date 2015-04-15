@@ -91,6 +91,16 @@ bool device_configured() {
 	return KEYS_BIT_SET(get_setup_status()->flags, FLAGS_CONFIGURED);
 }
 
+bool all_components_configured() {
+
+	setup_status_t *s = get_setup_status();
+
+	return (KEYS_BIT_SET(s->flags, FLAGS_PRIVATE_KEY) &&
+		KEYS_BIT_SET(s->flags, FLAGS_PUBLIC_KEY) &&
+		KEYS_BIT_SET(s->flags, FLAGS_NODE_ID) &&
+		KEYS_BIT_SET(s->flags, FLAGS_PASSWORD));
+}
+
 uint8_t set_private_key(uint8_t key[PAGE_SIZE]) {
 	memcpy(private_key, key, PAGE_SIZE);
 	if (nvm_write(INT_EEPROM, PRIVATE_KEY_BYTES_START, key, PAGE_SIZE) == STATUS_OK) {
@@ -130,6 +140,10 @@ void set_node_id(uint8_t node_id) {
 	status.node_id = node_id;
 	if (node_id != 0)
 		set_status_flag(FLAGS_NODE_ID);
+}
+
+void set_configured() {
+	set_status_flag(FLAGS_CONFIGURED);
 }
 
 uint8_t ssk_set_key(uint8_t node_id, uint8_t key[PAGE_SIZE])
