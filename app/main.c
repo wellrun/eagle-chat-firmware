@@ -21,9 +21,12 @@
 #include "protocol.h"
 
 
-#define AUTH		(authenticated)
-#define CONFIG		(device_configured())
-#define FULLREADY	(AUTH && CONFIG)
+#define AUTH			(authenticated)
+#define CONFIG			(device_configured())
+#define FULLREADY		(AUTH && CONFIG)
+#define EXIT_IF_NOAUTH		if (!AUTH) { protocolReplyFail("Not authenticated"); return; }
+#define EXIT_IF_NOCONFIG	if (!CONFIG) { protocolReplyFail("Not configured"); return; }
+#define EXIT_IF_NOTREADY	if (!FULLREADY) { protocolReplyFail("Not authenticated or not configured"); return; }
 
 volatile bool quit = false;
 uint8_t my_address = 0;
@@ -240,11 +243,11 @@ void processGet(uint8_t *data) {
 
 	switch (attr) {
 		case PROTOCOL_TOKEN_GET_KEY: // send host our public key
-			if (!FULLREADY) break;
+			EXIT_IF_NOTREADY;
 			returnPublicKey();
 			break;
 		case PROTOCOL_TOKEN_GET_ID: // send host our id
-			if (!FULLREADY) break;
+			EXIT_IF_NOTREADY;
 			returnNodeId();
 			break;
 		case PROTOCOL_TOKEN_GET_STATUS: // send host our status
@@ -379,6 +382,11 @@ void processPublicKey(uint8_t *data) {
 
 }
 
+void processSetPassword(uint8_t *pdata);
+void processSetPassword(uint8_t *pdata) {
+	set_password(pdata);
+}
+
 bool processAuth(uint8_t *pdata);
 bool processAuth(uint8_t *pdata) {
 	setup_status_t *s = get_setup_status();
@@ -412,29 +420,32 @@ void processIncomingProtocol() {
 
 			switch(type) {
 				case PROTOCOL_TOKEN_SEND:
-					if (!FULLREADY) break;
-					processSendMessage(msg->data + 1); // strip the first char
+					EXIT_IF_NOTREADY;
+					processSendMessage(msg->data + 2); // strip 'x:'
 					break;
 				case PROTOCOL_TOKEN_SET_KEY: // Host wants to send us a node's dest_pubKey
-					if (!FULLREADY) break;
-					processPublicKey(msg->data + 1); // strip the first char
+					EXIT_IF_NOTREADY;
+					processPublicKey(msg->data + 2);
 					break;
 				case PROTOCOL_TOKEN_PUBKEY_UPDATE:
-					if (!FULLREADY) break;
-					processPublicKeyUpdate(msg->data + 1);
+					EXIT_IF_NOTREADY;
+					processPublicKeyUpdate(msg->data + 2);
 					break;
 				case PROTOCOL_TOKEN_GENKEYS:
 					processGenKeys();
 					break;
 				case PROTOCOL_TOKEN_SET_ID:
-					processSetID(msg->data + 1);
+					processSetID(msg->data + 2);
+					break;
+				case PROTOCOL_TOKEN_SET_PASSWORD:
+					processSetPassword(msg->data + 2);
 					break;
 				case PROTOCOL_TOKEN_GET:
-					processGet(msg->data+1);
+					processGet(msg->data+2);
 					break;
 				case PROTOCOL_TOKEN_AUTH:
-					if (!CONFIG) break;
-					processAuth(msg->data + 1);
+					EXIT_IF_NOCONFIG;
+					processAuth(msg->data + 2);
 					break;
 			}
 		}
