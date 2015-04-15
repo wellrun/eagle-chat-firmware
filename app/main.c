@@ -386,15 +386,28 @@ void processPublicKey(uint8_t *data) {
 
 void processSetPassword(uint8_t *pdata);
 void processSetPassword(uint8_t *pdata) {
-	set_password(pdata);
+
+	uint8_t hash[30];
+
+	hostMsg_hexBufferToBytes(pdata, 60, hash);
+
+	set_password(hash);
 	protocolReplyOk();
 }
 
 void processAuth(uint8_t *pdata);
 void processAuth(uint8_t *pdata) {
 	setup_status_t *s = get_setup_status();
-	authenticated = (memcmp(pdata, s->password, 30) == 0);
-	protocolReplyOk();
+
+	uint8_t hash[30];
+
+	hostMsg_hexBufferToBytes(pdata, 60, hash);
+
+	authenticated = (memcmp(hash, s->password, 30) == 0);
+	if (authenticated)
+		protocolReplyOk();
+	else
+		protocolReplyFail("PASSWORD INCORRECT");
 }
 
 void processCommitConfig() {
