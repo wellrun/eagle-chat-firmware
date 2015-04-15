@@ -87,6 +87,10 @@ uint8_t ssk_read_key(uint8_t slot, uint8_t dest[PAGE_SIZE])
 	return nvm_read(INT_EEPROM, (slot + PAGE_KEY_START) * PAGE_SIZE, dest, PAGE_SIZE);
 }
 
+bool device_configured() {
+	return KEYS_BIT_SET(get_setup_status()->flags, FLAGS_CONFIGURED);
+}
+
 uint8_t set_private_key(uint8_t key[PAGE_SIZE]) {
 	memcpy(private_key, key, PAGE_SIZE);
 	if (nvm_write(INT_EEPROM, PRIVATE_KEY_BYTES_START, key, PAGE_SIZE) == STATUS_OK) {
@@ -117,8 +121,8 @@ void unset_status_flag(uint8_t mask)
 	store_setup_status();
 }
 
-void set_password(uint8_t password[16]) {
-	memcpy(status.password, password, 16);
+void set_password(uint8_t password[30]) {
+	memcpy(status.password, password, 30);
 	set_status_flag(FLAGS_PASSWORD);
 }
 
@@ -181,3 +185,11 @@ static bool ssk_find_free_slot(uint8_t * slot)
 }
 
 
+void burn_memory() {
+
+	uint8_t i = 0;
+	for (i = 0; i < MAX_PAGES; i ++) {
+		nvm_page_erase(INT_EEPROM, i);
+	}
+
+}

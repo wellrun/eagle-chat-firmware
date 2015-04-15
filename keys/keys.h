@@ -28,7 +28,7 @@
 
 typedef struct {
 	uint8_t node_id;
-	uint8_t password[16];
+	uint8_t password[30];
 	uint8_t flags;
 } setup_status_t;
 
@@ -59,18 +59,21 @@ const key_table_t * ssk_get_table(void);
 bool ssk_has_key(uint8_t node_id, uint8_t * slot);
 uint8_t ssk_read_key(uint8_t slot, uint8_t dest[PAGE_SIZE]);
 
+bool device_configured();
+
 
 //! Set functions - Set information on the data structures in-memory (which is automatically backed by the EEPROM)
 uint8_t set_private_key(uint8_t key[PAGE_SIZE]);
 uint8_t set_public_key(uint8_t key[PAGE_SIZE]);
 void set_status_flag(uint8_t mask);
 void unset_status_flag(uint8_t mask);
-void set_password(uint8_t password[16]);
+void set_password(uint8_t password[30]);
 void set_node_id(uint8_t node_id);
 
 uint8_t ssk_set_key(uint8_t node_id, uint8_t key[PAGE_SIZE]);
 uint8_t ssk_reset_table(void);
 
+void burn_memory(void);
 
 
 
