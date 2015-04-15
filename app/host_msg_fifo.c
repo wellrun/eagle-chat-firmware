@@ -110,5 +110,5 @@ uint8_t scaleByteFromHex(uint8_t byte) {
 }
 
 void hostMsg_terminate(hostMsg_t *msg) {
-	hostMsg_addByte(msg, '\r');
+	hostMsg_addByte(msg, '\n');
 }
