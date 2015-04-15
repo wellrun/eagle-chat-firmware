@@ -392,12 +392,21 @@ void processSetPassword(uint8_t *pdata) {
 	protocolReplyOk();
 }
 
-bool processAuth(uint8_t *pdata);
-bool processAuth(uint8_t *pdata) {
+void processAuth(uint8_t *pdata);
+void processAuth(uint8_t *pdata) {
 	setup_status_t *s = get_setup_status();
 	authenticated = (memcmp(pdata, s->password, 30) == 0);
 	protocolReplyOk();
 }
+
+void processCommitConfig() {
+	if (all_components_configured()) {
+		set_configured();
+		protocolReplyOk();
+	} else {
+		protocolReplyFail("All components not configured");
+	}
+} 
 
 void processIncomingProtocol(void);
 void processIncomingProtocol() {
@@ -453,6 +462,10 @@ void processIncomingProtocol() {
 					BREAK_IF_NOCONFIG;
 					processAuth(msg->data + 2);
 					break;
+				case PROTOCOL_TOKEN_COMMIT_CONFIG:
+					processCommitConfig();
+					break;
+
 			}
 		}
 
