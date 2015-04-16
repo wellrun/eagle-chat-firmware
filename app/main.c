@@ -322,6 +322,8 @@ void processSendMessage(uint8_t *data) {
 		protocolReplyOk();
 	} else if (result == FAILURE_NOKEY) {
 		protocolReplyFail("No public key entry for that node");
+	} else {
+		protocolReplyFail("Could not send message");
 	}
 
 }
