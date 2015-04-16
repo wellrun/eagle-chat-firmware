@@ -16,6 +16,7 @@
 #define PROTOCOL_TOKEN_SET_PASSWORD		'h'		// ex. h:[32 bytes hex]
 #define PROTOCOL_TOKEN_AUTH				'a'		// ex. a:[60 bytes hex]
 #define PROTOCOL_TOKEN_COMMIT_CONFIG	'c'		// 
+#define PROTOCOL_TOKEN_DEBUG			'd' 	// ex: d:r (print routing table)
 
 #define PROTOCOL_STRING_BURN			"BURN"	
 
@@ -25,6 +26,9 @@
 #define PROTOCOL_TOKEN_GET_KEY			'p' 	// g:p
 #define PROTOCOL_TOKEN_GET_ID			'i' 	// g:i
 #define PROTOCOL_TOKEN_GET_STATUS		's' 	// g:s
+
+// Debug commands
+#define PROTOCOL_TOKEN_DEBUG_RTABLE		'r'
 
 // Responses to host commands
 #define PROTOCOL_RESPONSE_PREFIX		'x'

@@ -410,6 +410,23 @@ void processCommitConfig() {
 	}
 } 
 
+void processDebug(uint8_t *data);
+void processDebug(uint8_t *data) {
+	// expects (debugcommand)
+
+	char * token;
+	token = strtok(data, PROTOCOL_DELIM);
+
+	uint8_t attr = 0;	
+	attr = token[0];
+
+	switch (attr) {
+		case PROTOCOL_TOKEN_DEBUG_RTABLE:
+			debugPrintRoutingTable();
+			break;
+	}
+}
+
 void processIncomingProtocol(void);
 void processIncomingProtocol() {
 	static uint16_t msg_count = 0;
@@ -466,6 +483,9 @@ void processIncomingProtocol() {
 					break;
 				case PROTOCOL_TOKEN_COMMIT_CONFIG:
 					processCommitConfig();
+					break;
+				case PROTOCOL_TOKEN_DEBUG:
+					processDebug(msg->data + 2);
 					break;
 
 			}
