@@ -220,11 +220,11 @@ void returnPublicKey() {
 	host_tx_queueMessage(&out);
 }
 
-void returnReceivedMessage(uint8_t *data, uint8_t len) {
+void returnReceivedMessage(uint8_t source, uint8_t *data, uint8_t len) {
 	hostMsg_t out;
 	out.len = 0;
 
-	protocolAddReceivePrefix(&out);
+	protocolAddReceivePrefix(source, &out);
 	hostMsg_addBuffer(&out, data, len);
 	hostMsg_terminate(&out);
 
@@ -572,7 +572,7 @@ int main()
 				uint8_t result = decryptMessageFrom(decrypted, &decryptedLength, header.source, payload, length);
 
 				if (result == SUCCESS) {
-					returnReceivedMessage(decrypted, decryptedLength);
+					returnReceivedMessage(header.source, decrypted, decryptedLength);
 				} else if (result == FAILURE_NOKEY) {
 					// Just discard
 				}

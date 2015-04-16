@@ -43,7 +43,7 @@ void protocolReplyOk();
 void protocolReplyFail(uint8_t *reason);
 
 void protocolAddReplyPrefix(hostMsg_t *msg);
-void protocolAddReceivePrefix(hostMsg_t *msg);
+void protocolAddReceivePrefix(uint8_t source, hostMsg_t *msg);
 
 
 #endif // PROTOCOL_H__

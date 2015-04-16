@@ -41,8 +41,10 @@ void protocolAddReplyPrefix(hostMsg_t *msg) {
 
 }
 
-void protocolAddReceivePrefix(hostMsg_t *msg) {
+void protocolAddReceivePrefix(uint8_t source, hostMsg_t *msg) {
 
 	hostMsg_addBuffer(msg, RECEIVED_PREFIX, sizeof(RECEIVED_PREFIX));
+	hostMsg_addHex(msg, source);
+	hostMsg_addByte(msg, PROTOCOL_DELIM_CHAR);
 
 }
