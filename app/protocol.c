@@ -3,6 +3,7 @@
 #include "host_tx.h"
 
 const uint8_t REPLY_PREFIX[] = {PROTOCOL_RESPONSE_PREFIX, PROTOCOL_DELIM_CHAR};
+const uint8_t RECEIVED_PREFIX[] = {PROTOCOL_RECEIVE_PREFIX, PROTOCOL_DELIM_CHAR};
 
 void protocolReplyOk() {
 	hostMsg_t out;
@@ -37,5 +38,11 @@ void protocolReplyFail(uint8_t *reason) {
 void protocolAddReplyPrefix(hostMsg_t *msg) {
 
 	hostMsg_addBuffer(msg, REPLY_PREFIX, sizeof(REPLY_PREFIX));
+
+}
+
+void protocolAddReceivePrefix(hostMsg_t *msg) {
+
+	hostMsg_addBuffer(msg, RECEIVED_PREFIX, sizeof(RECEIVED_PREFIX));
 
 }

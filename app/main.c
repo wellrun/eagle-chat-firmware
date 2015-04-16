@@ -220,6 +220,17 @@ void returnPublicKey() {
 	host_tx_queueMessage(&out);
 }
 
+void returnReceivedMessage(uint8_t *data, uint8_t len) {
+	hostMsg_t out;
+	out.len = 0;
+
+	protocolAddReceivePrefix(&out);
+	hostMsg_addBuffer(&out, data, len);
+	hostMsg_terminate(&out);
+
+	host_tx_queueMessage(&out);
+}
+
 
 void processGet(uint8_t *data);
 void processGet(uint8_t *data) {
@@ -541,14 +552,12 @@ int main()
 				uint8_t result = decryptMessageFrom(decrypted, &decryptedLength, header.source, payload, length);
 
 				if (result == SUCCESS) {
-					decrypted[decryptedLength] = 0;
+					returnReceivedMessage(decrypted, decryptedLength);
 				} else if (result == FAILURE_NOKEY) {
 					// Just discard
 				}
 
 			} else if (header.type == PACKET_TYPE_PUBKEY) {
-
-				ssk_load_table();
 
 				saveSSKFor(header.source, payload);
 

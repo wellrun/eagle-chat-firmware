@@ -33,10 +33,13 @@
 #define PROTOCOL_RESPONSE_YES			"YES"	// ex. x:YES
 #define PROTOCOL_RESPONSE_NO			"NO"	// ex. x:NO
 
+#define PROTOCOL_RECEIVE_PREFIX			'r'
+
 void protocolReplyOk();
 void protocolReplyFail(uint8_t *reason);
 
 void protocolAddReplyPrefix(hostMsg_t *msg);
+void protocolAddReceivePrefix(hostMsg_t *msg);
 
 
 #endif // PROTOCOL_H__
