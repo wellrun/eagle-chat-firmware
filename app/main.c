@@ -65,9 +65,6 @@ uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t
 
 		ssk_read_key(slot, ssk);
 
-		cdc_log_hex_string("Decrypt Nonce: ", nonce, crypto_box_NONCEBYTES);
-		cdc_log_hex_string("Decrypt SSK: ", ssk, CRYPTO_KEY_SIZE);
-
 		cr_decrypt(decrypted, emessage, elen, ssk, nonce);
 
 	} else {
@@ -77,9 +74,6 @@ uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t
 	}
 
 	*decryptedLength = DECRYPTED_LENGTH(elen);
-	cdc_log_int("Encrypted length: ", elen);
-	cdc_log_int("ZEROBYTES: ", crypto_box_ZEROBYTES);
-	cdc_log_int("Decrypted length: ", DECRYPTED_LENGTH(elen));
 
 	return SUCCESS;
 
@@ -131,9 +125,6 @@ uint8_t sendEncryptedTo(uint8_t addr, uint8_t *message, uint8_t len) {
 
 	}
 
-	cdc_log_hex_string("Encrypt Nonce: ", nonce, crypto_box_NONCEBYTES);
-	cdc_log_hex_string("Encrypt SSK: ", ssk, CRYPTO_KEY_SIZE);
-
 	memcpy(payload, nonce, crypto_box_NONCEBYTES);
 	memcpy(&payload[crypto_box_NONCEBYTES], encrypted, ENCRYPTED_LENGTH(len));
 
@@ -173,13 +164,10 @@ void processPublicKeyUpdate(uint8_t *data) {
 	if (token != NULL)
 		addr = (uint8_t) atoi(token);
 	if (addr == 0) {
-		cdc_write_line("INVALID: NO ADDRESS");
 		return; // invalid host message, invalid address
 	}
 
 	sendPublicKeyUpdate(addr);
-
-	cdc_log_int("Sent public key update to: ", addr);
 
 	protocolReplyOk();
 
@@ -334,17 +322,9 @@ void saveSSKFor(uint8_t addr, uint8_t *public) {
 
 	uint8_t ssk[CRYPTO_KEY_SIZE];
 
-	cdc_log_hex_string("My private: ", get_private_key(), CRYPTO_KEY_SIZE);
-	cdc_log_hex_string("My public: ", get_public_key(), CRYPTO_KEY_SIZE);
-	cdc_log_hex_string("His public: ", public, CRYPTO_KEY_SIZE);
-
 	cr_get_session_ssk(ssk, get_private_key(), public);
-	
-	cdc_log_hex_string("SSK: ", ssk, CRYPTO_KEY_SIZE);
 
 	ssk_set_key(addr, ssk);
-
-	cdc_log_int("Calculated and stored ssk for: ", addr);
 
 }
 
@@ -361,14 +341,12 @@ void processPublicKey(uint8_t *data) {
 	if (token != NULL)
 		addr = (uint8_t) atoi(token);
 	if (addr == 0) {
-		cdc_write_line("INVALID: NO ADDRESS");
 		return; // invalid host message, invalid address
 	}
 
 	// grab the message portion
 	token = strtok(NULL, PROTOCOL_DELIM);
 	if (token == NULL) {
-		cdc_write_line("INVALID: NO CONTENT");
 		return; // invalid host message, no message content
 	}
 
@@ -487,25 +465,6 @@ void processIncomingProtocol() {
 	}
 }
 
-/*
-void init(void) {
-	uint8_t inputbuf[4];
-	while (1) {
-		cdc_write_string("My address (1-3): ");
-		cdc_read_string(inputbuf, 3);
-		my_address = (uint8_t)atoi((const char *)inputbuf);
-		cdc_newline();
-
-		if (my_address >= 1 && my_address <= 3) {
-			cdc_log_int("You said: ", my_address);
-			break;
-		}
-
-		cdc_write_line("Invalid address.");
-	}
-}
-*/
-
 // Returns the configured node id
 uint8_t checkSetup();
 uint8_t checkSetup() {
@@ -576,18 +535,15 @@ int main()
 			PacketHeader header;
 			uint8_t *payload;
 			uint8_t length = packetReceivedPeek(&header, &payload);
-			cdc_log_int("From: ", header.source);
 
 			if (header.type == PACKET_TYPE_CONTENT) {
 
 				uint8_t result = decryptMessageFrom(decrypted, &decryptedLength, header.source, payload, length);
-				cdc_log_int("Decrypted length: ", decryptedLength);
 
 				if (result == SUCCESS) {
 					decrypted[decryptedLength] = 0;
-					cdc_log_string("Message: ", decrypted);
 				} else if (result == FAILURE_NOKEY) {
-					cdc_write_line("Couldn't decrypt because no public key for sender");
+					// Just discard
 				}
 
 			} else if (header.type == PACKET_TYPE_PUBKEY) {
@@ -596,12 +552,9 @@ int main()
 
 				saveSSKFor(header.source, payload);
 
-				cdc_log_int("successfully stored public key for: ", header.source);
-
 			}
 
 			packetReceivedSkip();
-			cdc_newline();
 		}
 	}
 
