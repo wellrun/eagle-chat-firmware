@@ -43,7 +43,14 @@ static inline void invalidateEntry(RoutingTableEntry * entry) {
 	entry->failures = 0;
 }
 
-void debugPrintRoutingTable(uint8_t entry) {
+void debugPrintRoutingTable() {
+	uint8_t i = 0;
+	for (i = 1; i < 255; i ++) {
+		debugPrintRoutingTableEntry(i);
+	}
+}
+
+void debugPrintRoutingTableEntry(uint8_t entry) {
 
 	RoutingTableEntry *r = &routingTable[entry];
 
@@ -53,7 +60,7 @@ void debugPrintRoutingTable(uint8_t entry) {
 		cdc_log_int("Failures: ", r->failures);
 		cdc_log_int("Original RRQID: ", r->originalRRQID);
 	} else {
-		cdc_write_line("No routing entry for that node");
+		//cdc_log_int("No routing entry for node: ", entry);
 	}
 
 }
@@ -76,6 +83,32 @@ void debugPrintRRQProgress() {
 	} else {
 		cdc_write_line("Not resolved.");
 	}
+}
+
+void debugPrintPacketHeader(PacketHeader *ph);
+void debugPrintPacketHeader(PacketHeader *ph) {
+	cdc_write_line("PACKET:");
+	cdc_log_int("    Source: ", ph->source);
+	cdc_log_int("    Dest: ", ph->dest);
+	cdc_write_string("    Type: ");
+	switch (ph->type) {
+		case PACKET_TYPE_CONTENT:
+			cdc_write_string("CONTENT");
+			break;
+		case PACKET_TYPE_RRQ:
+			cdc_write_string("RRQ");
+			break;
+		case PACKET_TYPE_RUP:
+			cdc_write_string("RUP");
+			break;
+		case PACKET_TYPE_FAIL:
+			cdc_write_string("FAIL");
+			break;
+		case PACKET_TYPE_PUBKEY:
+			cdc_write_string("PUBKEY");
+			break;
+	}
+	cdc_newline();
 }
 
 void setupRouting(uint8_t nodeId) {
@@ -200,6 +233,8 @@ void processSendQueue(void) {
 
 			// Safe to consume packet
 			payloadLen = packet_fifo_read(&sendFifo, &h, &payload);
+
+			cdc_write_line("Sent packet out of send queue");
 
 			// Send the packet
 			sendPacket(&h, payload, payloadLen);
@@ -338,7 +373,6 @@ void handleReceived() {
 						r.originalRRQID = rh->rrqID;
 						routingTable[h->source] = r;
 						//cdc_write_string("RRQ: ");
-						//debugPrintRoutingTable(h->source);
 
 						// Swap source and dest in the packet header
 						uint8_t temp = h->source;
@@ -354,7 +388,7 @@ void handleReceived() {
 					#if FORCE_HOPS
 					} else {
 
-						//cdc_log_int("Ignoring RRQ directly from: ", h->source);
+						cdc_log_int("Ignoring RRQ directly from: ", h->source);
 
 					}
 					#endif
@@ -394,7 +428,6 @@ void handleReceived() {
 					routingTable[rrqProgress.dest].originalRRQID = rh->rrqID;
 
 					//cdc_write_line("RUP: Should have updated routing table. Result:");
-					//debugPrintRoutingTable(rrqProgress.dest);
 
 
 					// Mark current RRQ as resolved
@@ -472,7 +505,14 @@ void handleReceived() {
 				RoutingTableEntry *nextHopEntry = getNextHop(h->dest);
 
 				if (nextHopEntry != NULL) {
+					
+					#ifdef PRINT_ROUTING_LOGS
+						cdc_write_line("Routing:");
+						debugPrintPacketHeader(h);
+					#endif
+
 					forward(nextHopEntry, framePayload, frameLength);
+				
 				} else {
 					// Do a route error
 
@@ -489,6 +529,7 @@ void handleReceived() {
 					if (nextHopEntry != NULL) {
 						// Try to send the error back to the source
 						// If this doesn't work, we can't help you
+
 						forward(nextHopEntry, (uint8_t *)h, PACKET_HEADER_SIZE);
 					}
 				}

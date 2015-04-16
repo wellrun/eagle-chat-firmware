@@ -6,7 +6,7 @@
 
 #define PACKET_HEADER_SIZE      	(sizeof(PacketHeader))
 #define MAX_ACK_FAILURES        	10
-#define ROUTING_ACK_WAIT			25 // ms
+#define ROUTING_ACK_WAIT			50 // ms
 
 typedef struct {
 	uint8_t source;
@@ -71,7 +71,8 @@ void handleReceived(void);
 
 void initiateRouteRequest(uint8_t dest);
 
-void debugPrintRoutingTable(uint8_t r);
+void debugPrintRoutingTable(void);
+void debugPrintRoutingTableEntry(uint8_t r);
 void debugPrintRecentRRQ(void);
 void debugPrintRRQProgress(void);
 
