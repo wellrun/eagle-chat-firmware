@@ -48,8 +48,9 @@ void do_routing(void) {
 }
 
 
-#define SUCCESS			0
-#define FAILURE_NOKEY	1
+#define SUCCESS					0
+#define FAILURE_NOKEY			1
+#define FAILURE_CANT_DECRYPT	2
 
 uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t addr, uint8_t *payload, uint8_t len);
 uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t addr, uint8_t *payload, uint8_t len) {
@@ -65,7 +66,9 @@ uint8_t decryptMessageFrom(uint8_t *decrypted, uint8_t *decryptedLength, uint8_t
 
 		ssk_read_key(slot, ssk);
 
-		cr_decrypt(decrypted, emessage, elen, ssk, nonce);
+		if (cr_decrypt(decrypted, emessage, elen, ssk, nonce) != 0) {
+			return FAILURE_CANT_DECRYPT;
+		}
 
 	} else {
 
@@ -503,10 +506,13 @@ uint8_t checkSetup() {
 	load_private_key();
 	load_public_key();
 	load_setup_status();
+
+
+	if (!device_configured())
+		ssk_reset_table();
 	ssk_load_table();
 
-	// This is part of the initialization process, but we fake it here for now.
-	ssk_reset_table();
+	
 
 	const setup_status_t *status = get_setup_status();
 	if (status->node_id == FLAGS_UNSET) {
@@ -574,7 +580,9 @@ int main()
 				if (result == SUCCESS) {
 					returnReceivedMessage(header.source, decrypted, decryptedLength);
 				} else if (result == FAILURE_NOKEY) {
-					// Just discard
+					protocolReplyFail("Could not decrypt received message. No key.");
+				} else {
+					protocolReplyFail("Decryption failed.");
 				}
 
 			} else if (header.type == PACKET_TYPE_PUBKEY) {
