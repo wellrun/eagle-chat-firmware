@@ -39,8 +39,9 @@ int main (void)
 {
 	// Insert system clock initialization code here (sysclk_init()).
 	uint8_t arrayt[12] = {"obrigadotudo"};
-	uint8_t fillthis[13];
-	fillthis[12]=0;//cdc_write_string funciton looking for zero 
+	uint8_t arry2[4] = {"reds"};
+	uint8_t fillthis[17];
+	fillthis[16]=0;//cdc_write_string funciton looking for zero 
 	long int i,j;
 	board_init();
 
@@ -66,10 +67,11 @@ int main (void)
 		}
 		
 		write_mode(1);// 0 byte, 1 sequential, 2 page
-		write_data(3,12,arrayt);//address, bytes of data, data array
-		read_data(3,12,fillthis);
+		write_data(arrayt);//address, bytes of data, data array
+		write_data(arry2);
+		read_data(16,fillthis);
 		cdc_write_string(fillthis);
-		cdc_newline();
+	//	cdc_newline();
 	//      display_read_results();
 	//	uint8_t read = udi_cdc_getc();
 		//if (read != 0)

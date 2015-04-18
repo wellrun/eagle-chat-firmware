@@ -5,6 +5,9 @@
 #include "cdc.h"
 #include <string.h>
 
+long int count= 0;
+uint8_t address = 0;
+uint8_t new_temp;
 
 struct spi_device spi_device_conf = 
 {
@@ -58,10 +61,6 @@ void write_mode(uint8_t mode)
             mode_w = 0;
          }
       
-	cdc_write_hex(mode);
-	cdc_newline();
-	cdc_write_hex(mode_w);
-	cdc_newline();
 
 	spi_select_device(&SPIC, &spi_device_conf);/*WRSR Sequence Begin*/
 	                                          /*Per page 12 of datasheet*/
@@ -88,10 +87,24 @@ void write_mode(uint8_t mode)
 
 }
 
-void write_data(uint16_t address,uint8_t write_num_bytes,uint8_t data[])
+void write_data(uint8_t data[])
 {
+
+	
+	uint8_t write_num_bytes = strlen((const char*)data);//casting data array to
+                                                           //const char so strlen 
+                                                           //can be used
 	
 
+	if (count >= 1)
+        {	
+           address = new_temp; //address gets set equal to next free memory byte
+        }
+	
+	cdc_write_hex(address);
+	cdc_newline();
+
+	uint8_t new_line[2] = "\n";
 	uint8_t writecommand = 2;
         uint8_t LSB = (uint8_t) address;//stores LSB of address in variable
 	uint8_t MSB = (uint8_t) (address>>8);//stores MSB of address in variable
@@ -118,22 +131,28 @@ void write_data(uint16_t address,uint8_t write_num_bytes,uint8_t data[])
         
  
 
-	spi_write_packet(&SPIC, data, write_num_bytes); //writes data to SRAM. 
+	spi_write_packet(&SPIC, data, write_num_bytes);//writes data to SRAM. 
                                                      //Each char 
                                                     //is a byte
+	spi_write_packet(&SPIC, new_line,2);//writes new line 
 	
 	spi_deselect_device(&SPIC, &spi_device_conf);/*End Write Sequence*/
                                                      /*Bring CS High to end 
-                                                      writing*/
+                                                     writing*/
+	
+	count++;
+        new_temp= address + write_num_bytes; //sets it so new_temp holds value of address
+	cdc_write_hex(count);
+	cdc_newline();
 
 }
 
 
 
-void read_data(uint16_t address, uint8_t read_num_bytes, uint8_t user_array[])
+void read_data(uint8_t read_num_bytes,uint8_t user_array[])
 {
 	
-
+	address = 0;
 	uint8_t readcommand = 3;
 	uint8_t LSB = (uint8_t) address;//stores LSB of address in variable
 	uint8_t MSB = (uint8_t) (address>>8);//stores MSB of address in variable
@@ -156,7 +175,7 @@ void read_data(uint16_t address, uint8_t read_num_bytes, uint8_t user_array[])
                                                       //allocated variable
 
         spi_deselect_device(&SPIC, &spi_device_conf);/*End Read 
-                                                      Sequence 
+                                                      Sequence*/ 
                                                      /*Bring CS High to end 
                                                        writing*/
 
