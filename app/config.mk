@@ -24,6 +24,7 @@ CSRCS += \
     common/components/crypto/sha204/sha204_command_marshaling.c \
     common/components/crypto/sha204/xmega_sha204/sha204_timer.c \
     xmega/drivers/twi/twim.c \
+    ccpwrite.c \
 
 INC_PATH += \
     common/services/ioport/xmega \

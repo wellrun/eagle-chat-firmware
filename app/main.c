@@ -11,6 +11,7 @@
 #include "host_tx.h"
 #include "routing/routing.h"
 #include "stack/stack.h"
+#include "ccpwrite.h"
 
 #include <util/atomic.h>
 
@@ -446,8 +447,9 @@ void processIncomingProtocol() {
 
 			// Check for burn
 			if (strcmp(msg->data, PROTOCOL_STRING_BURN) == 0) {
+				cpu_irq_disable();
 				burn_memory();
-				//RST.CTRL = RST_SWRST_BM;
+				CCPWrite( &RST.CTRL, RST_SWRST_bm );
 				return;
 			}
 
