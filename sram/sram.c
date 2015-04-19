@@ -6,8 +6,8 @@
 #include <string.h>
 
 long int count= 0;
-uint8_t address = 0;
-uint8_t new_temp;
+uint16_t address = 0; //so address can go to 65535 if necessary
+uint16_t new_temp;
 
 struct spi_device spi_device_conf = 
 {
@@ -95,9 +95,10 @@ void write_data(uint8_t data[])
                                                            //const char and adding 
                                                            //one so that null 
                                                            //char included
-
-	/*cdc_write_hex(write_num_bytes);
-	cdc_newline();*/
+	
+	
+	//cdc_write_hex(write_num_bytes);
+	//cdc_newline();
 
 	if (count >= 1)
         {	
@@ -161,7 +162,7 @@ void write_data(uint8_t data[])
 
 
 
-void read_data(uint8_t read_num_bytes,uint8_t user_array[])
+void read_data(uint16_t read_num_bytes,uint8_t user_array[])
 {
 	
 	address = 0;

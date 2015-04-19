@@ -64,10 +64,10 @@ int main (void)
 		}
 		
 		write_mode(1);// 0 byte, 1 sequential, 2 page
-		write_data(arrayt);//array of data to send		
-		write_data(arry2);//array of data to send
+		write_data(arry2);//array of data to send		
+		write_data(arrayt);//array of data to send
 		
-		read_data(9,fillthis);
+		read_data(15,fillthis);
 		cdc_write_string(fillthis);
 		cdc_newline();
 
