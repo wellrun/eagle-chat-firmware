@@ -90,11 +90,14 @@ void write_mode(uint8_t mode)
 void write_data(uint8_t data[])
 {
 
-	
-	uint8_t write_num_bytes = strlen((const char*)data);//casting data array to
-                                                           //const char so strlen 
-                                                           //can be used
-	
+       
+	uint8_t write_num_bytes = strlen((const char*)data)+1;//casting array to
+                                                           //const char and adding 
+                                                           //one so that null 
+                                                           //char included
+
+	/*cdc_write_hex(write_num_bytes);
+	cdc_newline();*/
 
 	if (count >= 1)
         {	
@@ -104,7 +107,7 @@ void write_data(uint8_t data[])
 	cdc_write_hex(address);
 	cdc_newline();
 
-	uint8_t new_line[2] = "\n";
+	
 	uint8_t writecommand = 2;
         uint8_t LSB = (uint8_t) address;//stores LSB of address in variable
 	uint8_t MSB = (uint8_t) (address>>8);//stores MSB of address in variable
@@ -134,16 +137,25 @@ void write_data(uint8_t data[])
 	spi_write_packet(&SPIC, data, write_num_bytes);//writes data to SRAM. 
                                                      //Each char 
                                                     //is a byte
-	spi_write_packet(&SPIC, new_line,2);//writes new line 
 	
+		
+
 	spi_deselect_device(&SPIC, &spi_device_conf);/*End Write Sequence*/
                                                      /*Bring CS High to end 
                                                      writing*/
 	
 	count++;
-        new_temp= address + write_num_bytes; //sets it so new_temp holds value of address
-	cdc_write_hex(count);
-	cdc_newline();
+        new_temp= address + write_num_bytes-1; /*sets it so new_temp holds value of 
+                                             address*/
+	//cdc_write_hex(new_temp);
+	//cdc_newline();
+	
+
+
+	
+
+	
+	
 
 }
 
@@ -178,7 +190,8 @@ void read_data(uint8_t read_num_bytes,uint8_t user_array[])
                                                       Sequence*/ 
                                                      /*Bring CS High to end 
                                                        writing*/
-
+ 	user_array[read_num_bytes] = '\0';//so that removed null is put back into 
+                                          //array avoiding erroneous output
       
 }
 

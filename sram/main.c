@@ -38,10 +38,9 @@
 int main (void)
 {
 	// Insert system clock initialization code here (sysclk_init()).
-	uint8_t arrayt[12] = {"obrigadotudo"};
-	uint8_t arry2[4] = {"reds"};
-	uint8_t fillthis[17];
-	fillthis[16]=0;//cdc_write_string funciton looking for zero 
+	uint8_t arrayt[15] = "obrigadotudo";
+	uint8_t arry2[15] = "redsor";
+	uint8_t fillthis[40];
 	long int i,j;
 	board_init();
 
@@ -54,8 +53,6 @@ int main (void)
 	sysclk_init();
 
 	cdc_start();
-       
-	//spi_init_pins();
 	
         spi_init_module();
 	
@@ -67,17 +64,13 @@ int main (void)
 		}
 		
 		write_mode(1);// 0 byte, 1 sequential, 2 page
-		write_data(arrayt);//address, bytes of data, data array
-		write_data(arry2);
-		read_data(16,fillthis);
+		write_data(arrayt);//array of data to send		
+		write_data(arry2);//array of data to send
+		
+		read_data(9,fillthis);
 		cdc_write_string(fillthis);
-	//	cdc_newline();
-	//      display_read_results();
-	//	uint8_t read = udi_cdc_getc();
-		//if (read != 0)
-			//cdc_write_string("Hello. This is quite a long string.\n");
-	//	cdc_write_hex(read);
-	//	cdc_write_string(" ");
+		cdc_newline();
+
 	}
 
 
