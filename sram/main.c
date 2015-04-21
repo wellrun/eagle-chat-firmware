@@ -38,9 +38,10 @@
 int main (void)
 {
 	// Insert system clock initialization code here (sysclk_init()).
-	uint8_t arrayt[15] = "obrigadotudo";
-	uint8_t arry2[15] = "redsor";
-	uint8_t fillthis[40];
+	uint8_t arrayt[15] = "obrigadotudo";//12
+	uint8_t arry2[15] = "redsor";//6 //345 chars in next array
+	uint8_t arry3[350] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB";
+	uint8_t fillthis[400];
 	long int i,j;
 	board_init();
 
@@ -64,10 +65,15 @@ int main (void)
 		}
 		
 		write_mode(1);// 0 byte, 1 sequential, 2 page
-		write_data(arry2);//array of data to send		
-		write_data(arrayt);//array of data to send
 		
-		read_data(15,fillthis);
+		write_data(arry3);//array of data to send		
+		write_data(arrayt);
+		read_data(357,fillthis);		
+		cdc_write_string(fillthis);
+		cdc_newline();
+
+		write_data(arry2);//array of data to send
+		read_data(6,fillthis);
 		cdc_write_string(fillthis);
 		cdc_newline();
 
@@ -76,3 +82,4 @@ int main (void)
 
 	// Insert application code here, after the board has been initialized.
 }
+

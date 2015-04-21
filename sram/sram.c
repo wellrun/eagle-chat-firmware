@@ -8,7 +8,7 @@
 long int count= 0;
 uint16_t address = 0; //so address can go to 65535 if necessary
 uint16_t new_temp;
-
+uint16_t for_read;
 struct spi_device spi_device_conf = 
 {
           .id = SRAM_CS_pin
@@ -91,11 +91,11 @@ void write_data(uint8_t data[])
 {
 
        
-	uint8_t write_num_bytes = strlen((const char*)data)+1;//casting array to
+	uint16_t write_num_bytes = strlen((const char*)data)+1;//casting array to
                                                            //const char and adding 
                                                            //one so that null 
                                                            //char included
-	
+	for_read = write_num_bytes;
 	
 	//cdc_write_hex(write_num_bytes);
 	//cdc_newline();
@@ -148,8 +148,8 @@ void write_data(uint8_t data[])
 	count++;
         new_temp= address + write_num_bytes-1; /*sets it so new_temp holds value of 
                                              address*/
-	//cdc_write_hex(new_temp);
-	//cdc_newline();
+	/*cdc_write_hex(new_temp);
+	cdc_newline();*/
 	
 
 
@@ -193,8 +193,53 @@ void read_data(uint16_t read_num_bytes,uint8_t user_array[])
                                                        writing*/
  	user_array[read_num_bytes] = '\0';//so that removed null is put back into 
                                           //array avoiding erroneous output
+	
+	//Erasing previously written data and starting address back at beginning
+	address =0;
+	uint8_t writecommand = 2;
+	uint8_t clear[2] = " ";
+        uint8_t LSB_c = (uint8_t) address;//stores LSB of address in variable
+	uint8_t MSB_c = (uint8_t) (address>>8);//stores MSB of address in variable
+	uint8_t address_var_c[2]; //array of 2 8 bit values to be used to send 16 
+                                //bits to chip for addressing read/write 
+                                //purposes 
+
+	address_var_c[0] = MSB_c;
+        address_var_c[1] = LSB_c;
+	
+	spi_select_device(&SPIC, &spi_device_conf);/*Begin Write 
+                                                    Sequence*/
+                                                  /*bringing CS Low since using 
+                                                  select_device function brings
+                                                  device low and you must bring 
+                                                  device low prior to      
+                                                  write       
+                                                  attempt*/
+	
+	spi_write_packet(&SPIC, &writecommand, 1);//Sends command to write 
+	
+	spi_write_packet(&SPIC, address_var_c, 2);/*Sends the 2 byte address to 
+	                                         SRAM for writing*/
+        
+ 
+
+	spi_write_packet(&SPIC, clear, for_read);//writes data to SRAM. 
+                                                     //Each char 
+                                                    //is a byte
+	
+		
+
+	spi_deselect_device(&SPIC, &spi_device_conf);/*End Write Sequence*/
+                                                     /*Bring CS High to end 
+                                                     writing*/
+	
+	address =0; //going back to beginning
+	count = 0;//resetting count so that write function starts at begining
+	new_temp = 0;//resetting new_temp so that write function starts at begining
+	
       
 }
+
 
 
 
