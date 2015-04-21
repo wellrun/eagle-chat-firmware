@@ -38,9 +38,10 @@
 int main (void)
 {
 	// Insert system clock initialization code here (sysclk_init()).
-	uint8_t arrayt[15] = "obrigadotudo";//12
+	uint8_t arry1[15] = "obrigadotudo";//12
 	uint8_t arry2[15] = "redsor";//6 //345 chars in next array
 	uint8_t arry3[350] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB";
+	uint8_t arry4[15] = "scooby";
 	uint8_t fillthis[400];
 	long int i,j;
 	board_init();
@@ -66,16 +67,22 @@ int main (void)
 		
 		write_mode(1);// 0 byte, 1 sequential, 2 page
 		
-		write_data(arry3);//array of data to send		
-		write_data(arrayt);
+		write_data(arry4);//array of data to send		
+		write_data(arry2);
 		read_data(400,fillthis);		
 		cdc_write_string(fillthis);
-		cdc_newline();
+		//cdc_newline();
 
-		write_data(arry2);//array of data to send
-		read_data(6,fillthis);
+		write_data(arry1);//array of data to send
+		read_data(90,fillthis);
 		cdc_write_string(fillthis);
-		cdc_newline();
+		
+		write_data(arry2);
+		write_data(arry3);
+		write_data(arry1);
+		read_data(600,fillthis);
+		cdc_write_string(fillthis);
+		//cdc_newline();
 
 	}
 

@@ -106,8 +106,8 @@ void write_data(uint8_t data[])
            address = new_temp; //address gets set equal to next free memory byte
         }
 	
-	cdc_write_hex(address);
-	cdc_newline();
+	//cdc_write_hex(address);
+	//cdc_newline();
 
 	
 	uint8_t writecommand = 2;
@@ -153,6 +153,38 @@ void write_data(uint8_t data[])
 	cdc_newline();*/
 	
 
+	//NEW LINE WRITING BEGINS
+
+	uint8_t new_line[2] = {"\n"};
+	uint8_t LSBn = (uint8_t) new_temp;/*stores LSB of address in variable*/
+	uint8_t MSBn = (uint8_t) (new_temp>>8);/*stores MSB of address in     
+                                                variable*/
+	uint8_t new_line_add[2]; /*array of 2 8 bit values to be used to send 16 
+                                bits to chip for addressing read/write 
+                                purposes*/
+
+	new_line_add[0] = MSBn;
+        new_line_add[1] = LSBn;
+	spi_select_device(&SPIC, &spi_device_conf);/*Begin Write 
+                                                    Sequence*/
+                                                  /*bringing CS Low since using 
+                                                  select_device function brings
+                                                  device low and you must bring 
+                                                  device low prior to      
+                                                  write       
+                                                  attempt*/
+	
+	spi_write_packet(&SPIC, &writecommand, 1);/*Sends command to write*/ 
+	
+	spi_write_packet(&SPIC, new_line_add, 2);/*Sends the 2 byte address to 
+	                                         SRAM for writing*/
+	spi_write_packet(&SPIC, new_line,2);/*writes new line*/ 
+        
+ 	spi_deselect_device(&SPIC, &spi_device_conf);/*End Write Sequence*/
+                                                     /*Bring CS High to end 
+                                                     writing*/
+	
+	 new_temp= new_temp + 1; 
 
 	
 
