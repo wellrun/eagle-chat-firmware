@@ -68,7 +68,7 @@ int main (void)
 		
 		write_data(arry3);//array of data to send		
 		write_data(arrayt);
-		read_data(357,fillthis);		
+		read_data(400,fillthis);		
 		cdc_write_string(fillthis);
 		cdc_newline();
 

@@ -9,6 +9,7 @@ long int count= 0;
 uint16_t address = 0; //so address can go to 65535 if necessary
 uint16_t new_temp;
 uint16_t for_read;
+uint16_t byte_count = 0;
 struct spi_device spi_device_conf = 
 {
           .id = SRAM_CS_pin
@@ -96,7 +97,7 @@ void write_data(uint8_t data[])
                                                            //one so that null 
                                                            //char included
 	for_read = write_num_bytes;
-	
+	byte_count = for_read + byte_count;
 	//cdc_write_hex(write_num_bytes);
 	//cdc_newline();
 
@@ -165,6 +166,13 @@ void write_data(uint8_t data[])
 void read_data(uint16_t read_num_bytes,uint8_t user_array[])
 {
 	
+	if(read_num_bytes>byte_count) //used in case user specifies more bytes to 
+                                      //read than were previously written
+	{
+	   read_num_bytes = byte_count;
+           byte_count = 0;
+        }
+
 	address = 0;
 	uint8_t readcommand = 3;
 	uint8_t LSB = (uint8_t) address;//stores LSB of address in variable
