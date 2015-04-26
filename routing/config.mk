@@ -7,7 +7,8 @@ CSRCS += \
 	radio/radio.cpp \
     radio/RFM69.cpp \
     radio/fifo.c \
-	packet_fifo.c
+	packet_fifo.c \
+	led.c
 
 INC_PATH += \
 

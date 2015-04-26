@@ -4,6 +4,10 @@
 #include "radio.h"
 #include <string.h>
 
+#if FORCE_HOPS
+#include "led.h"
+#endif
+
 static uint8_t framePayload[MAX_PAYLOAD_SIZE];
 
 static RoutingTableEntry routingTable[ROUTING_TABLE_ENTRIES];
@@ -123,6 +127,10 @@ void setupRouting(uint8_t nodeId) {
 
 	memset(recentRRQ, 0, RECENT_RRQ_NUM);
 	recentRRQ_p = 0;
+
+	#if FORCE_HOPS
+		led_init();
+	#endif
 }
 
 void setRoutingId(uint8_t nodeId) {
@@ -510,6 +518,10 @@ void handleReceived() {
 				RoutingTableEntry *nextHopEntry = getNextHop(h->dest);
 
 				if ((nextHopEntry != NULL) && forward(nextHopEntry, framePayload, frameLength)) {
+					#if FORCE_HOPS
+						led_on();
+					#endif
+
 
 					#ifdef PRINT_ROUTING_LOGS
 						cdc_write_line("Routing:");

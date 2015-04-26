@@ -102,4 +102,8 @@
 #define VBUS_SENSE_pin	IOPORT_CREATE_PIN(PORTE, 3)
 
 
+
+#define DEBUG_LED_pin	IOPORT_CREATE_PIN(PORTD, 4)
+
+
 #endif // USER_BOARD_H

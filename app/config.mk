@@ -14,6 +14,7 @@ CSRCS += \
 	radio/fifo.c \
 	routing/packet_fifo.c \
 	routing/routing.c \
+	routing/led.c \
 	crypto/crypto.c \
 	crypto/randombytes.c \
 	keys/keys.c \
