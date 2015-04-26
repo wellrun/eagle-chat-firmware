@@ -540,13 +540,6 @@ int main()
 
 	sysclk_init();
 
-	// TOTAL HACK
-
-	ioport_set_pin_dir(DEBUG_LED_pin, IOPORT_DIR_OUTPUT);
-	ioport_set_pin_high(DEBUG_LED_pin);
-
-	// TOTAL HACK
-
 	rtc_init();
 
 	cdc_start();
