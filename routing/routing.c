@@ -359,7 +359,28 @@ void handleReceived() {
 		switch (h->type) {
 			case PACKET_TYPE_RRQ:
 
+				; // Empty statement to appease GCC. lol C.
+
+				uint8_t *nodeList = &framePayload[PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE];
+
+				#if FORCE_HOPS
+
+				bool found = false;
+				uint8_t i = 0;
+				for (i = 0; i < rh->hopcount; i ++) {
+					if (nodeList[i] == _nodeId) {
+						found = true;
+						break;
+					}
+				}
+
+				if (!found) {
+
+				#else
+
 				if (!didRecentlyForwardRRQ(rh->rrqID)) {
+
+				#endif
 
 					if (h->dest == _nodeId) {
 
@@ -398,7 +419,6 @@ void handleReceived() {
 
 					} else {
 
-						uint8_t *nodeList = &framePayload[PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE];
 						nodeList[rh->hopcount] = _nodeId;
 
 						rh->hopcount++;
