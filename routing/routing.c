@@ -155,7 +155,7 @@ bool forward(RoutingTableEntry *nextHopEntry, uint8_t *framePayload, uint8_t fra
 	bool acked;
 	uint8_t retries = 0;
 
-	while (retries < 5) {
+	while (retries < MAX_ACK_FAILURES) {
 		sendFrame(nextHopEntry->nextHop, framePayload, frameLen);
 
 
@@ -479,10 +479,16 @@ void handleReceived() {
 				break;
 
 			case PACKET_TYPE_FAIL: // An error happened in the routing chain
+
 				routingTable[h->source].nextHop = 0; // invalidate route
 
-				// TODO: Queue failure message for host
-				// Include packet id once that's a thing
+				if (h->dest != _nodeId) {
+					RoutingTableEntry *nextFailHop = getNextHop(h->dest);
+
+					if (nextFailHop != NULL) {
+						forward(nextFailHop, framePayload, frameLength);
+					}
+				}
 
 				break;
 
@@ -504,16 +510,15 @@ void handleReceived() {
 				// Get the next hop to the packet's destination
 				RoutingTableEntry *nextHopEntry = getNextHop(h->dest);
 
-				if (nextHopEntry != NULL) {
-					
+				if ((nextHopEntry != NULL) && forward(nextHopEntry, framePayload, frameLength)) {
+
 					#ifdef PRINT_ROUTING_LOGS
 						cdc_write_line("Routing:");
 						debugPrintPacketHeader(h);
 					#endif
-
-					forward(nextHopEntry, framePayload, frameLength);
-				
+					
 				} else {
+
 					// Do a route error
 
 					h->type = PACKET_TYPE_FAIL;
@@ -529,7 +534,6 @@ void handleReceived() {
 					if (nextHopEntry != NULL) {
 						// Try to send the error back to the source
 						// If this doesn't work, we can't help you
-
 						forward(nextHopEntry, (uint8_t *)h, PACKET_HEADER_SIZE);
 					}
 				}
