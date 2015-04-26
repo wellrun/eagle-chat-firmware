@@ -359,44 +359,44 @@ void handleReceived() {
 		switch (h->type) {
 			case PACKET_TYPE_RRQ:
 
-				if (h->dest == _nodeId) {
+				if (!didRecentlyForwardRRQ(rh->rrqID)) {
 
-					#if FORCE_HOPS
-					if (rh->hopcount > FORCE_HOPS - 1) { // Ignore RRQs directly from originator
+					if (h->dest == _nodeId) {
 
-					#endif
+						#if FORCE_HOPS
+						if (rh->hopcount > FORCE_HOPS - 1) { // Ignore RRQs directly from originator
 
-						// Update our routing tables
-						RoutingTableEntry r;
-						r.nextHop = senderNodeId;
-						r.failures = 0;
-						r.originalRRQID = rh->rrqID;
-						routingTable[h->source] = r;
-						//cdc_write_string("RRQ: ");
+						#endif
 
-						// Swap source and dest in the packet header
-						uint8_t temp = h->source;
-						h->source = h->dest;
-						h->dest = temp;
+							// Update our routing tables
+							RoutingTableEntry r;
+							r.nextHop = senderNodeId;
+							r.failures = 0;
+							r.originalRRQID = rh->rrqID;
+							routingTable[h->source] = r;
+							//cdc_write_string("RRQ: ");
 
-						// Change the packet type to a RUP
-						h->type = PACKET_TYPE_RUP;
+							// Swap source and dest in the packet header
+							uint8_t temp = h->source;
+							h->source = h->dest;
+							h->dest = temp;
 
-						// Time to get that packet on the ol' dusty trail
-						forward(&r, framePayload, frameLength);
+							// Change the packet type to a RUP
+							h->type = PACKET_TYPE_RUP;
 
-					#if FORCE_HOPS
+							// Time to get that packet on the ol' dusty trail
+							forward(&r, framePayload, frameLength);
+
+						#if FORCE_HOPS
+						} else {
+
+							cdc_log_int("Ignoring RRQ directly from: ", h->source);
+
+						}
+						#endif
+
+
 					} else {
-
-						cdc_log_int("Ignoring RRQ directly from: ", h->source);
-
-					}
-					#endif
-
-
-				} else {
-
-					if (!didRecentlyForwardRRQ(rh->rrqID)) {
 
 						uint8_t *nodeList = &framePayload[PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE];
 						nodeList[rh->hopcount] = _nodeId;
@@ -405,14 +405,13 @@ void handleReceived() {
 
 						broadcastFrame(framePayload, PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE + rh->hopcount);
 
-						// We re-broadcasted this RRQ
-						// Add it to our recently broadcast RRQs
-						logRecentRRQ(rh->rrqID);
-
 					}
 
+				} else {
+					// We re-broadcasted this RRQ
+					// Add it to our recently broadcast RRQs
+					logRecentRRQ(rh->rrqID);
 				}
-
 
 				break;
 
