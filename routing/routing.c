@@ -559,14 +559,23 @@ void handleReceived() {
 					h->dest = h->source;
 					h->source = temp;
 
-					// This should exist, right?
-					nextHopEntry = getNextHop(h->dest);
+					// // This should exist, right?
+					// nextHopEntry = getNextHop(h->dest);
 
-					if (nextHopEntry != NULL) {
-						// Try to send the error back to the source
-						// If this doesn't work, we can't help you
-						forward(nextHopEntry, (uint8_t *)h, PACKET_HEADER_SIZE);
-					}
+					// if (nextHopEntry != NULL) {
+					// 	// Try to send the error back to the source
+					// 	// If this doesn't work, we can't help you
+					// 	forward(nextHopEntry, (uint8_t *)h, PACKET_HEADER_SIZE);
+					// }
+
+					// Send fail packet directly to senderNodeId to handle
+
+					RoutingTableEntry snd;
+					snd.nextHop = senderNodeId;
+					snd.originalRRQID = 0;
+					snd.failures = 0;
+
+					forward(&snd, (uint8_t *)h, PACKET_HEADER_SIZE);
 				}
 
 				break;
