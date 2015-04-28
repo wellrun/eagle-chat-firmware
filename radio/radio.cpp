@@ -56,10 +56,11 @@ bool framesToRead() {
 	return !fifo_isEmpty(&radio.RXFIFO);
 }
 
-void getNextFrame(uint8_t *senderId, uint8_t *length, uint8_t *buf, bool *needsAck) {
+void getNextFrame(uint8_t *senderId, uint8_t *destId, uint8_t *length, uint8_t *buf, bool *needsAck) {
 
 	uint8_t *fbuf = fifo_read(&radio.RXFIFO);
 	*senderId = fbuf[OFFSET_SENDER_ADDRESS];
+	*destId = fbuf[OFFSET_TARGET_ADDRESS];
 	*length = fbuf[OFFSET_LENGTH];
 	*needsAck = fbuf[OFFSET_CTL] & MASK_ACK_REQUESTED;
 	memcpy(buf, &fbuf[OFFSET_DATA], *length);

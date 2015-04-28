@@ -67,7 +67,7 @@ bool framesToRead(void);
   \param buf        Will be filled with the packet's payload (should be at least MAX_PAYLOAD_SIZE bytes)
   \param needsAck   Will be set to true if the packet requested an ACK. False otherwise.
 */
-void getNextFrame(uint8_t *senderId, uint8_t *length, uint8_t *buf, bool *needsAck);
+void getNextFrame(uint8_t *senderId, uint8_t *destId, uint8_t *length, uint8_t *buf, bool *needsAck);
 
 #ifdef __cplusplus
 }

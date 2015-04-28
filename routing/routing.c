@@ -342,16 +342,16 @@ void packetReceivedSkip() {
 
 void handleReceived() {
 
-	uint8_t senderNodeId, frameLength;
+	uint8_t senderNodeId, destNodeId, frameLength;
 	bool needsAck;
 
 	while (framesToRead()) {
 
 		// Get the raw frame
-		getNextFrame(&senderNodeId, &frameLength, framePayload, &needsAck);
+		getNextFrame(&senderNodeId, &destNodeId, &frameLength, framePayload, &needsAck);
 
 		// Send an ack if needed
-		if (needsAck) {
+		if (needsAck && (_nodeId == destNodeId)) {
 			sendAck(senderNodeId);
 		}
 
