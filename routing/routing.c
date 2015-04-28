@@ -376,7 +376,7 @@ void handleReceived() {
 					if (h->dest == _nodeId) {
 
 						#if FORCE_HOPS
-						if (rh->hopcount >= FORCE_HOPS - 1) { // Ignore RRQs directly from originator
+						if (rh->hopcount > 0) { // Ignore RRQs directly from originator
 
 						#endif
 

@@ -6,7 +6,11 @@
 
 #define PACKET_HEADER_SIZE      	(sizeof(PacketHeader))
 #define MAX_ACK_FAILURES        	10
+<<<<<<< HEAD
+#define ROUTING_ACK_WAIT			50 // ms
+=======
 #define ROUTING_ACK_WAIT			70		// ms
+>>>>>>> f8c75ab... Higher baud; demo-ready firmware
 
 typedef struct {
 	uint8_t source;

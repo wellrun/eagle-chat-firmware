@@ -545,6 +545,7 @@ int main()
 	cdc_start();
 
 	sha204_init();
+	sha204_fullLock();
 
 	host_rx_init(); // Setup host rx module
 	host_tx_init();
