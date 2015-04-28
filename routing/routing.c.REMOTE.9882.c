@@ -370,7 +370,7 @@ void handleReceived() {
 				; // Empty statement to appease GCC. lol C.
 
 				uint8_t *nodeList = &framePayload[PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE];
-				
+
 				if (!didRecentlyForwardRRQ(rh->rrqID)) {
 
 					if (h->dest == _nodeId) {

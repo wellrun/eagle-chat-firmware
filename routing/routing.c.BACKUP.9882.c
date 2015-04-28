@@ -370,7 +370,25 @@ void handleReceived() {
 				; // Empty statement to appease GCC. lol C.
 
 				uint8_t *nodeList = &framePayload[PACKET_HEADER_SIZE + RRQ_PACKET_HEADER_SIZE];
-				
+
+<<<<<<< HEAD
+				#if FORCE_HOPS
+
+				bool found = false;
+				uint8_t i = 0;
+				for (i = 0; i < rh->hopcount; i ++) {
+					if (nodeList[i] == _nodeId) {
+						found = true;
+						break;
+					}
+				}
+
+				if (!found) {
+
+				#else
+
+=======
+>>>>>>> 76a04b1... Rolled back everything we just did w.r.t FORCE_HOPS
 				if (!didRecentlyForwardRRQ(rh->rrqID)) {
 
 					if (h->dest == _nodeId) {
