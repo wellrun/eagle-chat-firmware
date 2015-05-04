@@ -13,7 +13,7 @@
 #define PROTOCOL_TOKEN_GENKEYS			'k' 	// ex. k
 #define PROTOCOL_TOKEN_PUBKEY_UPDATE	'u' 	// ex. u:[0-9]{1,3}(address)
 #define PROTOCOL_TOKEN_SET_ID			'i' 	// ex. i:[2 bytes hex]
-#define PROTOCOL_TOKEN_SET_PASSWORD		'h'		// ex. h:[32 bytes hex]
+#define PROTOCOL_TOKEN_SET_PASSWORD		'h'		// ex. h:[60 bytes hex]
 #define PROTOCOL_TOKEN_AUTH				'a'		// ex. a:[60 bytes hex]
 #define PROTOCOL_TOKEN_COMMIT_CONFIG	'c'		// 
 #define PROTOCOL_TOKEN_DEBUG			'd' 	// ex: d:r (print routing table)
